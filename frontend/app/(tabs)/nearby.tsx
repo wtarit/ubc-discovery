@@ -52,7 +52,13 @@ const sc = StyleSheet.create({
   center: { width: 56, height: 56, borderRadius: 28, backgroundColor: Surfaces.background, borderWidth: 1, borderColor: Surfaces.border, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
 });
 
-function fmtDist(m: number) { return m<1000 ? `${m}m` : `${(m/1000).toFixed(1)}km`; }
+function fmtDist(m: number) {
+  if (m < 50) return '< 50m away';
+  if (m < 100) return '< 100m away';
+  if (m < 500) return '< 500m away';
+  if (m < 1000) return '< 1km away';
+  return `${Math.round(m / 500) * 0.5}km away`;
+}
 function fmtTime(iso: string) {
   const mins = Math.floor((Date.now()-new Date(iso).getTime())/60000);
   if (mins<1) return 'Now'; if (mins<60) return `${mins}m`;
