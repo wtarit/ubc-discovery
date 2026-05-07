@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as Location from 'expo-location';
 import { api, type NearbyUserResponse, type MatchedUserResponse } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -31,9 +32,11 @@ interface NearbyState {
   introductions: Introduction[];
   isScanning: boolean;
   isLoading: boolean;
+  locationPermissionDenied: boolean;
   error: string | null;
 
   selectUser: (user: NearbyUser | null) => void;
+  updateMyLocation: () => Promise<boolean>;
   fetchNearbyUsers: (radiusKm?: number) => Promise<void>;
   fetchMatchedUsers: (limit?: number) => Promise<void>;
   sendConnectionRequest: (userId: string) => Promise<boolean>;
@@ -81,9 +84,24 @@ export const useNearbyStore = create<NearbyState>((set, get) => ({
   introductions: [],
   isScanning: false,
   isLoading: false,
+  locationPermissionDenied: false,
   error: null,
 
   selectUser: (user) => set({ selectedUser: user }),
+
+  updateMyLocation: async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      set({ locationPermissionDenied: true });
+      return false;
+    }
+    set({ locationPermissionDenied: false });
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    await api.updateLocation(location.coords.latitude, location.coords.longitude);
+    return true;
+  },
 
   fetchNearbyUsers: async (radiusKm = 5.0) => {
     const token = useAuthStore.getState().accessToken;
@@ -91,6 +109,11 @@ export const useNearbyStore = create<NearbyState>((set, get) => ({
 
     set({ isScanning: true, isLoading: true, error: null });
     try {
+      const locationUpdated = await get().updateMyLocation();
+      if (!locationUpdated) {
+        set({ isScanning: false, isLoading: false, error: 'Location permission required' });
+        return;
+      }
       const data = await api.getNearbyUsers(radiusKm);
       set({
         nearbyUsers: data.map(apiUserToNearbyUser),

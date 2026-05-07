@@ -74,7 +74,7 @@ const cc = StyleSheet.create({
 
 export default function NearbyScreen() {
   const insets = useSafeAreaInsets();
-  const { nearbyUsers, matchedUsers, fetchNearbyUsers, fetchMatchedUsers, isLoading } = useNearbyStore();
+  const { nearbyUsers, matchedUsers, fetchNearbyUsers, fetchMatchedUsers, isLoading, locationPermissionDenied } = useNearbyStore();
   const { accessToken } = useAuthStore();
   const [sortBy, setSortBy] = useState<'match'|'distance'>('match');
 
@@ -104,12 +104,25 @@ export default function NearbyScreen() {
           ))}
         </View>
       </View>
-      <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
-        {sorted.map(u => (
-          <UserCard key={u.id} user={u} onPress={() => router.push({ pathname:'/user-detail', params:{ userId:u.id } })} />
-        ))}
-        <View style={{ height:32 }} />
-      </ScrollView>
+      {locationPermissionDenied ? (
+        <View style={s.permMsg}>
+          <Ionicons name="location-outline" size={48} color={Brand.secondary} />
+          <Text style={s.permTitle}>Location Access Needed</Text>
+          <Text style={s.permDesc}>
+            Enable location permissions in your device settings to discover people nearby.
+          </Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => fetchNearbyUsers()}>
+            <Text style={s.retryT}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
+          {sorted.map(u => (
+            <UserCard key={u.id} user={u} onPress={() => router.push({ pathname:'/user-detail', params:{ userId:u.id } })} />
+          ))}
+          <View style={{ height:32 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -125,4 +138,9 @@ const s = StyleSheet.create({
   sortT: { fontFamily: Typography.fonts.h4, fontSize: 13, color: Brand.primary },
   sortTA: { color: Surfaces.background },
   list: { paddingHorizontal: Spacing.lg },
+  permMsg: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
+  permTitle: { fontFamily: Typography.fonts.h3, fontSize: 18, color: Brand.primary, marginTop: Spacing.md },
+  permDesc: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.secondary, textAlign: 'center', marginTop: Spacing.sm },
+  retryBtn: { marginTop: Spacing.lg, paddingHorizontal: 24, paddingVertical: 12, borderRadius: Radius.full, backgroundColor: Brand.accent },
+  retryT: { fontFamily: Typography.fonts.h4, fontSize: 14, color: Surfaces.background },
 });
