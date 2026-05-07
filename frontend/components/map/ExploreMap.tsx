@@ -19,7 +19,7 @@ import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors
 import { CATEGORY_COLORS, type ExploreZone } from '@/constants/Zones';
 import { useExploreStore } from '@/stores/useExploreStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { api, type ConnectionLocationResponse } from '@/services/api';
+import { api, type ConnectionLocationResponse, type EventResponse } from '@/services/api';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -87,9 +87,10 @@ function buildMapHTML(centerLat: number, centerLng: number, zoom: number): strin
 </html>`;
 }
 
-type CategoryFilter = ExploreZone['category'] | 'all';
+type CategoryFilter = ExploreZone['category'] | 'all' | 'events';
 const CATEGORIES: { key: CategoryFilter; label: string; icon: keyof typeof Feather.glyphMap }[] = [
   { key: 'all', label: 'All', icon: 'map' },
+  { key: 'events', label: 'Events', icon: 'calendar' },
   { key: 'nature', label: 'Nature', icon: 'feather' },
   { key: 'academic', label: 'Academic', icon: 'book-open' },
   { key: 'social', label: 'Social', icon: 'users' },
@@ -105,9 +106,10 @@ interface ExploreMapProps {
 export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [selectedZone, setSelectedZone] = useState<ExploreZone | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
   const [mapSize, setMapSize] = useState({ w: SCREEN_W, h: SCREEN_H - 88 });
-  const { zones, isZoneUnlocked, getProgress, totalPoints, unlockZone } = useExploreStore();
+  const { zones, events, fetchEvents, isZoneUnlocked, getProgress, totalPoints, unlockZone } = useExploreStore();
   const { accessToken } = useAuthStore();
   const [connections, setConnections] = useState<ConnectionLocationResponse[]>([]);
   const progress = getProgress();
@@ -117,12 +119,27 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
     api.listConnectionLocations().then(data => setConnections(data.connections)).catch(() => {});
   }, [accessToken]);
 
-  const filteredZones = activeCategory === 'all'
+  React.useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const filteredZones = (activeCategory === 'all')
     ? zones
-    : zones.filter(z => z.category === activeCategory);
+    : (activeCategory === 'events' ? [] : zones.filter(z => z.category === activeCategory));
+
+  const filteredEvents = (activeCategory === 'all' || activeCategory === 'events')
+    ? events
+    : [];
 
   const handleMarkerPress = useCallback((zone: ExploreZone) => {
     setSelectedZone(zone);
+    setSelectedEvent(null);
+    setJustUnlocked(null);
+  }, []);
+
+  const handleEventMarkerPress = useCallback((event: EventResponse) => {
+    setSelectedEvent(event);
+    setSelectedZone(null);
     setJustUnlocked(null);
   }, []);
 
@@ -226,6 +243,38 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                 {conn.is_available_to_meet && <View style={s.connDot} />}
               </View>
             </View>
+          );
+        })}
+
+        {filteredEvents.map(event => {
+          if (!event.latitude || !event.longitude) return null;
+          const { x, y } = latLngToOffset(
+            event.latitude, event.longitude,
+            CENTER.lat, CENTER.lng,
+            ZOOM,
+            mapSize.w, mapSize.h
+          );
+          const isSelected = selectedEvent?.id === event.id;
+
+          return (
+            <TouchableOpacity
+              key={event.id}
+              activeOpacity={0.85}
+              onPress={() => handleEventMarkerPress(event)}
+              style={[s.markerWrap, { left: x - 24, top: y - 24 }]}
+            >
+              <View style={[
+                s.marker,
+                { borderColor: Brand.accent, backgroundColor: '#FFF9F0' },
+                isSelected && s.markerSel,
+              ]}>
+                <Feather
+                  name="calendar"
+                  size={20}
+                  color={isSelected ? Brand.accent : Brand.primary}
+                />
+              </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -336,11 +385,53 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         </View>
       )}
 
-      {selectedZone && (
+      {selectedEvent && (
+        <View style={[s.btmWrap, { paddingBottom: Math.max(insetBottom, 12) + 12 }]}>
+          <Card style={s.btmCard} noPadding>
+            <View style={s.handleBar} />
+            <View style={{ padding: Spacing.lg }}>
+              <View style={s.cardH}>
+                <View style={[s.cardIcon, { backgroundColor: '#FFF9F0' }]}>
+                  <Feather name="calendar" size={24} color={Brand.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={s.cardNR}>
+                    <Text style={s.cardN}>{selectedEvent.title}</Text>
+                  </View>
+                  <Text style={s.cardDesc} numberOfLines={2}>{selectedEvent.description}</Text>
+                </View>
+              </View>
+
+              <View style={s.cardMeta}>
+                <View style={[s.catTag, { backgroundColor: `${Brand.accent}15` }]}>
+                  <Text style={[s.catTT, { color: Brand.accent }]}>
+                    {selectedEvent.club_name || 'Event'}
+                  </Text>
+                </View>
+                {selectedEvent.event_date && (
+                  <Text style={s.radT}>
+                    <Feather name="clock" size={10}/> {new Date(selectedEvent.event_date).toLocaleDateString()}
+                  </Text>
+                )}
+              </View>
+
+              <View style={s.acts}>
+                <Button
+                  title="View Event Details"
+                  variant="primary"
+                  onPress={() => router.push({ pathname: '/event-detail', params: { eventId: selectedEvent.id } })}
+                />
+              </View>
+            </View>
+          </Card>
+        </View>
+      )}
+
+      {(selectedZone || selectedEvent) && (
         <TouchableOpacity
           style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
           activeOpacity={1}
-          onPress={() => setSelectedZone(null)}
+          onPress={() => { setSelectedZone(null); setSelectedEvent(null); }}
         />
       )}
     </View>
