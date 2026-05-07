@@ -1,42 +1,41 @@
 /**
- * Root Layout — App entry with Verdana Health design system
+ * Root Layout — App entry with auth gating and theme
  */
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-// Font imports
-import { 
+import {
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold 
+  PlusJakartaSans_700Bold
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { 
+import {
   DMSans_400Regular,
-  DMSans_500Medium 
+  DMSans_500Medium
 } from '@expo-google-fonts/dm-sans';
-import { 
-  FiraCode_400Regular 
+import {
+  FiraCode_400Regular
 } from '@expo-google-fonts/fira-code';
 
 import { Surfaces, Brand } from '@/constants/Colors';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export {
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: '(auth)',
 };
 
 SplashScreen.preventAutoHideAsync();
 
-// Custom light theme matching Verdana Health
 const AppLightTheme = {
   ...DefaultTheme,
   colors: {
@@ -49,6 +48,27 @@ const AppLightTheme = {
     notification: Brand.info,
   },
 };
+
+function useProtectedRoute() {
+  const { accessToken, user } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(auth)';
+    const isLoggedIn = !!accessToken;
+
+    if (!isLoggedIn && !inAuthGroup) {
+      router.replace('/(auth)/welcome');
+    } else if (isLoggedIn && inAuthGroup) {
+      if (user && !user.onboarding_completed) {
+        router.replace('/(auth)/onboarding');
+      } else if (user && user.onboarding_completed) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [accessToken, user, segments]);
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -76,10 +96,17 @@ export default function RootLayout() {
     return null;
   }
 
+  return <RootLayoutNav />;
+}
+
+function RootLayoutNav() {
+  useProtectedRoute();
+
   return (
     <ThemeProvider value={AppLightTheme}>
       <StatusBar style="dark" />
       <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="zone-detail"

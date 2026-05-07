@@ -1,29 +1,17 @@
 /**
  * Profile Tab — User profile & exploration stats (UBC-Navigate)
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useExploreStore } from '@/stores/useExploreStore';
 import { useNearbyStore } from '@/stores/useNearbyStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { Card } from '@/components/ui/Card';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { CATEGORY_COLORS } from '@/constants/Zones';
 import { Feather, Ionicons } from '@expo/vector-icons';
-
-// Mock user profile
-const MY_PROFILE = {
-  displayName: 'Alex M.',
-  avatar: 'person', // Ionicons
-  program: 'Computer Science',
-  year: 2,
-  interests: ['Coding', 'Hiking', 'Photography', 'Coffee', 'Music'],
-  languages: ['English', 'French'],
-  nationality: 'Canada',
-  bio: 'CS major exploring UBC one zone at a time. Love building apps and finding hidden gems on campus.',
-  joinedDate: 'September 2025',
-};
 
 function StatRow({ icon, iconFamily, label, value, color }: { icon: string; iconFamily: 'Feather' | 'Ionicons'; label: string; value: string; color: string }) {
   const IconComponent = iconFamily === 'Feather' ? Feather : Ionicons;
@@ -47,7 +35,22 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { totalPoints, getProgress, zones, isZoneUnlocked } = useExploreStore();
   const { introductions } = useNearbyStore();
+  const { user, fetchUser, accessToken } = useAuthStore();
   const progress = getProgress();
+
+  useEffect(() => {
+    if (accessToken && !user) fetchUser();
+  }, [accessToken]);
+
+  const profile = {
+    displayName: user?.full_name || 'Guest',
+    program: user?.major || 'Undeclared',
+    year: user?.year_standing || 1,
+    interests: user?.interests || [],
+    origin: user?.origin || '',
+    bio: user?.bio || '',
+    joinedDate: user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
+  };
 
   // Category stats
   const categories = ['nature', 'academic', 'social', 'culture', 'athletics'] as const;
@@ -64,13 +67,13 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={s.hdrWrap}>
           <View style={s.avatarWrap}>
-            <Ionicons name={MY_PROFILE.avatar as any} size={48} color={Brand.secondary} />
+            <Ionicons name="person" size={48} color={Brand.secondary} />
           </View>
-          <Text style={s.name}>{MY_PROFILE.displayName}</Text>
-          <Text style={s.program}>{MY_PROFILE.program} · Year {MY_PROFILE.year}</Text>
-          <Text style={s.bio}>{MY_PROFILE.bio}</Text>
+          <Text style={s.name}>{profile.displayName}</Text>
+          <Text style={s.program}>{profile.program} · Year {profile.year}</Text>
+          {profile.bio ? <Text style={s.bio}>{profile.bio}</Text> : null}
           <View style={s.tags}>
-            {MY_PROFILE.interests.map(i => (
+            {profile.interests.map(i => (
               <View key={i} style={s.tag}><Text style={s.tagT}>{i}</Text></View>
             ))}
           </View>
@@ -117,9 +120,9 @@ export default function ProfileScreen() {
         <View style={s.section}>
           <Text style={s.secTitle}>Account</Text>
           <Card>
-            <StatRow icon="globe" iconFamily="Feather" label="Languages" value={MY_PROFILE.languages.join(', ')} color={Brand.primary} />
-            <StatRow icon="flag" iconFamily="Feather" label="Nationality" value={MY_PROFILE.nationality} color={Brand.primary} />
-            <StatRow icon="calendar" iconFamily="Feather" label="Joined" value={MY_PROFILE.joinedDate} color={Brand.primary} />
+            {profile.origin ? <StatRow icon="flag" iconFamily="Feather" label="Origin" value={profile.origin} color={Brand.primary} /> : null}
+            <StatRow icon="briefcase" iconFamily="Feather" label="Connections" value={`${user?.connections_count || 0}`} color={Brand.primary} />
+            <StatRow icon="calendar" iconFamily="Feather" label="Joined" value={profile.joinedDate || 'N/A'} color={Brand.primary} />
           </Card>
         </View>
 

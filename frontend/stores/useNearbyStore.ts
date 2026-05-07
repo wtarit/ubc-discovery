@@ -1,68 +1,141 @@
-/**
- * Zustand store for nearby/proximity matching state
- */
 import { create } from 'zustand';
-import { MOCK_NEARBY_USERS, AI_INTRO_TEMPLATES, type NearbyUser } from '@/constants/MockUsers';
+import { api, type NearbyUserResponse, type MatchedUserResponse } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
+
+export interface NearbyUser {
+  id: string;
+  displayName: string;
+  program: string;
+  year: number;
+  interests: string[];
+  origin: string;
+  bio: string;
+  matchScore: number;
+  distanceMeters: number;
+  profilePictureUrl: string | null;
+  isAvailableToMeet: boolean;
+  connectionsCount: number;
+}
 
 interface Introduction {
   id: string;
   targetUserId: string;
-  message: string;
-  status: 'sent' | 'read' | 'replied';
+  status: 'pending' | 'accepted' | 'declined';
   sentAt: string;
 }
 
 interface NearbyState {
   nearbyUsers: NearbyUser[];
+  matchedUsers: NearbyUser[];
   selectedUser: NearbyUser | null;
   introductions: Introduction[];
   isScanning: boolean;
+  isLoading: boolean;
+  error: string | null;
 
-  // Actions
   selectUser: (user: NearbyUser | null) => void;
-  startScanning: () => void;
-  stopScanning: () => void;
-  sendIntroduction: (userId: string) => void;
-  generateAIIntro: (user: NearbyUser) => string;
+  fetchNearbyUsers: (radiusKm?: number) => Promise<void>;
+  fetchMatchedUsers: (limit?: number) => Promise<void>;
+  sendConnectionRequest: (userId: string) => Promise<boolean>;
   getIntroForUser: (userId: string) => Introduction | undefined;
 }
 
+function apiUserToNearbyUser(item: NearbyUserResponse): NearbyUser {
+  return {
+    id: item.user.id,
+    displayName: item.user.full_name,
+    program: item.user.major || 'Undeclared',
+    year: item.user.year_standing || 1,
+    interests: item.user.interests || [],
+    origin: item.user.origin || '',
+    bio: item.user.bio || '',
+    matchScore: 0,
+    distanceMeters: Math.round(item.distance_km * 1000),
+    profilePictureUrl: item.user.profile_picture_url,
+    isAvailableToMeet: item.user.is_available_to_meet,
+    connectionsCount: item.user.connections_count,
+  };
+}
+
+function matchedUserToNearbyUser(item: MatchedUserResponse): NearbyUser {
+  return {
+    id: item.user.id,
+    displayName: item.user.full_name,
+    program: item.user.major || 'Undeclared',
+    year: item.user.year_standing || 1,
+    interests: item.user.interests || [],
+    origin: item.user.origin || '',
+    bio: item.user.bio || '',
+    matchScore: Math.round(item.match_score * 100),
+    distanceMeters: 0,
+    profilePictureUrl: item.user.profile_picture_url,
+    isAvailableToMeet: item.user.is_available_to_meet,
+    connectionsCount: item.user.connections_count,
+  };
+}
+
 export const useNearbyStore = create<NearbyState>((set, get) => ({
-  nearbyUsers: MOCK_NEARBY_USERS,
+  nearbyUsers: [],
+  matchedUsers: [],
   selectedUser: null,
   introductions: [],
   isScanning: false,
+  isLoading: false,
+  error: null,
 
   selectUser: (user) => set({ selectedUser: user }),
 
-  startScanning: () => set({ isScanning: true }),
-  stopScanning: () => set({ isScanning: false }),
+  fetchNearbyUsers: async (radiusKm = 5.0) => {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return;
 
-  sendIntroduction: (userId) => {
-    const state = get();
-    const user = state.nearbyUsers.find((u) => u.id === userId);
-    if (!user) return;
-
-    const message = state.generateAIIntro(user);
-    const intro: Introduction = {
-      id: `intro-${Date.now()}`,
-      targetUserId: userId,
-      message,
-      status: 'sent',
-      sentAt: new Date().toISOString(),
-    };
-
-    set({ introductions: [...state.introductions, intro] });
+    set({ isScanning: true, isLoading: true, error: null });
+    try {
+      const data = await api.getNearbyUsers(radiusKm);
+      set({
+        nearbyUsers: data.map(apiUserToNearbyUser),
+        isScanning: false,
+        isLoading: false,
+      });
+    } catch (e: any) {
+      set({ isScanning: false, isLoading: false, error: e.message });
+    }
   },
 
-  generateAIIntro: (user) => {
-    const template = AI_INTRO_TEMPLATES[Math.floor(Math.random() * AI_INTRO_TEMPLATES.length)];
-    return template
-      .replace('{name}', user.displayName)
-      .replace('{shared_interest}', user.interests[0] || 'learning')
-      .replace('{program}', user.program)
-      .replace('{zones}', String(user.zonesExplored))
-      .replace('{match_score}', String(user.matchScore));
+  fetchMatchedUsers: async (limit = 10) => {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const data = await api.getMatchedUsers(limit);
+      set({
+        matchedUsers: data.matches.map(matchedUserToNearbyUser),
+        isLoading: false,
+      });
+    } catch (e: any) {
+      set({ isLoading: false, error: e.message });
+    }
+  },
+
+  sendConnectionRequest: async (userId) => {
+    try {
+      const connection = await api.sendConnectionRequest(userId);
+      set({
+        introductions: [
+          ...get().introductions,
+          {
+            id: connection.id,
+            targetUserId: userId,
+            status: 'pending',
+            sentAt: connection.created_at,
+          },
+        ],
+      });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   getIntroForUser: (userId) => {

@@ -1,5 +1,5 @@
 /**
- * User Detail Modal — Nearby user profile + AI intro (UBC-Navigate)
+ * User Detail Modal — Nearby user profile + connect (UBC-Navigate)
  */
 import React, { useState } from 'react';
 import {
@@ -9,7 +9,6 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useNearbyStore } from '@/stores/useNearbyStore';
-import { MOCK_NEARBY_USERS } from '@/constants/MockUsers';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Button } from '@/components/ui/Button';
@@ -18,24 +17,18 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 export default function UserDetailScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const insets = useSafeAreaInsets();
-  const { sendIntroduction, getIntroForUser, generateAIIntro } = useNearbyStore();
-  const [previewMsg, setPreviewMsg] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const { nearbyUsers, matchedUsers, sendConnectionRequest, getIntroForUser } = useNearbyStore();
+  const [sending, setSending] = useState(false);
 
-  const user = MOCK_NEARBY_USERS.find(u => u.id === userId);
+  const user = [...nearbyUsers, ...matchedUsers].find(u => u.id === userId);
   if (!user) return <View style={s.container}><Text style={s.err}>User not found</Text></View>;
 
   const existingIntro = getIntroForUser(user.id);
 
-  const handleGenerateIntro = () => {
-    const msg = generateAIIntro(user);
-    setPreviewMsg(msg);
-  };
-
-  const handleSend = () => {
-    sendIntroduction(user.id);
-    setSent(true);
-    setPreviewMsg(null);
+  const handleConnect = async () => {
+    setSending(true);
+    await sendConnectionRequest(user.id);
+    setSending(false);
   };
 
   return (
@@ -47,7 +40,7 @@ export default function UserDetailScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={s.hero}>
           <View style={s.avatarWrap}>
-            <Ionicons name={user.avatar as any} size={48} color={Brand.secondary} />
+            <Ionicons name="person" size={48} color={Brand.secondary} />
           </View>
           <Text style={s.name}>{user.displayName}</Text>
           <Text style={s.prog}>{user.program} · Year {user.year}</Text>
@@ -58,7 +51,7 @@ export default function UserDetailScreen() {
 
         <Card style={s.card}>
           <Text style={s.secTitle}>About</Text>
-          <Text style={s.bio}>{user.bio}</Text>
+          <Text style={s.bio}>{user.bio || 'No bio yet.'}</Text>
         </Card>
 
         <Card style={s.card}>
@@ -67,70 +60,48 @@ export default function UserDetailScreen() {
             <Text style={s.detLabel}>Distance</Text>
             <Text style={[s.detVal, { color: Brand.primary }]}>{user.distanceMeters}m away</Text>
           </View>
-          <View style={s.detRow}>
-            <Feather name="globe" size={16} color={Brand.secondary} style={s.detIcon} />
-            <Text style={s.detLabel}>Languages</Text>
-            <Text style={s.detVal}>{user.languages.join(', ')}</Text>
-          </View>
-          <View style={s.detRow}>
-            <Feather name="flag" size={16} color={Brand.secondary} style={s.detIcon} />
-            <Text style={s.detLabel}>From</Text>
-            <Text style={s.detVal}>{user.nationality}</Text>
-          </View>
+          {user.origin ? (
+            <View style={s.detRow}>
+              <Feather name="flag" size={16} color={Brand.secondary} style={s.detIcon} />
+              <Text style={s.detLabel}>From</Text>
+              <Text style={s.detVal}>{user.origin}</Text>
+            </View>
+          ) : null}
           <View style={[s.detRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Feather name="map" size={16} color={Brand.secondary} style={s.detIcon} />
-            <Text style={s.detLabel}>Zones Explored</Text>
-            <Text style={[s.detVal, { color: Brand.primary }]}>{user.zonesExplored}</Text>
+            <Feather name="users" size={16} color={Brand.secondary} style={s.detIcon} />
+            <Text style={s.detLabel}>Connections</Text>
+            <Text style={[s.detVal, { color: Brand.primary }]}>{user.connectionsCount}</Text>
           </View>
         </Card>
 
-        <Card style={s.card}>
-          <Text style={s.secTitle}>Interests</Text>
-          <View style={s.tags}>
-            {user.interests.map(i => (
-              <View key={i} style={s.tag}><Text style={s.tagT}>{i}</Text></View>
-            ))}
-          </View>
-        </Card>
+        {user.interests.length > 0 && (
+          <Card style={s.card}>
+            <Text style={s.secTitle}>Interests</Text>
+            <View style={s.tags}>
+              {user.interests.map(i => (
+                <View key={i} style={s.tag}><Text style={s.tagT}>{i}</Text></View>
+              ))}
+            </View>
+          </Card>
+        )}
 
         <View style={s.section}>
-          <Text style={s.secTitle}>AI Introduction</Text>
-          {existingIntro || sent ? (
+          {existingIntro ? (
             <Card style={{ backgroundColor: '#F0FDF4', borderColor: Brand.success }}>
-              <Text style={s.sentLabel}>Introduction sent</Text>
-              <Text style={s.sentMsg}>{existingIntro?.message || 'Message sent successfully'}</Text>
-            </Card>
-          ) : previewMsg ? (
-            <View>
-              <Card style={{ backgroundColor: Surfaces.default }}>
-                <Text style={s.previewLabel}>Preview</Text>
-                <Text style={s.previewMsg}>{previewMsg}</Text>
-              </Card>
-              <View style={s.btnRow}>
-                <Button title="Regenerate" variant="secondary" size="md" onPress={handleGenerateIntro} style={{ flex: 1 }} />
-                <Button title="Send" variant="primary" size="md" onPress={handleSend} style={{ flex: 1 }} />
+              <View style={s.sentRow}>
+                <Feather name="check-circle" size={18} color={Brand.success} />
+                <Text style={s.sentLabel}>Connection request sent</Text>
               </View>
-            </View>
+            </Card>
           ) : (
-            <View>
-              <Text style={s.aiDesc}>
-                Let our AI craft a personalized introduction based on your shared interests and profiles.
-              </Text>
-              <Button
-                title="Generate AI Introduction"
-                variant="primary"
-                size="lg"
-                onPress={handleGenerateIntro}
-              />
-            </View>
+            <Button
+              title={sending ? 'Sending...' : 'Connect'}
+              variant="primary"
+              size="lg"
+              onPress={handleConnect}
+            />
           )}
         </View>
-
-        {!existingIntro && !sent && (
-          <View style={s.actions}>
-            <Button title="Say Hello" variant="secondary" size="md" onPress={() => {}} />
-          </View>
-        )}
 
         <View style={{ height: 48 }} />
       </ScrollView>
@@ -158,11 +129,6 @@ const s = StyleSheet.create({
   tag: { backgroundColor: Surfaces.default, paddingHorizontal: 12, paddingVertical: 4, borderRadius: Radius.sm, borderWidth: 1, borderColor: Surfaces.border },
   tagT: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
   section: { marginTop: Spacing.xl },
-  aiDesc: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.secondary, lineHeight: 22, marginBottom: Spacing.md },
-  previewLabel: { fontFamily: Typography.fonts.h4, fontSize: 12, color: Brand.primary, marginBottom: 6 },
-  previewMsg: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.primary, lineHeight: 22 },
-  btnRow: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.md },
-  sentLabel: { fontFamily: Typography.fonts.h4, fontSize: 14, color: Brand.success, marginBottom: 6 },
-  sentMsg: { fontFamily: Typography.fonts.body, fontSize: 13, color: Brand.secondary, lineHeight: 20 },
-  actions: { marginTop: Spacing.xl, alignItems: 'center' },
+  sentRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sentLabel: { fontFamily: Typography.fonts.h4, fontSize: 14, color: Brand.success },
 });

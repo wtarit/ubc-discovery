@@ -9,11 +9,11 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
-import { useNearbyStore } from '@/stores/useNearbyStore';
+import { useNearbyStore, type NearbyUser } from '@/stores/useNearbyStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import type { NearbyUser } from '@/constants/MockUsers';
 
 function ScanningPulse() {
   const pulse1 = useRef(new Animated.Value(0)).current;
@@ -59,11 +59,6 @@ function fmtDist(m: number) {
   if (m < 1000) return '< 1km away';
   return `${Math.round(m / 500) * 0.5}km away`;
 }
-function fmtTime(iso: string) {
-  const mins = Math.floor((Date.now()-new Date(iso).getTime())/60000);
-  if (mins<1) return 'Now'; if (mins<60) return `${mins}m`;
-  return `${Math.floor(mins/60)}h`;
-}
 
 function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) {
   return (
@@ -72,9 +67,9 @@ function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) 
         <View style={cc.row}>
           <View>
             <View style={cc.avatarWrap}>
-              <Ionicons name={user.avatar as any} size={32} color={Brand.secondary} />
+              <Ionicons name="person" size={32} color={Brand.secondary} />
             </View>
-            <View style={cc.dot} />
+            {user.isAvailableToMeet && <View style={cc.dot} />}
           </View>
           <View style={cc.info}>
             <View style={cc.nameRow}>
@@ -90,7 +85,7 @@ function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) 
           </View>
         </View>
         <View style={cc.foot}>
-          <Text style={cc.meta}>{fmtTime(user.lastSeen)}</Text>
+          <Text style={cc.meta}>{user.origin || 'Nearby'}</Text>
           <MatchBadge score={user.matchScore} size="sm" />
         </View>
       </Card>
@@ -116,15 +111,25 @@ const cc = StyleSheet.create({
 
 export default function NearbyScreen() {
   const insets = useSafeAreaInsets();
-  const { nearbyUsers } = useNearbyStore();
+  const { nearbyUsers, matchedUsers, fetchNearbyUsers, fetchMatchedUsers, isLoading } = useNearbyStore();
+  const { accessToken } = useAuthStore();
   const [sortBy, setSortBy] = useState<'match'|'distance'>('match');
-  const sorted = [...nearbyUsers].sort((a,b) => sortBy==='match' ? b.matchScore-a.matchScore : a.distanceMeters-b.distanceMeters);
+
+  useEffect(() => {
+    if (accessToken) {
+      fetchNearbyUsers();
+      fetchMatchedUsers();
+    }
+  }, [accessToken]);
+
+  const users = sortBy === 'match' && matchedUsers.length > 0 ? matchedUsers : nearbyUsers;
+  const sorted = [...users].sort((a,b) => sortBy==='match' ? b.matchScore-a.matchScore : a.distanceMeters-b.distanceMeters);
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <View style={s.hdr}>
         <Text style={s.title}>People Nearby</Text>
-        <Text style={s.sub}>{nearbyUsers.length} people around you</Text>
+        <Text style={s.sub}>{isLoading ? 'Scanning...' : `${sorted.length} people around you`}</Text>
         <ScanningPulse />
         <View style={s.sortRow}>
           {(['match','distance'] as const).map(k => (

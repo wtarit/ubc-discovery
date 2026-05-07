@@ -1,8 +1,6 @@
-/**
- * Zustand store for explore zone state management
- */
 import { create } from 'zustand';
 import { EXPLORE_ZONES, type ExploreZone } from '@/constants/Zones';
+import { api, type LandmarkResponse } from '@/services/api';
 
 interface ZoneUnlock {
   zoneId: string;
@@ -11,23 +9,27 @@ interface ZoneUnlock {
 
 interface ExploreState {
   zones: ExploreZone[];
+  landmarks: LandmarkResponse[];
   unlockedZones: ZoneUnlock[];
   selectedZone: ExploreZone | null;
   totalPoints: number;
+  isLoading: boolean;
 
-  // Actions
   selectZone: (zone: ExploreZone | null) => void;
   unlockZone: (zoneId: string) => void;
   isZoneUnlocked: (zoneId: string) => boolean;
   getProgress: () => { unlocked: number; total: number; percentage: number };
   getPointsForZone: (zoneId: string) => number;
+  fetchLandmarks: () => Promise<void>;
 }
 
 export const useExploreStore = create<ExploreState>((set, get) => ({
   zones: EXPLORE_ZONES,
+  landmarks: [],
   unlockedZones: [],
   selectedZone: null,
   totalPoints: 0,
+  isLoading: false,
 
   selectZone: (zone) => set({ selectedZone: zone }),
 
@@ -65,5 +67,15 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
   getPointsForZone: (zoneId) => {
     const zone = get().zones.find((z) => z.id === zoneId);
     return zone?.points ?? 0;
+  },
+
+  fetchLandmarks: async () => {
+    set({ isLoading: true });
+    try {
+      const data = await api.listLandmarks();
+      set({ landmarks: data.landmarks, isLoading: false });
+    } catch {
+      set({ isLoading: false });
+    }
   },
 }));
