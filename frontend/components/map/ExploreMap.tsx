@@ -1,5 +1,5 @@
 /**
- * ExploreMap — Web version (Light Theme)
+ * ExploreMap — Web version (Flat Theme)
  */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -7,8 +7,9 @@ import {
   Dimensions, Platform,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 
-import { Brand, Surfaces, Typography, Spacing, Radius, Shadows } from '@/constants/Colors';
+import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { EXPLORE_ZONES, CATEGORY_COLORS, type ExploreZone } from '@/constants/Zones';
 import { useExploreStore } from '@/stores/useExploreStore';
 import { Card } from '@/components/ui/Card';
@@ -16,11 +17,9 @@ import { Button } from '@/components/ui/Button';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
-// UBC campus center
 const CENTER = { lat: 49.2606, lng: -123.2460 };
 const ZOOM = 14;
 
-// ── Mercator projection helpers (matches Leaflet at any zoom) ──────────────
 function lngToX(lng: number, zoom: number): number {
   return ((lng + 180) / 360) * Math.pow(2, zoom) * 256;
 }
@@ -45,7 +44,6 @@ function latLngToOffset(
   };
 }
 
-// ── Leaflet map HTML injected into the iframe ──────────────────────────────
 function buildMapHTML(centerLat: number, centerLng: number, zoom: number): string {
   return `<!DOCTYPE html>
 <html>
@@ -55,7 +53,7 @@ function buildMapHTML(centerLat: number, centerLng: number, zoom: number): strin
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; background: #F8FAFC; overflow: hidden; }
+    html, body { width: 100%; height: 100%; background: #FFFFFF; overflow: hidden; }
     #map { width: 100%; height: 100%; }
     .leaflet-control-attribution { display: none; }
   </style>
@@ -74,7 +72,6 @@ function buildMapHTML(centerLat: number, centerLng: number, zoom: number): strin
       attributionControl: false,
     }).setView([${centerLat}, ${centerLng}], ${zoom});
 
-    // Light theme tiles for Verdana Health
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd',
       maxZoom: 19,
@@ -85,13 +82,13 @@ function buildMapHTML(centerLat: number, centerLng: number, zoom: number): strin
 }
 
 type CategoryFilter = ExploreZone['category'] | 'all';
-const CATEGORIES: { key: CategoryFilter; label: string; emoji: string }[] = [
-  { key: 'all', label: 'All', emoji: '🗺️' },
-  { key: 'nature', label: 'Nature', emoji: '🌿' },
-  { key: 'academic', label: 'Academic', emoji: '📚' },
-  { key: 'social', label: 'Social', emoji: '🤝' },
-  { key: 'culture', label: 'Culture', emoji: '🎭' },
-  { key: 'athletics', label: 'Athletics', emoji: '⚡' },
+const CATEGORIES: { key: CategoryFilter; label: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { key: 'all', label: 'All', icon: 'map' },
+  { key: 'nature', label: 'Nature', icon: 'feather' },
+  { key: 'academic', label: 'Academic', icon: 'book-open' },
+  { key: 'social', label: 'Social', icon: 'users' },
+  { key: 'culture', label: 'Culture', icon: 'globe' },
+  { key: 'athletics', label: 'Athletics', icon: 'activity' },
 ];
 
 interface ExploreMapProps {
@@ -133,7 +130,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         setMapSize({ w: width, h: height });
       }}
     >
-      {/* ── IFRAME MAP (base layer) ── */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         {Platform.OS === 'web' &&
           React.createElement('iframe', {
@@ -150,7 +146,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         }
       </View>
 
-      {/* ── ZONE MARKERS overlay ── */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
         {filteredZones.map(zone => {
           const { x, y } = latLngToOffset(
@@ -172,26 +167,28 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
               onPress={() => handleMarkerPress(zone)}
               style={[s.markerWrap, { left: x - 24, top: y - 24 }]}
             >
-              {/* Radius ring */}
               <View style={[s.radiusRing, {
                 width: ringPx,
                 height: ringPx,
                 borderRadius: ringPx / 2,
                 left: -(ringPx / 2) + 24,
                 top: -(ringPx / 2) + 24,
-                borderColor: unlocked ? 'rgba(34,197,94,0.4)' : `${catColor}40`,
-                backgroundColor: unlocked ? 'rgba(34,197,94,0.15)' : `${catColor}15`,
+                borderColor: unlocked ? Brand.success : `${catColor}40`,
+                backgroundColor: unlocked ? 'rgba(52,199,89,0.1)' : `${catColor}15`,
               }]} />
 
-              {/* Marker bubble */}
               <View style={[
                 s.marker,
                 isSelected && s.markerSel,
                 unlocked && s.markerDone,
               ]}>
-                <Text style={s.markerE}>{zone.emoji}</Text>
+                <Feather 
+                  name={zone.icon as any} 
+                  size={20} 
+                  color={isSelected ? Brand.accent : unlocked ? Brand.success : Brand.primary} 
+                />
                 {unlocked && (
-                  <View style={s.chk}><Text style={s.chkT}>✓</Text></View>
+                  <View style={s.chk}><Feather name="check" size={10} color="#fff" /></View>
                 )}
               </View>
             </TouchableOpacity>
@@ -199,7 +196,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         })}
       </View>
 
-      {/* ── FLOATING STATS BAR ── */}
       <View style={[s.topBar, { top: insetTop + 8 }]}>
         <View style={s.stats}>
           <View style={s.si}>
@@ -208,7 +204,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
           </View>
           <View style={s.divider} />
           <View style={s.si}>
-            <Text style={[s.sv, { color: Brand.warning }]}>{totalPoints}</Text>
+            <Text style={[s.sv, { color: Brand.primary }]}>{totalPoints}</Text>
             <Text style={s.slb}>Points</Text>
           </View>
           <View style={s.divider} />
@@ -219,13 +215,16 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         </View>
       </View>
 
-      {/* ── CATEGORY FILTERS ── */}
       <View style={[s.filterC, { top: insetTop + 68 }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterR}>
           {CATEGORIES.map(cat => (
             <TouchableOpacity key={cat.key} onPress={() => setActiveCategory(cat.key)} activeOpacity={0.7}>
               <View style={[s.pill, activeCategory === cat.key && s.pillA]}>
-                <Text style={s.pillE}>{cat.emoji}</Text>
+                <Feather 
+                  name={cat.icon as any} 
+                  size={14} 
+                  color={activeCategory === cat.key ? '#fff' : Brand.primary} 
+                />
                 <Text style={[s.pillL, activeCategory === cat.key && s.pillLA]}>{cat.label}</Text>
               </View>
             </TouchableOpacity>
@@ -233,21 +232,23 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         </ScrollView>
       </View>
 
-      {/* ── BOTTOM ZONE CARD ── */}
       {selectedZone && (
         <View style={[s.btmWrap, { paddingBottom: Math.max(insetBottom, 12) + 12 }]}>
-          <Card variant="elevated" style={s.btmCard} noPadding>
+          <Card style={s.btmCard} noPadding>
             <View style={s.handleBar} />
             <View style={{ padding: Spacing.lg }}>
               <View style={s.cardH}>
                 <View style={[s.cardIcon, { backgroundColor: `${CATEGORY_COLORS[selectedZone.category]}15` }]}>
-                  <Text style={{ fontSize: 26 }}>{selectedZone.emoji}</Text>
+                  <Feather name={selectedZone.icon as any} size={24} color={CATEGORY_COLORS[selectedZone.category]} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={s.cardNR}>
                     <Text style={s.cardN}>{selectedZone.name}</Text>
                     {isZoneUnlocked(selectedZone.id) && (
-                      <View style={s.expB}><Text style={s.expBT}>✓ Explored</Text></View>
+                      <View style={s.expB}>
+                        <Feather name="check" size={12} color={Brand.success} />
+                        <Text style={s.expBT}>Explored</Text>
+                      </View>
                     )}
                   </View>
                   <Text style={s.cardDesc} numberOfLines={2}>{selectedZone.description}</Text>
@@ -260,14 +261,16 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                     {selectedZone.category}
                   </Text>
                 </View>
-                <Text style={s.radT}>📍 {selectedZone.radiusMeters}m radius</Text>
-                <View style={s.ptBadge}><Text style={s.ptText}>+{selectedZone.points} pts</Text></View>
+                <Text style={s.radT}><Feather name="map-pin" size={10}/> {selectedZone.radiusMeters}m radius</Text>
+                <View style={s.ptBadge}>
+                  <Text style={s.ptText}>+{selectedZone.points} pts</Text>
+                </View>
               </View>
 
               <View style={s.acts}>
                 {justUnlocked === selectedZone.id ? (
                   <View style={s.unlkMsg}>
-                    <Text style={{ fontSize: 24 }}>🎉</Text>
+                    <Feather name="check-circle" size={24} color={Brand.success} />
                     <Text style={s.unlkMT}>Zone Unlocked! +{selectedZone.points} pts</Text>
                   </View>
                 ) : isZoneUnlocked(selectedZone.id) ? (
@@ -281,7 +284,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                     <Button
                       title="Unlock Zone"
                       variant="primary"
-                      icon="🔓"
                       style={{ flex: 1 }}
                       onPress={handleUnlock}
                     />
@@ -290,7 +292,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                       onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })}
                       activeOpacity={0.8}
                     >
-                      <Text style={{ fontSize: 20 }}>ℹ️</Text>
+                      <Feather name="info" size={20} color={Brand.primary} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -300,7 +302,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         </View>
       )}
 
-      {/* Tap-away to deselect */}
       {selectedZone && (
         <TouchableOpacity
           style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
@@ -319,23 +320,19 @@ const s = StyleSheet.create({
   radiusRing: { position: 'absolute', borderWidth: 1.5 },
   marker: {
     width: 44, height: 44, borderRadius: Radius.full,
-    backgroundColor: Surfaces.default,
+    backgroundColor: Surfaces.background,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: Surfaces.border,
-    ...Shadows.sm,
   },
-  markerSel: { borderColor: Brand.primary, borderWidth: 2, transform: [{ scale: 1.15 }], ...Shadows.md },
+  markerSel: { borderColor: Brand.accent, borderWidth: 2, transform: [{ scale: 1.15 }] },
   markerDone: { borderColor: Brand.success, backgroundColor: '#F0FDF4' },
-  markerE: { fontSize: 22 },
   chk: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: Brand.success, alignItems: 'center', justifyContent: 'center' },
-  chkT: { fontSize: 9, color: '#fff', fontWeight: '800' },
-
+  
   topBar: { position: 'absolute', left: 16, right: 16, zIndex: 10 },
   stats: {
-    flexDirection: 'row', backgroundColor: Surfaces.default,
-    borderRadius: Radius.lg, paddingVertical: 10, paddingHorizontal: 16,
+    flexDirection: 'row', backgroundColor: Surfaces.background,
+    borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16,
     alignItems: 'center', borderWidth: 1, borderColor: Surfaces.border,
-    ...Shadows.DEFAULT,
   },
   si: { flex: 1, alignItems: 'center' },
   sv: { fontFamily: Typography.fonts.h3, fontSize: 18, color: Brand.primary },
@@ -347,33 +344,32 @@ const s = StyleSheet.create({
   pill: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: Radius.full, backgroundColor: Surfaces.default,
-    borderWidth: 1, borderColor: Surfaces.border, gap: 5, ...Shadows.sm,
+    borderRadius: Radius.full, backgroundColor: Surfaces.background,
+    borderWidth: 1, borderColor: Surfaces.border, gap: 6,
   },
   pillA: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  pillE: { fontSize: 13 },
   pillL: { fontFamily: Typography.fonts.bodySm, fontSize: 13, color: Brand.primary },
-  pillLA: { color: Surfaces.default },
+  pillLA: { color: Surfaces.background },
 
   btmWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16 },
   btmCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   handleBar: { width: 36, height: 4, borderRadius: 2, backgroundColor: Surfaces.border, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
   cardH: { flexDirection: 'row', gap: 14 },
-  cardIcon: { width: 52, height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  cardIcon: { width: 48, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   cardNR: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   cardN: { fontFamily: Typography.fonts.h3, fontSize: 18, color: Brand.primary },
-  expB: { backgroundColor: `${Brand.success}15`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.sm },
+  expB: { backgroundColor: '#F0FDF4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.sm, flexDirection: 'row', alignItems: 'center', gap: 4 },
   expBT: { fontFamily: Typography.fonts.caption, fontSize: 11, color: Brand.success },
   cardDesc: { fontFamily: Typography.fonts.bodySm, fontSize: 14, color: Brand.secondary, marginTop: 4, lineHeight: 20 },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   catTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm },
   catTT: { fontFamily: Typography.fonts.caption, fontSize: 11, textTransform: 'capitalize' },
   radT: { fontFamily: Typography.fonts.bodySm, fontSize: 12, color: Brand.secondary },
-  ptBadge: { backgroundColor: `${Brand.warning}15`, paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.sm, marginLeft: 'auto' },
-  ptText: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.warning },
+  ptBadge: { backgroundColor: Surfaces.default, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.sm, marginLeft: 'auto', borderWidth: 1, borderColor: Surfaces.border },
+  ptText: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.primary },
   acts: { marginTop: 16 },
   actRow: { flexDirection: 'row', gap: 10 },
-  infoBtn: { width: 42, height: 42, borderRadius: Radius.DEFAULT, backgroundColor: Surfaces.default, borderWidth: 1, borderColor: Surfaces.border, alignItems: 'center', justifyContent: 'center' },
+  infoBtn: { width: 48, height: 48, borderRadius: Radius.md, backgroundColor: Surfaces.background, borderWidth: 1, borderColor: Surfaces.border, alignItems: 'center', justifyContent: 'center' },
   unlkMsg: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10 },
   unlkMT: { fontFamily: Typography.fonts.h3, fontSize: 16, color: Brand.success },
 });

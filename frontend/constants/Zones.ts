@@ -11,7 +11,7 @@ export interface ExploreZone {
   radiusMeters: number;
   points: number;
   category: 'nature' | 'academic' | 'social' | 'culture' | 'athletics';
-  emoji: string;
+  icon: string; // Changed from emoji to Feather icon string
   funFact: string;
 }
 
@@ -25,7 +25,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 80,
     points: 50,
     category: 'nature',
-    emoji: '🌸',
+    icon: 'feather',
     funFact: 'Named after Dr. Inazo Nitobe, a Japanese educator who promoted cross-cultural understanding.',
   },
   {
@@ -37,7 +37,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 40,
     category: 'nature',
-    emoji: '🌹',
+    icon: 'sun',
     funFact: 'The garden has over 250 varieties of roses and was established in 1969.',
   },
   {
@@ -49,7 +49,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 120,
     points: 60,
     category: 'nature',
-    emoji: '🏖️',
+    icon: 'sunset',
     funFact: 'Wreck Beach is one of the longest clothing-optional beaches in North America.',
   },
   {
@@ -61,7 +61,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 50,
     points: 30,
     category: 'social',
-    emoji: '📚',
+    icon: 'shopping-bag',
     funFact: 'The UBC Bookstore was established in 1926 and is one of the largest in Canada.',
   },
   {
@@ -73,7 +73,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 35,
     category: 'academic',
-    emoji: '🏛️',
+    icon: 'book',
     funFact: 'Designed by Arthur Erickson, one of Canada\'s most celebrated architects.',
   },
   {
@@ -85,7 +85,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 35,
     category: 'academic',
-    emoji: '📖',
+    icon: 'book-open',
     funFact: 'IKB incorporates the 1925 Main Library facade into its modern design.',
   },
   {
@@ -97,7 +97,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 100,
     points: 60,
     category: 'culture',
-    emoji: '🎭',
+    icon: 'globe',
     funFact: 'Houses over 50,000 ethnographic objects from cultures around the world.',
   },
   {
@@ -109,7 +109,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 70,
     points: 40,
     category: 'social',
-    emoji: '🏠',
+    icon: 'coffee',
     funFact: 'The Nest cost $112 million and opened in 2015 with a 6-story timber structure.',
   },
   {
@@ -121,7 +121,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 80,
     points: 45,
     category: 'athletics',
-    emoji: '🏊',
+    icon: 'activity',
     funFact: 'The pool was used as a training venue for the 2010 Winter Olympics.',
   },
   {
@@ -133,7 +133,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 150,
     points: 70,
     category: 'nature',
-    emoji: '🌲',
+    icon: 'map',
     funFact: 'Home to over 150 bird species and some trees over 500 years old.',
   },
   {
@@ -145,7 +145,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 45,
     category: 'culture',
-    emoji: '🐋',
+    icon: 'eye',
     funFact: 'The blue whale skeleton was found on a beach in PEI in 1987.',
   },
   {
@@ -157,18 +157,18 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 70,
     points: 45,
     category: 'culture',
-    emoji: '🎵',
+    icon: 'music',
     funFact: 'The cylindrical concert hall was designed to mimic the inside of a cello.',
   },
 ];
 
-// Category colors for map markers
+// Flat minimalist category colors (replacing the AI/pastel variants)
 export const CATEGORY_COLORS: Record<ExploreZone['category'], string> = {
-  nature: '#34D399',
-  academic: '#60A5FA',
-  social: '#FBBF24',
-  culture: '#A78BFA',
-  athletics: '#F87171',
+  nature: '#10B981',     // Emerald 500
+  academic: '#3B82F6',   // Blue 500
+  social: '#F59E0B',     // Amber 500
+  culture: '#8B5CF6',    // Violet 500
+  athletics: '#EF4444',  // Red 500
 };
 
 // UBC campus center for initial map position

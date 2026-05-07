@@ -1,30 +1,35 @@
 /**
- * Verdana Health Design System Constants
- * Derived from DESIGN.md
+ * Global Color & Styling Constants (UBC-Navigate Calm Blue Theme)
  */
 
 export const Brand = {
-  primary: '#0F172A',      // Primary Navy: Primary actions, strong headers
-  secondary: '#64748B',    // Secondary Slate: Secondary text, borders
-  accent: '#059669',       // Tertiary Sage: Links, CTAs, highlights
-  success: '#22C55E',      // Confirmed, healthy range
-  warning: '#EAB308',      // Pending results, caution
-  error: '#EF4444',        // Critical, out of range
-  info: '#0EA5E9',         // Informational, new feature
+  primary: '#111827',     // Deep almost-black for text
+  secondary: '#6B7280',   // Gray for secondary text
+  accent: '#007AFF',      // Calm Blue for links/CTAs (iOS System Blue)
+  accentDark: '#005bb5',  // Darker blue for pressed states
+  
+  // Semantic
+  success: '#34C759',     // iOS Green
+  warning: '#FF9500',     // iOS Orange
+  error: '#FF3B30',       // iOS Red
+  info: '#5AC8FA',        // iOS Light Blue
 };
 
 export const Surfaces = {
-  background: '#F8FAFC',   // Page background
-  default: '#FFFFFF',      // Card backgrounds
-  border: '#E2E8F0',       // Default borders
-  borderHover: '#0F172A',  // Hover borders
+  background: '#FFFFFF',  // Pure white main background
+  default: '#F9FAFB',     // Very soft gray for cards or alternate sections
+  border: '#E5E7EB',      // Clean lines for separation
+  
+  // Modals/Overlays
+  glass: 'rgba(255, 255, 255, 0.85)',
+  glassBorder: 'rgba(229, 231, 235, 0.5)',
 };
 
 export const Typography = {
   fonts: {
     display: 'PlusJakartaSans_700Bold',
     h1: 'PlusJakartaSans_700Bold',
-    h2: 'PlusJakartaSans_600SemiBold',
+    h2: 'PlusJakartaSans_700Bold',
     h3: 'PlusJakartaSans_600SemiBold',
     h4: 'PlusJakartaSans_500Medium',
     bodyLg: 'DMSans_400Regular',
@@ -33,70 +38,54 @@ export const Typography = {
     caption: 'DMSans_500Medium',
     code: 'FiraCode_400Regular',
   },
-  sizes: {
-    display: { fontSize: 40, lineHeight: 46 }, // 1.15 line height approx
-    h1: { fontSize: 32, lineHeight: 38.4 },
-    h2: { fontSize: 24, lineHeight: 30 },
-    h3: { fontSize: 20, lineHeight: 26 },
-    h4: { fontSize: 16, lineHeight: 21.6 },
-    bodyLg: { fontSize: 18, lineHeight: 28.8 },
-    body: { fontSize: 16, lineHeight: 25.6 },
-    bodySm: { fontSize: 14, lineHeight: 21 },
-    caption: { fontSize: 12, lineHeight: 16.8 },
-    code: { fontSize: 14, lineHeight: 22.4 },
-  },
-  colors: {
-    primary: '#0F172A',
-    secondary: '#64748B',
-    accent: '#059669',
-  }
 };
 
 export const Spacing = {
-  xs: 4,     // Inline icon gaps
-  sm: 8,     // Tight component padding
-  md: 16,    // Default padding
-  lg: 24,    // Card padding
-  xl: 32,    // Section gaps
-  xxl: 48,   // Layout sections
-  xxxl: 64,  // Page-level spacing
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
 };
 
 export const Radius = {
-  sm: 4,     // Badges, small tags
-  DEFAULT: 8, // Buttons, cards, inputs
-  md: 12,    // Modals, dropdown panels
-  lg: 16,    // Large containers, hero sections
-  full: 9999, // Avatars, status indicators
+  sm: 4,
+  DEFAULT: 8,
+  md: 8,
+  lg: 12,
+  xl: 20,
+  full: 9999,
 };
 
+// Extremely subtle shadows for the professional flat look
 export const Shadows = {
   sm: {
-    shadowColor: '#0F172A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     elevation: 1,
   },
   DEFAULT: {
-    shadowColor: '#0F172A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: '#0F172A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  lg: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 32,
-    elevation: 8,
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
 };

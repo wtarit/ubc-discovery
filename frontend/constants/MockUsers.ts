@@ -5,7 +5,7 @@
 export interface NearbyUser {
   id: string;
   displayName: string;
-  avatar: string;
+  avatar: string; // We'll now use this as an Ionicons name, e.g., 'person'
   program: string;
   year: number;
   interests: string[];
@@ -22,7 +22,7 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   {
     id: 'user-1',
     displayName: 'Aisha K.',
-    avatar: '👩🏽‍💻',
+    avatar: 'person',
     program: 'Computer Science',
     year: 2,
     interests: ['Coding', 'Hiking', 'Photography'],
@@ -37,7 +37,7 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   {
     id: 'user-2',
     displayName: 'Marcus L.',
-    avatar: '👨🏻‍🎨',
+    avatar: 'person',
     program: 'Fine Arts',
     year: 3,
     interests: ['Art', 'Music', 'Coffee'],
@@ -52,7 +52,7 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   {
     id: 'user-3',
     displayName: 'Yuki T.',
-    avatar: '👩🏻‍🔬',
+    avatar: 'person',
     program: 'Biochemistry',
     year: 1,
     interests: ['Science', 'Anime', 'Cooking'],
@@ -67,7 +67,7 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   {
     id: 'user-4',
     displayName: 'Priya S.',
-    avatar: '👩🏽‍💼',
+    avatar: 'person',
     program: 'Commerce',
     year: 2,
     interests: ['Business', 'Yoga', 'Travel'],
@@ -82,7 +82,7 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   {
     id: 'user-5',
     displayName: 'Chen W.',
-    avatar: '👨🏻‍💻',
+    avatar: 'person',
     program: 'Electrical Engineering',
     year: 4,
     interests: ['Robotics', 'Gaming', 'Basketball'],
@@ -96,9 +96,9 @@ export const MOCK_NEARBY_USERS: NearbyUser[] = [
   },
 ];
 
-// AI-generated intro message examples
+// Clean AI-generated intro message examples without emojis
 export const AI_INTRO_TEMPLATES = [
-  "Hey {name}! I noticed we both love {shared_interest}. I'm also new to UBC and trying to explore the campus. Would love to grab a coffee at the Nest sometime! ☕",
-  "Hi {name}! Fellow {program} student here 👋 I see you've already explored {zones} zones — impressive! Want to team up and discover more of campus together?",
+  "Hey {name}! I noticed we both love {shared_interest}. I'm also new to UBC and trying to explore the campus. Would love to grab a coffee at the Nest sometime!",
+  "Hi {name}! Fellow {program} student here. I see you've already explored {zones} zones — impressive! Want to team up and discover more of campus together?",
   "Hey there, {name}! We have {match_score}% compatibility — that's pretty cool! I'd love to chat about {shared_interest} sometime. What do you think?",
 ];
