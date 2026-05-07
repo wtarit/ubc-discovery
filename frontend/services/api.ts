@@ -153,6 +153,9 @@ export const api = {
   listConnections: () =>
     request<ConnectionListResponse>('/connections'),
 
+  listConnectionLocations: () =>
+    request<ConnectionLocationsListResponse>('/connections/locations'),
+
   listPendingConnections: () =>
     request<ConnectionListResponse>('/connections/pending'),
 
@@ -291,14 +294,33 @@ export interface EventListResponse {
 
 export interface ConnectionResponse {
   id: string;
-  requester_id: string;
-  receiver_id: string;
+  requester: UserPublicResponse;
+  receiver: UserPublicResponse;
   status: 'pending' | 'accepted' | 'declined';
+  met_at_landmark: string | null;
   created_at: string;
 }
 
 export interface ConnectionListResponse {
   connections: ConnectionResponse[];
+  total: number;
+}
+
+export interface ConnectionLocationResponse {
+  id: string;
+  full_name: string;
+  major: string | null;
+  origin: string | null;
+  interests: string[] | null;
+  profile_picture_url: string | null;
+  is_available_to_meet: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  connected_at: string;
+}
+
+export interface ConnectionLocationsListResponse {
+  connections: ConnectionLocationResponse[];
   total: number;
 }
 

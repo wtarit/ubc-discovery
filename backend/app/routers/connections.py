@@ -8,7 +8,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.connection import Connection
 from app.models.user import User
-from app.schemas.connection import ConnectionListResponse, ConnectionResponse
+from app.schemas.connection import ConnectionListResponse, ConnectionLocationResponse, ConnectionLocationsListResponse, ConnectionResponse
 
 router = APIRouter(prefix="/connections", tags=["Connections"])
 
@@ -107,6 +107,42 @@ async def list_connections(
         connections=[ConnectionResponse.model_validate(c) for c in connections],
         total=len(connections),
     )
+
+
+@router.get("/locations", response_model=ConnectionLocationsListResponse)
+async def list_connection_locations(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Connection).where(
+            or_(Connection.requester_id == current_user.id, Connection.receiver_id == current_user.id),
+            Connection.status == "accepted",
+        )
+    )
+    connections = result.scalars().all()
+
+    locations = []
+    for conn in connections:
+        other_id = conn.receiver_id if conn.requester_id == current_user.id else conn.requester_id
+        user_result = await db.execute(select(User).where(User.id == other_id))
+        other_user = user_result.scalar_one()
+        locations.append(
+            ConnectionLocationResponse(
+                id=other_user.id,
+                full_name=other_user.full_name,
+                major=other_user.major,
+                origin=other_user.origin,
+                interests=other_user.interests,
+                profile_picture_url=None,
+                is_available_to_meet=other_user.is_available_to_meet,
+                latitude=other_user.last_latitude,
+                longitude=other_user.last_longitude,
+                connected_at=conn.created_at,
+            )
+        )
+
+    return ConnectionLocationsListResponse(connections=locations, total=len(locations))
 
 
 @router.get("/pending", response_model=ConnectionListResponse)
