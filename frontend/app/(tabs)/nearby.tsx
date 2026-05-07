@@ -4,13 +4,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Animated,
+  Animated, Switch,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useNearbyStore, type NearbyUser } from '@/stores/useNearbyStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -77,13 +78,24 @@ export default function NearbyScreen() {
   const { nearbyUsers, matchedUsers, fetchNearbyUsers, fetchMatchedUsers, isLoading, locationPermissionDenied } = useNearbyStore();
   const { accessToken } = useAuthStore();
   const [sortBy, setSortBy] = useState<'match'|'distance'>('match');
+  const [isAvailable, setIsAvailable] = useState(false);
 
   useEffect(() => {
     if (accessToken) {
+      api.getMe().then(user => setIsAvailable(user.is_available_to_meet));
       fetchNearbyUsers();
       fetchMatchedUsers();
     }
   }, [accessToken]);
+
+  const toggleAvailability = async (value: boolean) => {
+    setIsAvailable(value);
+    try {
+      await api.updateAvailability(value);
+    } catch {
+      setIsAvailable(!value);
+    }
+  };
 
   const users = sortBy === 'match' && matchedUsers.length > 0 ? matchedUsers : nearbyUsers;
   const sorted = [...users].sort((a,b) => sortBy==='match' ? b.matchScore-a.matchScore : a.distanceMeters-b.distanceMeters);
@@ -93,6 +105,16 @@ export default function NearbyScreen() {
       <View style={s.hdr}>
         <Text style={s.title}>People Nearby</Text>
         <Text style={s.sub}>{isLoading ? 'Scanning...' : `${sorted.length} people around you`}</Text>
+        <View style={s.toggleRow}>
+          <Feather name="eye" size={16} color={isAvailable ? Brand.accent : Brand.secondary} />
+          <Text style={[s.toggleLabel, isAvailable && s.toggleLabelActive]}>Visible to others</Text>
+          <Switch
+            value={isAvailable}
+            onValueChange={toggleAvailability}
+            trackColor={{ false: Surfaces.border, true: Brand.accent }}
+            thumbColor={Surfaces.background}
+          />
+        </View>
         <View style={s.sortRow}>
           {(['match','distance'] as const).map(k => (
             <TouchableOpacity key={k} onPress={() => setSortBy(k)}
@@ -132,6 +154,9 @@ const s = StyleSheet.create({
   hdr: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, backgroundColor: Surfaces.background, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Surfaces.border, marginBottom: Spacing.md },
   title: { fontFamily: Typography.fonts.h1, fontSize: 24, color: Brand.primary },
   sub: { fontFamily: Typography.fonts.body, fontSize: 15, color: Brand.secondary, marginTop: 4 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, backgroundColor: Surfaces.default, borderRadius: Radius.md, borderWidth: 1, borderColor: Surfaces.border },
+  toggleLabel: { flex: 1, fontFamily: Typography.fonts.bodySm, fontSize: 14, color: Brand.secondary },
+  toggleLabelActive: { color: Brand.primary },
   sortRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
   sortPill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, backgroundColor: Surfaces.background, borderWidth: 1, borderColor: Surfaces.border },
   sortPillA: { backgroundColor: Brand.primary, borderColor: Brand.primary },
