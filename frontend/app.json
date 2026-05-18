@@ -46,6 +46,12 @@
           "locationWhenInUsePermission": "UBC Newcomers uses your location to find people near you on campus."
         }
       ],
+      [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "process.env.GOOGLE_MAPS_API_KEY"
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {
