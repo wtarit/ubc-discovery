@@ -37,6 +37,7 @@ class User(Base):
     meetups_completed: Mapped[int] = mapped_column(Integer, default=0)
     events_attended: Mapped[int] = mapped_column(Integer, default=0)
 
+    ubc_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

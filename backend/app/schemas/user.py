@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     home_latitude: float | None
     home_longitude: float | None
     is_available_to_meet: bool
+    ubc_verified: bool
     connections_count: int
     meetups_completed: int
     events_attended: int
@@ -74,6 +75,7 @@ class UserPublicResponse(BaseModel):
     bio: str | None
     profile_picture_url: str | None = None
     is_available_to_meet: bool
+    ubc_verified: bool
     connections_count: int
 
     model_config = {"from_attributes": True}

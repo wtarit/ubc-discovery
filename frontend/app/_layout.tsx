@@ -143,6 +143,10 @@ function RootLayoutNav() {
           name="connection-detail"
           options={{ presentation: 'modal', headerShown: false }}
         />
+        <Stack.Screen
+          name="ubc-verify"
+          options={{ presentation: 'modal', headerShown: false }}
+        />
       </Stack>
     </ThemeProvider>
   );

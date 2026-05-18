@@ -22,6 +22,10 @@ async def get_firebase_identity(
 
     token = authorization[7:]
     decoded = firebase_auth.verify_id_token(token)
+
+    if not decoded.get("email_verified"):
+        raise HTTPException(status_code=403, detail="Email not verified. Please check your inbox and verify your email.")
+
     return FirebaseIdentity(
         uid=decoded["uid"],
         email=decoded["email"],

@@ -16,7 +16,14 @@ class Settings(BaseSettings):
 
     bedrock_model_id: str = "anthropic.claude-sonnet-4-6"
 
-    test_allowed_emails: list[str] = []
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender_email: str = ""
+    otp_expiry_minutes: int = 10
+    otp_max_attempts: int = 5
+    otp_rate_limit_per_15min: int = 3
 
     cors_allowed_origins: list[str] = [
         "http://localhost:8081",  # Expo web dev server

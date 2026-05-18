@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.database import get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.user import User
@@ -35,12 +34,9 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return response
 
 
-def _validate_ubc_email(email: str):
-    if email.lower() in [e.lower() for e in settings.test_allowed_emails]:
-        return
-    domain = email.lower().split("@")[-1]
-    if domain != "ubc.ca" and not domain.endswith(".ubc.ca"):
-        raise HTTPException(status_code=400, detail="Only UBC email addresses (*.ubc.ca) are allowed.")
+def _is_ubc_email(addr: str) -> bool:
+    domain = addr.lower().split("@")[-1]
+    return domain == "ubc.ca" or domain.endswith(".ubc.ca")
 
 
 @router.post("/onboarding", response_model=UserResponse)
@@ -49,7 +45,6 @@ async def complete_onboarding(
     identity: FirebaseIdentity = Depends(get_firebase_identity),
     db: AsyncSession = Depends(get_db),
 ):
-    _validate_ubc_email(identity.email)
 
     result = await db.execute(select(User).where(User.firebase_uid == identity.uid))
     if result.scalar_one_or_none():
@@ -66,6 +61,7 @@ async def complete_onboarding(
         transfer_from=body.transfer_from,
         faculty=body.faculty,
         bio=body.bio,
+        ubc_verified=_is_ubc_email(identity.email),
         onboarding_completed=True,
     )
     db.add(user)

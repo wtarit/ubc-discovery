@@ -68,6 +68,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export const api = {
+  // Auth - OTP
+  sendOTP: (email: string) =>
+    request<OTPSendResponse>('/auth/otp/send', { method: 'POST', body: { email }, auth: false }),
+
+  verifyOTP: (email: string, code: string) =>
+    request<OTPVerifyResponse>('/auth/otp/verify', { method: 'POST', body: { email, code }, auth: false }),
+
+  sendUBCVerifyOTP: (email: string) =>
+    request<OTPSendResponse>('/auth/ubc-verify/send', { method: 'POST', body: { email } }),
+
+  confirmUBCVerify: (email: string, code: string) =>
+    request<UserResponse>('/auth/ubc-verify/confirm', { method: 'POST', body: { email, code } }),
+
   // Users
   getMe: () => request<UserResponse>('/users/me'),
 
@@ -189,6 +202,17 @@ export const api = {
 
 // Types matching backend schemas
 
+export interface OTPSendResponse {
+  message: string;
+  expires_in_seconds: number;
+}
+
+export interface OTPVerifyResponse {
+  firebase_custom_token: string;
+  is_new_user: boolean;
+  ubc_verified: boolean;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -204,6 +228,7 @@ export interface UserResponse {
   home_latitude: number | null;
   home_longitude: number | null;
   is_available_to_meet: boolean;
+  ubc_verified: boolean;
   connections_count: number;
   meetups_completed: number;
   events_attended: number;
@@ -221,6 +246,7 @@ export interface UserPublicResponse {
   bio: string | null;
   profile_picture_url: string | null;
   is_available_to_meet: boolean;
+  ubc_verified: boolean;
   connections_count: number;
 }
 

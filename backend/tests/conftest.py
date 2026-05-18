@@ -162,14 +162,21 @@ def _mock_external_services():
     """Patch external service calls so no real requests are made."""
     with (
         patch("app.services.firebase_auth.verify_id_token") as mock_firebase,
+        patch("app.services.firebase_auth.get_or_create_firebase_user") as mock_get_or_create,
+        patch("app.services.firebase_auth.create_custom_token") as mock_custom_token,
         patch("app.services.s3._client") as mock_s3,
         patch("app.services.bedrock._client") as mock_bedrock,
+        patch("app.services.email.send_otp_email") as mock_email,
     ):
         mock_firebase.return_value = {
             "uid": "test-uid-111",
             "email": "testuser@student.ubc.ca",
             "name": "Test User",
         }
+
+        mock_get_or_create.return_value = "test-uid-111"
+        mock_custom_token.return_value = "mock-custom-token"
+        mock_email.return_value = True
 
         s3_client = MagicMock()
         mock_s3.return_value = s3_client

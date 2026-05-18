@@ -1,71 +1,42 @@
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  updateProfile,
-  getIdToken,
-  onAuthStateChanged,
-  type User,
-} from 'firebase/auth';
-
-const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 export interface AuthTokens {
   idToken: string;
   refreshToken: string;
 }
 
-export async function signUp(email: string, password: string, fullName: string): Promise<AuthTokens> {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(credential.user, { displayName: fullName });
-  await sendEmailVerification(credential.user);
-  const idToken = await getIdToken(credential.user);
-  return { idToken, refreshToken: credential.user.refreshToken };
+async function getTokensFromUser(user: FirebaseAuthTypes.User): Promise<AuthTokens> {
+  const idToken = await user.getIdToken();
+  return { idToken, refreshToken: idToken };
 }
 
-export async function login(email: string, password: string): Promise<AuthTokens> {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  const idToken = await getIdToken(credential.user);
-  return { idToken, refreshToken: credential.user.refreshToken };
+export async function signInWithGoogle(): Promise<AuthTokens> {
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const response = await GoogleSignin.signIn();
+  if (!response.data?.idToken) {
+    throw new Error('Google sign-in failed: no ID token');
+  }
+  const credential = auth.GoogleAuthProvider.credential(response.data.idToken);
+  const result = await auth().signInWithCredential(credential);
+  return getTokensFromUser(result.user);
+}
+
+export async function signInWithCustomToken(customToken: string): Promise<AuthTokens> {
+  const result = await auth().signInWithCustomToken(customToken);
+  return getTokensFromUser(result.user);
 }
 
 export async function refreshIdToken(): Promise<string | null> {
-  const user = auth.currentUser;
+  const user = auth().currentUser;
   if (!user) return null;
-  return getIdToken(user, true);
+  return user.getIdToken(true);
 }
 
 export async function logout(): Promise<void> {
-  await signOut(auth);
+  await auth().signOut();
 }
 
-export async function resetPassword(email: string): Promise<void> {
-  await sendPasswordResetEmail(auth, email);
+export function getCurrentUser(): FirebaseAuthTypes.User | null {
+  return auth().currentUser;
 }
-
-export async function resendVerificationEmail(): Promise<void> {
-  const user = auth.currentUser;
-  if (user) await sendEmailVerification(user);
-}
-
-export function isEmailVerified(): boolean {
-  return auth.currentUser?.emailVerified ?? false;
-}
-
-export function getCurrentUser(): User | null {
-  return auth.currentUser;
-}
-
-export { auth, onAuthStateChanged };

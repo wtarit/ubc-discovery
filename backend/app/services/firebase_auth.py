@@ -30,6 +30,7 @@ def verify_id_token(id_token: str) -> dict:
             "uid": decoded["uid"],
             "email": decoded.get("email", ""),
             "name": decoded.get("name", ""),
+            "email_verified": decoded.get("email_verified", False),
         }
     except auth.InvalidIdTokenError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -37,3 +38,20 @@ def verify_id_token(id_token: str) -> dict:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception:
         raise HTTPException(status_code=401, detail="Token verification failed")
+
+
+def get_or_create_firebase_user(email: str) -> str:
+    _get_app()
+    try:
+        user = auth.get_user_by_email(email)
+        auth.update_user(user.uid, email_verified=True)
+        return user.uid
+    except auth.UserNotFoundError:
+        user = auth.create_user(email=email, email_verified=True)
+        return user.uid
+
+
+def create_custom_token(uid: str) -> str:
+    _get_app()
+    token = auth.create_custom_token(uid)
+    return token.decode("utf-8") if isinstance(token, bytes) else token

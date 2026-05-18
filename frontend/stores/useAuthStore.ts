@@ -36,10 +36,12 @@ interface AuthState {
   isLoading: boolean;
   isRestoring: boolean;
   error: string | null;
+  otpEmail: string | null;
+  otpExpiresAt: number | null;
 
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, fullName: string) => Promise<{ success: boolean; message: string }>;
-  verifyEmail: (email: string, code: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
+  sendOTP: (email: string) => Promise<boolean>;
+  verifyOTP: (email: string, code: string) => Promise<{ success: boolean; isNewUser: boolean; ubcVerified: boolean }>;
   refresh: () => Promise<boolean>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -56,6 +58,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   isRestoring: true,
   error: null,
+  otpEmail: null,
+  otpExpiresAt: null,
 
   restoreSession: async () => {
     set({ isRestoring: true });
@@ -94,10 +98,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  login: async (email, password) => {
+  signInWithGoogle: async () => {
     set({ isLoading: true, error: null });
     try {
-      const tokens = await firebase.login(email, password);
+      const tokens = await firebase.signInWithGoogle();
+      const user = firebase.getCurrentUser();
+      const email = user?.email || '';
 
       await Promise.all([
         saveToken(TOKEN_KEYS.idToken, tokens.idToken),
@@ -125,10 +131,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signup: async (email, password, fullName) => {
+  sendOTP: async (email: string) => {
     set({ isLoading: true, error: null });
     try {
-      const tokens = await firebase.signUp(email, password, fullName);
+      const resp = await api.sendOTP(email);
+      set({
+        isLoading: false,
+        otpEmail: email,
+        otpExpiresAt: Date.now() + resp.expires_in_seconds * 1000,
+      });
+      return true;
+    } catch (e: any) {
+      set({ isLoading: false, error: e.message });
+      return false;
+    }
+  },
+
+  verifyOTP: async (email: string, code: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const resp = await api.verifyOTP(email, code);
+      const tokens = await firebase.signInWithCustomToken(resp.firebase_custom_token);
 
       await Promise.all([
         saveToken(TOKEN_KEYS.idToken, tokens.idToken),
@@ -142,24 +165,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         refreshToken: tokens.refreshToken,
         email,
         isLoading: false,
+        otpEmail: null,
+        otpExpiresAt: null,
       });
 
-      return { success: true, message: 'Verification email sent' };
-    } catch (e: any) {
-      set({ isLoading: false, error: e.message });
-      return { success: false, message: e.message };
-    }
-  },
+      if (!resp.is_new_user) {
+        try {
+          await get().fetchUser();
+        } catch {
+          // user profile fetch failed — navigation guard handles it
+        }
+      }
 
-  verifyEmail: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      await firebase.resendVerificationEmail();
-      set({ isLoading: false });
-      return true;
+      return { success: true, isNewUser: resp.is_new_user, ubcVerified: resp.ubc_verified };
     } catch (e: any) {
       set({ isLoading: false, error: e.message });
-      return false;
+      return { success: false, isNewUser: false, ubcVerified: false };
     }
   },
 
@@ -190,6 +211,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       email: null,
       user: null,
       error: null,
+      otpEmail: null,
+      otpExpiresAt: null,
     });
   },
 

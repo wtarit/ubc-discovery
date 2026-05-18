@@ -5,9 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
+  const { signInWithGoogle, isLoading } = useAuthStore();
+
+  const handleGoogle = async () => {
+    await signInWithGoogle();
+  };
 
   return (
     <View style={[s.container, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 24 }]}>
@@ -29,17 +35,18 @@ export default function WelcomeScreen() {
 
       <View style={s.actions}>
         <Button
-          title="Create Account"
+          title="Continue with Google"
           variant="primary"
           size="lg"
-          onPress={() => router.push('/(auth)/signup')}
+          onPress={handleGoogle}
+          loading={isLoading}
           style={{ width: '100%' }}
         />
         <Button
-          title="I already have an account"
+          title="Continue with Email"
           variant="ghost"
           size="lg"
-          onPress={() => router.push('/(auth)/login')}
+          onPress={() => router.push('/(auth)/email-login')}
           style={{ width: '100%' }}
         />
       </View>

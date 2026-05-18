@@ -15,6 +15,8 @@ dependencies = [
     "beautifulsoup4>=4.12.0",
     "python-multipart>=0.0.18",
     "firebase-admin>=6.5.0",
+    "aiosmtplib>=3.0.0",
+    "pydantic[email]>=2.0.0",
     "types-boto3[essential,s3]>=1.43.8",
 ]
 
