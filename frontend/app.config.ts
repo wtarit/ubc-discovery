@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     googleServicesFile: "./GoogleService-Info.plist",
+    bundleIdentifier: "me.wtarit.ubcnewcomers"
   },
   android: {
     adaptiveIcon: {
