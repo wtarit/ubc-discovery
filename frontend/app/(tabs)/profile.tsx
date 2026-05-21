@@ -91,6 +91,26 @@ export default function ProfileScreen() {
     if (accessToken && !user) fetchUser();
   }, [accessToken]);
 
+  if (!accessToken) {
+    return (
+      <View style={[s.container, { paddingTop: insets.top + 32 }]}>
+        <View style={s.signInWrap}>
+          <View style={s.signInIcon}>
+            <Feather name="user" size={34} color={Brand.accent} />
+          </View>
+          <Text style={s.signInTitle}>Sign in to personalize UBC discovery</Text>
+          <Text style={s.signInBody}>
+            Save events, pick interests, request Meet access, and build your campus profile.
+          </Text>
+          <TouchableOpacity style={s.signInButton} onPress={() => router.push('/(auth)/welcome')}>
+            <Feather name="log-in" size={18} color={Surfaces.background} />
+            <Text style={s.signInButtonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   const pickAvatar = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -579,5 +599,56 @@ const s = StyleSheet.create({
     fontFamily: Typography.fonts.h4,
     fontSize: 15,
     color: '#DC3545',
+  },
+
+  signInWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+
+  signInIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: Radius.xl,
+    backgroundColor: `${Brand.accent}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+
+  signInTitle: {
+    fontFamily: Typography.fonts.h1,
+    fontSize: 24,
+    color: Brand.primary,
+    textAlign: 'center',
+  },
+
+  signInBody: {
+    fontFamily: Typography.fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Brand.secondary,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+  },
+
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: Spacing.xl,
+    paddingHorizontal: 22,
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Brand.accent,
+  },
+
+  signInButtonText: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 15,
+    color: Surfaces.background,
   },
 });

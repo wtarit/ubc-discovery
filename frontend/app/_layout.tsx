@@ -31,7 +31,7 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(auth)',
+  initialRouteName: '(tabs)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -62,9 +62,11 @@ function useProtectedRoute() {
     if (isRestoring) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const publicRoots = new Set(['(tabs)', 'event-detail', 'events', 'zone-detail']);
+    const isPublicRoute = publicRoots.has(segments[0] ?? '');
     const isLoggedIn = !!accessToken;
 
-    if (!isLoggedIn && !inAuthGroup) {
+    if (!isLoggedIn && !inAuthGroup && !isPublicRoute) {
       router.replace('/(auth)/welcome');
     } else if (isLoggedIn && inAuthGroup) {
       if (user) {

@@ -147,6 +147,9 @@ export const api = {
   listEvents: (skip = 0, limit = 20) =>
     request<EventListResponse>('/events', { params: { skip, limit }, auth: false }),
 
+  getEvent: (eventId: string) =>
+    request<EventResponse>(`/events/${eventId}`, { auth: false }),
+
   listNearbyEvents: (radius_km = 10.0, skip = 0, limit = 20) =>
     request<EventListResponse>('/events/nearby', { params: { radius_km, skip, limit } }),
 
@@ -303,9 +306,12 @@ export interface EventResponse {
   title: string;
   description: string | null;
   source: string;
+  source_label: 'ubc_official' | 'ams_club' | 'campus_community';
   source_url: string | null;
+  external_cta_label: string | null;
   club_name: string | null;
   image_url: string | null;
+  vibes: string[];
   latitude: number | null;
   longitude: number | null;
   location_name: string | null;
@@ -318,6 +324,10 @@ export interface CreateEventRequest {
   description?: string;
   club_name?: string;
   image_url?: string;
+  source_label?: 'ubc_official' | 'ams_club' | 'campus_community';
+  source_url?: string;
+  external_cta_label?: string;
+  vibes?: string[];
   latitude?: number;
   longitude?: number;
   location_name?: string;

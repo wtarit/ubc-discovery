@@ -23,14 +23,14 @@ export default function WelcomeScreen() {
         </View>
         <Text style={s.title}>UBC Newcomers</Text>
         <Text style={s.subtitle}>
-          Explore campus, meet people nearby, and build your community at UBC.
+          Find events, places, and campus life around UBC.
         </Text>
       </View>
 
       <View style={s.features}>
-        <FeatureRow icon="map" text="Discover 12+ campus zones and earn points" />
-        <FeatureRow icon="users" text="Find people nearby with shared interests" />
-        <FeatureRow icon="zap" text="AI-powered matching based on your profile" />
+        <FeatureRow icon="calendar" text="Browse student-centered event listings" />
+        <FeatureRow icon="map" text="Explore campus through a map-first Discover view" />
+        <FeatureRow icon="bookmark" text="Save events and personalize recommendations" />
       </View>
 
       <View style={s.actions}>

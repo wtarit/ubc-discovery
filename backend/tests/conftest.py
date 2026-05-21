@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import SessionTransaction
 
 from app.config import settings
-from app.database import Base, get_db
+from app.database import Base, ensure_event_discovery_columns, get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.landmark import Landmark
 from app.models.user import User
@@ -55,6 +55,7 @@ async def _setup_tables():
     engine = _get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await ensure_event_discovery_columns(conn)
     yield
     await engine.dispose()
     global _engine

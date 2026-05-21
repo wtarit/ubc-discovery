@@ -325,6 +325,11 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
                 <View style={[s.catTag, { backgroundColor: `${Brand.accent}15` }]}>
                   <Text style={[s.catTT, { color: Brand.accent }]}>{selectedEvent.club_name || 'Event'}</Text>
                 </View>
+                {selectedEvent.vibes.slice(0, 2).map(vibe => (
+                  <View key={vibe} style={s.catTag}>
+                    <Text style={s.catTT}>{vibe}</Text>
+                  </View>
+                ))}
                 {selectedEvent.event_date && (
                   <Text style={s.radT}>
                     <Feather name="clock" size={10}/> {new Date(selectedEvent.event_date).toLocaleDateString()}
@@ -335,7 +340,7 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
                 <Button 
                   title="View Event Details" 
                   variant="primary" 
-                  onPress={() => router.push({ pathname: '/event-detail', params: { eventId: selectedEvent.id } })} 
+                  onPress={() => router.push(`/events/${selectedEvent.id}` as any)} 
                 />
               </View>
             </View>
@@ -353,7 +358,7 @@ const s = StyleSheet.create({
   markerDone: { borderColor: Brand.success, backgroundColor: '#F0FDF4' },
   chk: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: Brand.success, alignItems: 'center', justifyContent: 'center' },
   
-  topBar: { position: 'absolute', left: 16, right: 16, zIndex: 10 },
+  topBar: { position: 'absolute', left: 16, right: 154, zIndex: 10 },
   stats: { flexDirection: 'row', backgroundColor: Surfaces.background, borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center', borderWidth: 1, borderColor: Surfaces.border },
   si: { flex: 1, alignItems: 'center' },
   sv: { fontFamily: Typography.fonts.h3, fontSize: 18, color: Brand.primary },

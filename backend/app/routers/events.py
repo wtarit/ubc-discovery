@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +56,15 @@ async def list_nearby_events(
         events=[EventResponse.model_validate(e) for e in nearby[skip : skip + limit]],
         total=len(nearby),
     )
+
+
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(event_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return EventResponse.model_validate(event)
 
 
 @router.post("", response_model=EventResponse)
