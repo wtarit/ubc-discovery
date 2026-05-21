@@ -12,7 +12,6 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "boto3>=1.35.0",
     "httpx>=0.28.0",
-    "beautifulsoup4>=4.12.0",
     "python-multipart>=0.0.18",
     "firebase-admin>=6.5.0",
     "aiosmtplib>=3.0.0",
