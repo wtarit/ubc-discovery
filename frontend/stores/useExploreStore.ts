@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as Location from 'expo-location';
 import { EXPLORE_ZONES, type ExploreZone } from '@/constants/Zones';
-import { api, type LandmarkResponse, type EventResponse } from '@/services/api';
+import { api, type EventResponse } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { haversineMeters } from '@/utils/geo';
 
@@ -19,7 +19,6 @@ export interface UnlockResult {
 
 interface ExploreState {
   zones: ExploreZone[];
-  landmarks: LandmarkResponse[];
   events: EventResponse[];
   unlockedZones: ZoneUnlock[];
   selectedZone: ExploreZone | null;
@@ -34,14 +33,12 @@ interface ExploreState {
   isZoneUnlocked: (zoneId: string) => boolean;
   getProgress: () => { unlocked: number; total: number; percentage: number };
   getPointsForZone: (zoneId: string) => number;
-  fetchLandmarks: () => Promise<void>;
   fetchEvents: () => Promise<void>;
   fetchProgress: () => Promise<void>;
 }
 
 export const useExploreStore = create<ExploreState>((set, get) => ({
   zones: EXPLORE_ZONES,
-  landmarks: [],
   events: [],
   unlockedZones: [],
   selectedZone: null,
@@ -134,16 +131,6 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
   getPointsForZone: (zoneId) => {
     const zone = get().zones.find((z) => z.id === zoneId);
     return zone?.points ?? 0;
-  },
-
-  fetchLandmarks: async () => {
-    set({ isLoading: true });
-    try {
-      const data = await api.listLandmarks();
-      set({ landmarks: data.landmarks, isLoading: false });
-    } catch {
-      set({ isLoading: false });
-    }
   },
 
   fetchEvents: async () => {
