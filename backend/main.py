@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base, ensure_event_discovery_columns
-from app.routers import auth, users, events, connections, matching, landmarks, meetups, zones
-from app.seed import seed_landmarks, seed_events
+from app.routers import auth, users, events, connections, matching, zones
+from app.seed import seed_events
 
 
 @asynccontextmanager
@@ -16,7 +16,6 @@ async def lifespan(app: FastAPI):
         await ensure_event_discovery_columns(conn)
     from app.database import async_session
     async with async_session() as db:
-        await seed_landmarks(db)
         await seed_events(db)
     yield
     await engine.dispose()
@@ -42,8 +41,6 @@ app.include_router(users.router)
 app.include_router(events.router)
 app.include_router(connections.router)
 app.include_router(matching.router)
-app.include_router(landmarks.router)
-app.include_router(meetups.router)
 app.include_router(zones.router)
 
 

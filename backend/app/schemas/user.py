@@ -57,7 +57,6 @@ class UserResponse(BaseModel):
     is_available_to_meet: bool
     ubc_verified: bool
     connections_count: int
-    meetups_completed: int
     events_attended: int
     created_at: datetime
 
@@ -88,7 +87,6 @@ class NearbyUserResponse(BaseModel):
 
 class UserStatsResponse(BaseModel):
     connections_count: int
-    meetups_completed: int
     events_attended: int
     member_since: datetime
 

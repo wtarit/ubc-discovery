@@ -35,7 +35,7 @@ class TestGetMe:
             "id", "email", "full_name", "major", "year_standing",
             "origin", "interests", "transfer_from", "faculty", "bio",
             "profile_picture_url", "home_latitude", "home_longitude",
-            "is_available_to_meet", "connections_count", "meetups_completed",
+            "is_available_to_meet", "connections_count",
             "events_attended", "created_at",
         }
         assert expected_fields.issubset(data.keys())
@@ -157,7 +157,6 @@ class TestUserStats:
         assert resp.status_code == 200
         data = resp.json()
         assert "connections_count" in data
-        assert "meetups_completed" in data
         assert "events_attended" in data
         assert "member_since" in data
 

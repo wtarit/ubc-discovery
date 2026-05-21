@@ -44,10 +44,10 @@ backend/
 │   ├── config.py        # Pydantic settings from .env
 │   ├── database.py      # Async SQLAlchemy engine + session
 │   ├── dependencies.py  # get_current_user (Cognito token → User)
-│   ├── seed.py          # UBC landmark seed data
-│   ├── models/          # SQLAlchemy ORM: User, Event, Connection, Landmark, Meetup
+│   ├── seed.py          # UBC event seed data
+│   ├── models/          # SQLAlchemy ORM: User, Event, Connection, ZoneUnlock
 │   ├── schemas/         # Pydantic request/response models (auto Swagger docs)
-│   ├── routers/         # auth, users, events, connections, matching, landmarks, meetups
+│   ├── routers/         # auth, users, events, connections, matching, zones
 │   └── services/        # cognito, s3, bedrock, sns, scraper
 └── tests/               # pytest async test suite
 
@@ -68,7 +68,7 @@ frontend/
 │   └── api.ts               # Typed API client (auth, users, events, matching, etc.)
 ├── stores/
 │   ├── useAuthStore.ts      # Auth state (login, signup, token refresh)
-│   ├── useExploreStore.ts   # Zone unlock/progress + landmarks from API
+│   ├── useExploreStore.ts   # Zone unlock/progress + events from API
 │   └── useNearbyStore.ts    # Nearby/matched users from API, connections
 └── constants/
     ├── Colors.ts            # Design tokens (Brand, Surfaces, Typography, Spacing)

@@ -31,7 +31,6 @@ from sqlalchemy.orm import SessionTransaction
 from app.config import settings
 from app.database import Base, ensure_event_discovery_columns, get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
-from app.models.landmark import Landmark
 from app.models.user import User
 
 # ---------------------------------------------------------------------------
@@ -139,20 +138,6 @@ async def other_user(db_session: AsyncSession) -> User:
     db_session.add(user)
     await db_session.flush()
     return user
-
-
-@pytest_asyncio.fixture(loop_scope="session")
-async def test_landmark(db_session: AsyncSession) -> Landmark:
-    landmark = Landmark(
-        id=uuid.uuid4(),
-        name="Test Landmark",
-        description="A test landmark on campus",
-        latitude=49.2665,
-        longitude=-123.2490,
-    )
-    db_session.add(landmark)
-    await db_session.flush()
-    return landmark
 
 
 # ---------------------------------------------------------------------------

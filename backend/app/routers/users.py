@@ -140,7 +140,6 @@ async def get_presigned_upload(
 async def get_stats(current_user: User = Depends(get_current_user)):
     return UserStatsResponse(
         connections_count=current_user.connections_count,
-        meetups_completed=current_user.meetups_completed,
         events_attended=current_user.events_attended,
         member_since=current_user.created_at,
     )

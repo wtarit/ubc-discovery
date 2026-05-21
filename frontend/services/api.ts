@@ -193,29 +193,6 @@ export const api = {
   getMatchedEvents: (limit = 10) =>
     request<EventMatchListResponse>('/matching/events', { params: { limit } }),
 
-  // Landmarks
-  listLandmarks: () =>
-    request<LandmarkListResponse>('/landmarks', { auth: false }),
-
-  getLandmark: (landmarkId: string) =>
-    request<LandmarkResponse>(`/landmarks/${landmarkId}`, { auth: false }),
-
-  // Meetups
-  createMeetup: (landmark_id: string, scheduled_time: string) =>
-    request<MeetupResponse>('/meetups', { method: 'POST', body: { landmark_id, scheduled_time } }),
-
-  listMeetups: (radius_km = 5.0) =>
-    request<MeetupListResponse>('/meetups', { params: { radius_km } }),
-
-  joinMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/join`, { method: 'PUT' }),
-
-  completeMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/complete`, { method: 'PUT' }),
-
-  cancelMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/cancel`, { method: 'PUT' }),
-
   // Zones
   unlockZone: (zoneId: string) =>
     request<ZoneUnlockResponse>(`/zones/${zoneId}/unlock`, { method: 'POST' }),
@@ -254,7 +231,6 @@ export interface UserResponse {
   is_available_to_meet: boolean;
   ubc_verified: boolean;
   connections_count: number;
-  meetups_completed: number;
   events_attended: number;
   created_at: string;
 }
@@ -281,7 +257,6 @@ export interface NearbyUserResponse {
 
 export interface UserStatsResponse {
   connections_count: number;
-  meetups_completed: number;
   events_attended: number;
   member_since: string;
 }
@@ -422,34 +397,6 @@ export interface UserMatchListResponse {
 
 export interface EventMatchListResponse {
   matches: MatchedEventResponse[];
-}
-
-export interface LandmarkResponse {
-  id: string;
-  name: string;
-  description: string | null;
-  latitude: number;
-  longitude: number;
-  image_url: string | null;
-}
-
-export interface LandmarkListResponse {
-  landmarks: LandmarkResponse[];
-}
-
-export interface MeetupResponse {
-  id: string;
-  creator_id: string;
-  joiner_id: string | null;
-  landmark_id: string;
-  scheduled_time: string;
-  status: 'active' | 'accepted' | 'completed' | 'cancelled';
-  created_at: string;
-}
-
-export interface MeetupListResponse {
-  meetups: MeetupResponse[];
-  total: number;
 }
 
 export interface ZoneUnlockResponse {
