@@ -1,14 +1,16 @@
 import { Button } from '@/components/ui/Button';
+import { SignInSheet } from '@/components/ui/SignInSheet';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SavedScreen() {
   const insets = useSafeAreaInsets();
   const { accessToken } = useAuthStore();
+  const [showSignIn, setShowSignIn] = useState(false);
 
   if (!accessToken) {
     return (
@@ -24,9 +26,10 @@ export default function SavedScreen() {
           title="Sign in to save events"
           size="lg"
           icon="log-in-outline"
-          onPress={() => router.push('/(auth)/welcome')}
+          onPress={() => setShowSignIn(true)}
           style={s.cta}
         />
+        <SignInSheet visible={showSignIn} onClose={() => setShowSignIn(false)} />
       </View>
     );
   }

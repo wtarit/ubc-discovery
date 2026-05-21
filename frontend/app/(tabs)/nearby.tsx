@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
+import { SignInSheet } from '@/components/ui/SignInSheet';
 import { Ionicons, Feather } from '@expo/vector-icons';
 
 const MEET_ENABLED = false;
@@ -161,6 +162,7 @@ export default function NearbyScreen() {
   const [sortBy, setSortBy] = useState<'match'|'distance'>('match');
   const [isAvailable, setIsAvailable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
     if (accessToken && MEET_ENABLED) {
@@ -225,13 +227,14 @@ export default function NearbyScreen() {
           </Text>
           <TouchableOpacity
             style={s.gateButton}
-            onPress={() => accessToken ? undefined : router.push('/(auth)/welcome')}
+            onPress={() => accessToken ? undefined : setShowSignIn(true)}
             activeOpacity={0.8}
           >
             <Feather name={accessToken ? 'clock' : 'log-in'} size={18} color={Surfaces.background} />
             <Text style={s.gateButtonText}>{accessToken ? 'Request access soon' : 'Sign in to request access'}</Text>
           </TouchableOpacity>
         </View>
+        <SignInSheet visible={showSignIn} onClose={() => setShowSignIn(false)} />
       </View>
     );
   }

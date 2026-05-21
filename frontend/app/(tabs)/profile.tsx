@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -81,7 +82,7 @@ export default function ProfileScreen() {
 
   const { introductions } = useNearbyStore();
 
-  const { user, fetchUser, accessToken, logout } = useAuthStore();
+  const { user, fetchUser, accessToken, logout, signInWithGoogle, isLoading, error: authError, clearError } = useAuthStore();
 
   const progress = getProgress();
 
@@ -102,10 +103,35 @@ export default function ProfileScreen() {
           <Text style={s.signInBody}>
             Save events, pick interests, request Meet access, and build your campus profile.
           </Text>
-          <TouchableOpacity style={s.signInButton} onPress={() => router.push('/(auth)/welcome')}>
-            <Feather name="log-in" size={18} color={Surfaces.background} />
-            <Text style={s.signInButtonText}>Sign In</Text>
+          <TouchableOpacity
+            style={s.signInButton}
+            onPress={signInWithGoogle}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Surfaces.background} size="small" />
+            ) : (
+              <>
+                <Text style={s.googleIcon}>G</Text>
+                <Text style={s.signInButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
+          <TouchableOpacity
+            style={s.emailButton}
+            onPress={() => router.push('/(auth)/email-login')}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Feather name="mail" size={18} color={Brand.primary} />
+            <Text style={s.emailButtonText}>Continue with Email</Text>
+          </TouchableOpacity>
+          {authError ? (
+            <TouchableOpacity onPress={clearError}>
+              <Text style={s.authError}>{authError}</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     );
@@ -638,17 +664,51 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     marginTop: Spacing.xl,
-    paddingHorizontal: 22,
+    width: '100%',
     height: 48,
     borderRadius: Radius.md,
     backgroundColor: Brand.accent,
+  },
+
+  googleIcon: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 18,
+    color: Surfaces.background,
   },
 
   signInButtonText: {
     fontFamily: Typography.fonts.h3,
     fontSize: 15,
     color: Surfaces.background,
+  },
+
+  emailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: Spacing.sm,
+    width: '100%',
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Surfaces.default,
+    borderWidth: 1,
+    borderColor: Surfaces.border,
+  },
+
+  emailButtonText: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 15,
+    color: Brand.primary,
+  },
+
+  authError: {
+    fontFamily: Typography.fonts.body,
+    fontSize: 14,
+    color: Brand.error,
+    textAlign: 'center',
+    marginTop: Spacing.md,
   },
 });

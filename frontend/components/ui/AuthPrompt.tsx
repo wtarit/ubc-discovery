@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
+import { SignInSheet } from '@/components/ui/SignInSheet';
 
 interface AuthPromptProps {
   variant: 'inline' | 'toast';
@@ -20,30 +20,37 @@ export function AuthPrompt({
   visible = true,
   onDismiss,
 }: AuthPromptProps) {
-  const router = useRouter();
+  const [showSignIn, setShowSignIn] = useState(false);
 
-  const goToAuth = () => {
+  const openSheet = () => setShowSignIn(true);
+  const closeSheet = () => {
+    setShowSignIn(false);
     onDismiss?.();
-    router.push('/(auth)/welcome');
   };
 
   if (variant === 'toast') {
     return (
-      <AuthToast
-        message={message}
-        visible={visible}
-        onDismiss={onDismiss}
-        onSignIn={goToAuth}
-      />
+      <>
+        <AuthToast
+          message={message}
+          visible={visible}
+          onDismiss={onDismiss}
+          onSignIn={openSheet}
+        />
+        <SignInSheet visible={showSignIn} onClose={closeSheet} />
+      </>
     );
   }
 
   return (
-    <View style={s.inlineWrap}>
-      <Feather name="lock" size={24} color={Brand.secondary} />
-      <Text style={s.inlineMsg}>{message}</Text>
-      <Button title="Sign In" variant="primary" size="md" onPress={goToAuth} />
-    </View>
+    <>
+      <View style={s.inlineWrap}>
+        <Feather name="lock" size={24} color={Brand.secondary} />
+        <Text style={s.inlineMsg}>{message}</Text>
+        <Button title="Sign In" variant="primary" size="md" onPress={openSheet} />
+      </View>
+      <SignInSheet visible={showSignIn} onClose={closeSheet} />
+    </>
   );
 }
 

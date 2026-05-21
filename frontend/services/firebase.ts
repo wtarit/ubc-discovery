@@ -1,54 +1,53 @@
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
-  signInWithCredential,
+  signInWithPopup,
   signInWithCustomToken as firebaseSignInWithCustomToken,
   signOut,
   GoogleAuthProvider,
-  getIdToken,
-} from '@react-native-firebase/auth';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
+} from 'firebase/auth';
 
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-});
+const firebaseConfig = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+};
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
 
 export interface AuthTokens {
   idToken: string;
   refreshToken: string;
 }
 
-async function getTokensFromUser(user: FirebaseAuthTypes.User): Promise<AuthTokens> {
-  const idToken = await getIdToken(user);
+async function getTokensFromUser(user: import('firebase/auth').User): Promise<AuthTokens> {
+  const idToken = await user.getIdToken();
   return { idToken, refreshToken: idToken };
 }
 
 export async function signInWithGoogle(): Promise<AuthTokens> {
-  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  const response = await GoogleSignin.signIn();
-  if (!response.data?.idToken) {
-    throw new Error('Google sign-in failed: no ID token');
-  }
-  const credential = GoogleAuthProvider.credential(response.data.idToken);
-  const result = await signInWithCredential(getAuth(), credential);
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
   return getTokensFromUser(result.user);
 }
 
 export async function signInWithCustomToken(customToken: string): Promise<AuthTokens> {
-  const result = await firebaseSignInWithCustomToken(getAuth(), customToken);
+  const result = await firebaseSignInWithCustomToken(auth, customToken);
   return getTokensFromUser(result.user);
 }
 
 export async function refreshIdToken(): Promise<string | null> {
-  const user = getAuth().currentUser;
+  const user = auth.currentUser;
   if (!user) return null;
-  return getIdToken(user, true);
+  return user.getIdToken(true);
 }
 
 export async function logout(): Promise<void> {
-  await signOut(getAuth());
+  await signOut(auth);
 }
 
-export function getCurrentUser(): FirebaseAuthTypes.User | null {
-  return getAuth().currentUser;
+export function getCurrentUser() {
+  return auth.currentUser;
 }

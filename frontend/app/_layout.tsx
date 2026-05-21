@@ -68,7 +68,7 @@ function useProtectedRoute() {
     const isLoggedIn = !!accessToken;
 
     if (!isLoggedIn && !inAuthGroup && !isPublicRoute) {
-      router.replace('/(auth)/welcome');
+      router.replace('/(tabs)');
     } else if (isLoggedIn && inAuthGroup) {
       if (user) {
         router.replace('/(tabs)');
