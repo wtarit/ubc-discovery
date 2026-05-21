@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { api, type ConnectionLocationResponse, type EventResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AuthPrompt } from '@/components/ui/AuthPrompt';
 
 type CategoryFilter = ExploreZone['category'] | 'all' | 'events';
 const CATEGORIES: { key: CategoryFilter; label: string; icon: keyof typeof Feather.glyphMap }[] = [
@@ -40,7 +41,8 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
   const [selectedZone, setSelectedZone] = useState<ExploreZone | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
-  const { zones, events, fetchEvents, isZoneUnlocked, getProgress, totalPoints, unlockZone } = useExploreStore();
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const { zones, events, fetchEvents, isZoneUnlocked, getProgress, totalPoints, unlockZone, isUnlocking } = useExploreStore();
   const { accessToken } = useAuthStore();
   const [connections, setConnections] = useState<ConnectionLocationResponse[]>([]);
   const progress = getProgress();
@@ -67,6 +69,7 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
     setSelectedZone(zone);
     setSelectedEvent(null);
     setJustUnlocked(null);
+    setUnlockError(null);
     mapRef.current?.animateToRegion({
       latitude: zone.latitude - 0.003,
       longitude: zone.longitude,
@@ -96,10 +99,19 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
     }, 150);
   }, []);
 
-  const handleUnlock = useCallback(() => {
+  const handleUnlock = useCallback(async () => {
     if (!selectedZone) return;
-    unlockZone(selectedZone.id);
-    setJustUnlocked(selectedZone.id);
+    setUnlockError(null);
+    const result = await unlockZone(selectedZone.id);
+    if (result.success) {
+      setJustUnlocked(selectedZone.id);
+    } else if (result.error === 'too_far') {
+      setUnlockError(`You're ${result.distance}m away. Get within ${result.required}m to unlock.`);
+    } else if (result.error === 'location_permission_denied') {
+      setUnlockError('Location permission needed to unlock zones.');
+    } else if (result.error === 'network') {
+      setUnlockError('Something went wrong. Try again.');
+    }
   }, [selectedZone, unlockZone]);
 
   return (
@@ -280,22 +292,34 @@ export default function ExploreMapNative({ insetTop, insetBottom }: ExploreMapPr
                     <Text style={s.unlockMT}>Zone Unlocked! +{selectedZone.points} pts</Text>
                   </View>
                 ) : isZoneUnlocked(selectedZone.id) ? (
-                  <Button 
-                    title="View Details" 
-                    variant="secondary" 
-                    onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })} 
+                  <Button
+                    title="View Details"
+                    variant="secondary"
+                    onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })}
+                  />
+                ) : !accessToken ? (
+                  <AuthPrompt
+                    variant="inline"
+                    message="Sign in to unlock zones and track exploration"
                   />
                 ) : (
-                  <View style={s.actRow}>
-                    <Button 
-                      title="Unlock Zone" 
-                      variant="primary" 
-                      style={{ flex: 1 }}
-                      onPress={handleUnlock} 
-                    />
-                    <TouchableOpacity style={s.infoBtn} onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })} activeOpacity={0.8}>
-                      <Feather name="info" size={20} color={Brand.primary} />
-                    </TouchableOpacity>
+                  <View>
+                    <View style={s.actRow}>
+                      <Button
+                        title="Unlock Zone"
+                        variant="primary"
+                        style={{ flex: 1 }}
+                        onPress={handleUnlock}
+                        loading={isUnlocking}
+                        disabled={isUnlocking}
+                      />
+                      <TouchableOpacity style={s.infoBtn} onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })} activeOpacity={0.8}>
+                        <Feather name="info" size={20} color={Brand.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    {unlockError && (
+                      <Text style={s.unlockErr}>{unlockError}</Text>
+                    )}
                   </View>
                 )}
               </View>
@@ -395,6 +419,7 @@ const s = StyleSheet.create({
   infoBtn: { width: 48, height: 48, borderRadius: Radius.md, backgroundColor: Surfaces.background, borderWidth: 1, borderColor: Surfaces.border, alignItems: 'center', justifyContent: 'center' },
   unlockMsg: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10 },
   unlockMT: { fontFamily: Typography.fonts.h3, fontSize: 16, color: Brand.success },
+  unlockErr: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.error, textAlign: 'center', marginTop: 8 },
 
   connMarker: { width: 40, height: 40, borderRadius: 20, backgroundColor: Surfaces.background, borderWidth: 2, borderColor: Brand.accent, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   connAvatar: { width: 36, height: 36, borderRadius: 18 },

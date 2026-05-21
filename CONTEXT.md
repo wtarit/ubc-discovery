@@ -73,8 +73,8 @@ Campus-oriented content that a Visitor can browse without becoming a Member, inc
 _Avoid_: Guest mode, anonymous nearby
 
 **Contextual Sign-up Trigger**:
-A prompt to become a Member that appears only when a Visitor tries to use a member-only capability, such as people discovery, meetups, saved progress, personalized recommendations, or connection actions. Contextual Sign-up Triggers replace a global authentication wall for public discovery.
-_Avoid_: Auth wall, forced login
+A prompt to become a Member that appears only when a Visitor tries to use a member-only capability, such as people discovery, meetups, saved progress, personalized recommendations, or connection actions. Contextual Sign-up Triggers replace a global authentication wall for public discovery. The trigger uses two presentation modes depending on available space: an **inline mode** for detail or full-screen views (replaces the action area with a short message and Sign In button, so the Visitor stays on the page and can still browse the content) and a **toast mode** for compact actions like a save icon on a card (a brief non-blocking bar slides up with a tappable Sign In link and auto-dismisses). Both modes share the same component and navigate to the same auth flow.
+_Avoid_: Auth wall, forced login, modal popup over content
 
 **Campus Discovery**:
 The public-first experience of exploring UBC places, zones, landmarks, and newcomer-relevant happenings before participating socially. Campus Discovery is the primary public web promise.

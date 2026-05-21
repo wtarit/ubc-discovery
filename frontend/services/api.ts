@@ -215,6 +215,13 @@ export const api = {
 
   cancelMeetup: (meetupId: string) =>
     request<MeetupResponse>(`/meetups/${meetupId}/cancel`, { method: 'PUT' }),
+
+  // Zones
+  unlockZone: (zoneId: string) =>
+    request<ZoneUnlockResponse>(`/zones/${zoneId}/unlock`, { method: 'POST' }),
+
+  getZoneProgress: () =>
+    request<ZoneProgressResponse>('/zones/progress'),
 };
 
 // Types matching backend schemas
@@ -443,6 +450,17 @@ export interface MeetupResponse {
 export interface MeetupListResponse {
   meetups: MeetupResponse[];
   total: number;
+}
+
+export interface ZoneUnlockResponse {
+  id: string;
+  zone_id: string;
+  unlocked_at: string;
+}
+
+export interface ZoneProgressResponse {
+  unlocks: ZoneUnlockResponse[];
+  total_points: number;
 }
 
 export { ApiError };

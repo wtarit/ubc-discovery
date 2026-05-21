@@ -15,6 +15,7 @@ import {
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { AuthPrompt } from '@/components/ui/AuthPrompt';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';
 import { CATEGORY_COLORS, type ExploreZone } from '@/constants/Zones';
 import { useExploreStore } from '@/stores/useExploreStore';
@@ -108,8 +109,9 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
   const [selectedZone, setSelectedZone] = useState<ExploreZone | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [mapSize, setMapSize] = useState({ w: SCREEN_W, h: SCREEN_H - 88 });
-  const { zones, events, fetchEvents, isZoneUnlocked, getProgress, totalPoints, unlockZone } = useExploreStore();
+  const { zones, events, fetchEvents, isZoneUnlocked, getProgress, totalPoints, unlockZone, isUnlocking } = useExploreStore();
   const { accessToken } = useAuthStore();
   const [connections, setConnections] = useState<ConnectionLocationResponse[]>([]);
   const progress = getProgress();
@@ -135,6 +137,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
     setSelectedZone(zone);
     setSelectedEvent(null);
     setJustUnlocked(null);
+    setUnlockError(null);
   }, []);
 
   const handleEventMarkerPress = useCallback((event: EventResponse) => {
@@ -143,10 +146,19 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
     setJustUnlocked(null);
   }, []);
 
-  const handleUnlock = useCallback(() => {
+  const handleUnlock = useCallback(async () => {
     if (!selectedZone) return;
-    unlockZone(selectedZone.id);
-    setJustUnlocked(selectedZone.id);
+    setUnlockError(null);
+    const result = await unlockZone(selectedZone.id);
+    if (result.success) {
+      setJustUnlocked(selectedZone.id);
+    } else if (result.error === 'too_far') {
+      setUnlockError(`You're ${result.distance}m away. Get within ${result.required}m to unlock.`);
+    } else if (result.error === 'location_permission_denied') {
+      setUnlockError('Location permission needed to unlock zones.');
+    } else if (result.error === 'network') {
+      setUnlockError('Something went wrong. Try again.');
+    }
   }, [selectedZone, unlockZone]);
 
   const mapHTML = buildMapHTML(CENTER.lat, CENTER.lng, ZOOM);
@@ -362,21 +374,33 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                     variant="secondary"
                     onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })}
                   />
+                ) : !accessToken ? (
+                  <AuthPrompt
+                    variant="inline"
+                    message="Sign in to unlock zones and track exploration"
+                  />
                 ) : (
-                  <View style={s.actRow}>
-                    <Button
-                      title="Unlock Zone"
-                      variant="primary"
-                      style={{ flex: 1 }}
-                      onPress={handleUnlock}
-                    />
-                    <TouchableOpacity
-                      style={s.infoBtn}
-                      onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })}
-                      activeOpacity={0.8}
-                    >
-                      <Feather name="info" size={20} color={Brand.primary} />
-                    </TouchableOpacity>
+                  <View>
+                    <View style={s.actRow}>
+                      <Button
+                        title="Unlock Zone"
+                        variant="primary"
+                        style={{ flex: 1 }}
+                        onPress={handleUnlock}
+                        loading={isUnlocking}
+                        disabled={isUnlocking}
+                      />
+                      <TouchableOpacity
+                        style={s.infoBtn}
+                        onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: selectedZone.id } })}
+                        activeOpacity={0.8}
+                      >
+                        <Feather name="info" size={20} color={Brand.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    {unlockError && (
+                      <Text style={s.unlkErr}>{unlockError}</Text>
+                    )}
                   </View>
                 )}
               </View>
@@ -502,6 +526,7 @@ const s = StyleSheet.create({
   infoBtn: { width: 48, height: 48, borderRadius: Radius.md, backgroundColor: Surfaces.background, borderWidth: 1, borderColor: Surfaces.border, alignItems: 'center', justifyContent: 'center' },
   unlkMsg: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10 },
   unlkMT: { fontFamily: Typography.fonts.h3, fontSize: 16, color: Brand.success },
+  unlkErr: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.error, textAlign: 'center', marginTop: 8 },
 
   connMarkerWrap: { position: 'absolute', alignItems: 'center', zIndex: 6 },
   connMarker: { width: 40, height: 40, borderRadius: 20, backgroundColor: Surfaces.background, borderWidth: 2, borderColor: Brand.accent, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

@@ -25,6 +25,7 @@ import {
 
 import { Surfaces, Brand } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useExploreStore } from '@/stores/useExploreStore';
 
 export {
   ErrorBoundary,
@@ -76,6 +77,12 @@ function useProtectedRoute() {
       }
     }
   }, [accessToken, user, segments, isRestoring]);
+
+  useEffect(() => {
+    if (accessToken && user) {
+      useExploreStore.getState().fetchProgress();
+    }
+  }, [accessToken, user]);
 }
 
 export default function RootLayout() {

@@ -5,5 +5,6 @@ from app.models.connection_message import ConnectionMessage
 from app.models.landmark import Landmark
 from app.models.meetup import Meetup
 from app.models.otp_code import OTPCode
+from app.models.zone_unlock import ZoneUnlock
 
-__all__ = ["User", "Event", "Connection", "ConnectionMessage", "Landmark", "Meetup", "OTPCode"]
+__all__ = ["User", "Event", "Connection", "ConnectionMessage", "Landmark", "Meetup", "OTPCode", "ZoneUnlock"]
