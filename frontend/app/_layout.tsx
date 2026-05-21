@@ -75,6 +75,8 @@ function useProtectedRoute() {
       } else {
         router.replace('/(auth)/onboarding');
       }
+    } else if (isLoggedIn && !inAuthGroup && !user) {
+      router.replace('/(auth)/onboarding');
     }
   }, [accessToken, user, segments, isRestoring]);
 

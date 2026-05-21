@@ -217,8 +217,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchUser: async () => {
-    const user = await api.getMe();
-    set({ user });
+    try {
+      const user = await api.getMe();
+      set({ user });
+    } catch (e: any) {
+      if (e?.status === 404) return;
+      throw e;
+    }
   },
 
   clearError: () => set({ error: null }),
