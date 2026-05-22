@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     s3_endpoint_url: str = "https://s3.us-west-2.amazonaws.com"
     sns_platform_app_arn: str = ""
 
-    firebase_credentials_path: str = ""
+    firebase_credentials_json: str = ""
     firebase_project_id: str = ""
 
     bedrock_model_id: str = "anthropic.claude-sonnet-4-6"
