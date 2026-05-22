@@ -1,5 +1,9 @@
+import json
+import logging
 from contextlib import asynccontextmanager
 
+import firebase_admin
+from firebase_admin import credentials
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,9 +12,15 @@ from app.database import engine, Base, ensure_event_discovery_columns
 from app.routers import auth, users, events, connections, matching, zones
 from app.seed import seed_events
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+    firebase_admin.initialize_app(cred)
+    logger.info("Firebase Admin SDK initialized")
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await ensure_event_discovery_columns(conn)
