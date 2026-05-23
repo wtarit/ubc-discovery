@@ -12,7 +12,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cognito_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    firebase_uid: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     full_name: Mapped[str] = mapped_column(String(255))
 
@@ -34,9 +34,9 @@ class User(Base):
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     connections_count: Mapped[int] = mapped_column(Integer, default=0)
-    meetups_completed: Mapped[int] = mapped_column(Integer, default=0)
     events_attended: Mapped[int] = mapped_column(Integer, default=0)
 
+    ubc_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

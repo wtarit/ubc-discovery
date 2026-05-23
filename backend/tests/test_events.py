@@ -28,7 +28,10 @@ async def sample_events(db_session: AsyncSession) -> list[Event]:
             title=f"Test Event {i}",
             description=f"Description for event {i}",
             source="manual",
+            source_label="ubc_official" if i == 0 else "campus_community",
+            external_cta_label="View details",
             club_name=f"Club {i}",
+            vibes=["social", "academic"] if i == 0 else ["social"],
             latitude=49.2665 + i * 0.001,
             longitude=-123.2490 + i * 0.001,
             location_name=f"Location {i}",
@@ -74,6 +77,24 @@ class TestListEvents:
         assert len(resp.json()["events"]) == 0
 
 
+class TestGetEvent:
+    async def test_get_event_public(
+        self, unauthed_client: AsyncClient, sample_events: list[Event]
+    ):
+        event = sample_events[0]
+        resp = await unauthed_client.get(f"/events/{event.id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == str(event.id)
+        assert data["title"] == event.title
+        assert data["source_label"] == event.source_label
+        assert data["vibes"] == event.vibes
+
+    async def test_get_event_not_found(self, unauthed_client: AsyncClient):
+        resp = await unauthed_client.get(f"/events/{uuid.uuid4()}")
+        assert resp.status_code == 404
+
+
 class TestCreateEvent:
     async def test_create_event_success(self, client: AsyncClient):
         resp = await client.post(
@@ -82,6 +103,10 @@ class TestCreateEvent:
                 "title": "My New Event",
                 "description": "A cool gathering",
                 "club_name": "Coding Club",
+                "source_label": "ams_club",
+                "source_url": "https://example.com/event",
+                "external_cta_label": "View registration",
+                "vibes": ["career", "social"],
                 "latitude": 49.2700,
                 "longitude": -123.2500,
                 "location_name": "The Nest",
@@ -91,6 +116,10 @@ class TestCreateEvent:
         data = resp.json()
         assert data["title"] == "My New Event"
         assert data["source"] == "manual"
+        assert data["source_label"] == "ams_club"
+        assert data["source_url"] == "https://example.com/event"
+        assert data["external_cta_label"] == "View registration"
+        assert data["vibes"] == ["career", "social"]
         assert data["club_name"] == "Coding Club"
 
     async def test_create_event_minimal_fields(self, client: AsyncClient):
@@ -102,6 +131,15 @@ class TestCreateEvent:
         data = resp.json()
         assert data["title"] == "Minimal Event"
         assert data["description"] is None
+        assert data["source_label"] == "campus_community"
+        assert data["vibes"] == []
+
+    async def test_create_event_rejects_unknown_vibe(self, client: AsyncClient):
+        resp = await client.post(
+            "/events",
+            json={"title": "Unknown Vibe", "vibes": ["invented"]},
+        )
+        assert resp.status_code == 422
 
     async def test_create_event_with_date(self, client: AsyncClient):
         resp = await client.post(

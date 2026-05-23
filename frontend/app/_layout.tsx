@@ -25,13 +25,14 @@ import {
 
 import { Surfaces, Brand } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useExploreStore } from '@/stores/useExploreStore';
 
 export {
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(auth)',
+  initialRouteName: '(tabs)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -62,18 +63,28 @@ function useProtectedRoute() {
     if (isRestoring) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const publicRoots = new Set(['(tabs)', 'event-detail', 'events', 'zone-detail']);
+    const isPublicRoute = publicRoots.has(segments[0] ?? '');
     const isLoggedIn = !!accessToken;
 
-    if (!isLoggedIn && !inAuthGroup) {
-      router.replace('/(auth)/welcome');
+    if (!isLoggedIn && !inAuthGroup && !isPublicRoute) {
+      router.replace('/(tabs)');
     } else if (isLoggedIn && inAuthGroup) {
-      if (user && !user.onboarding_completed) {
-        router.replace('/(auth)/onboarding');
-      } else if (user && user.onboarding_completed) {
+      if (user) {
         router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/onboarding');
       }
+    } else if (isLoggedIn && !inAuthGroup && !user) {
+      router.replace('/(auth)/onboarding');
     }
   }, [accessToken, user, segments, isRestoring]);
+
+  useEffect(() => {
+    if (accessToken && user) {
+      useExploreStore.getState().fetchProgress();
+    }
+  }, [accessToken, user]);
 }
 
 export default function RootLayout() {
@@ -141,6 +152,10 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="connection-detail"
+          options={{ presentation: 'modal', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ubc-verify"
           options={{ presentation: 'modal', headerShown: false }}
         />
       </Stack>

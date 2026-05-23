@@ -1,20 +1,31 @@
+import json
+import logging
 from contextlib import asynccontextmanager
 
+import firebase_admin
+from firebase_admin import credentials
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine, Base
-from app.routers import auth, users, events, connections, matching, landmarks, meetups
-from app.seed import seed_landmarks, seed_events
+from app.config import settings
+from app.database import engine, Base, ensure_event_discovery_columns
+from app.routers import auth, users, events, connections, matching, zones
+from app.seed import seed_events
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+    firebase_admin.initialize_app(cred)
+    logger.info("Firebase Admin SDK initialized")
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await ensure_event_discovery_columns(conn)
     from app.database import async_session
     async with async_session() as db:
-        await seed_landmarks(db)
         await seed_events(db)
     yield
     await engine.dispose()
@@ -29,7 +40,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,8 +51,7 @@ app.include_router(users.router)
 app.include_router(events.router)
 app.include_router(connections.router)
 app.include_router(matching.router)
-app.include_router(landmarks.router)
-app.include_router(meetups.router)
+app.include_router(zones.router)
 
 
 @app.get("/", tags=["Health"])

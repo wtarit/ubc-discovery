@@ -6,6 +6,7 @@ import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Brand, Surfaces, Typography, Spacing } from '@/constants/Colors';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -20,6 +21,8 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
+  const { accessToken } = useAuthStore();
+
   return (
     <Tabs
       screenOptions={{
@@ -34,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Explore',
+          title: 'Discover',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="map" color={color} focused={focused} />
           ),
@@ -43,18 +46,27 @@ export default function TabLayout() {
       <Tabs.Screen
         name="nearby"
         options={{
-          title: 'Nearby',
+          title: 'Meet',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="users" color={color} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
+        name="saved"
+        options={{
+          title: 'Saved',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="bookmark" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: accessToken ? 'Profile' : 'Sign In',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="user" color={color} focused={focused} />
+            <TabBarIcon name={accessToken ? 'user' : 'sign-in'} color={color} focused={focused} />
           ),
         }}
       />
@@ -62,6 +74,7 @@ export default function TabLayout() {
         name="connections"
         options={{
           title: 'Connections',
+          href: null,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="comments" color={color} focused={focused} />
           ),

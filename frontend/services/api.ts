@@ -1,6 +1,20 @@
-import { useAuthStore } from '@/stores/useAuthStore';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://ubc-newcomers-alb-2075450770.us-west-2.elb.amazonaws.com';
+type AuthProvider = {
+  getToken: () => string | null;
+  refresh: () => Promise<boolean>;
+  logout: () => Promise<void>;
+};
+
+let auth: AuthProvider = {
+  getToken: () => null,
+  refresh: async () => false,
+  logout: async () => {},
+};
+
+export function configureAuth(provider: AuthProvider) {
+  auth = provider;
+}
 
 type RequestOptions = {
   method?: string;
@@ -17,7 +31,7 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, auth = true, params } = options;
+  const { method = 'GET', body, auth: useAuth = true, params } = options;
 
   let url = `${BASE_URL}${path}`;
   if (params) {
@@ -32,8 +46,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     'Content-Type': 'application/json',
   };
 
-  if (auth) {
-    const token = useAuthStore.getState().accessToken;
+  if (useAuth) {
+    const token = auth.getToken();
     if (!token) throw new ApiError(401, 'Not authenticated');
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -44,10 +58,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401 && auth) {
-    const refreshed = await useAuthStore.getState().refresh();
+  if (res.status === 401 && useAuth) {
+    const refreshed = await auth.refresh();
     if (refreshed) {
-      headers['Authorization'] = `Bearer ${useAuthStore.getState().accessToken}`;
+      headers['Authorization'] = `Bearer ${auth.getToken()}`;
       const retry = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
       if (!retry.ok) {
         const err = await retry.json().catch(() => ({ detail: 'Request failed' }));
@@ -55,7 +69,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       }
       return retry.json();
     }
-    useAuthStore.getState().logout();
+    auth.logout();
     throw new ApiError(401, 'Session expired');
   }
 
@@ -68,42 +82,24 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export const api = {
-  // Auth
-  signup: (email: string, password: string, full_name: string) =>
-    request<{ message: string; cognito_sub: string }>('/auth/signup', {
-      method: 'POST', body: { email, password, full_name }, auth: false,
-    }),
+  // Auth - OTP
+  sendOTP: (email: string) =>
+    request<OTPSendResponse>('/auth/otp/send', { method: 'POST', body: { email }, auth: false }),
 
-  verify: (email: string, confirmation_code: string) =>
-    request<{ message: string }>('/auth/verify', {
-      method: 'POST', body: { email, confirmation_code }, auth: false,
-    }),
+  verifyOTP: (email: string, code: string) =>
+    request<OTPVerifyResponse>('/auth/otp/verify', { method: 'POST', body: { email, code }, auth: false }),
 
-  login: (email: string, password: string) =>
-    request<{ access_token: string; refresh_token: string; id_token: string; token_type: string }>('/auth/login', {
-      method: 'POST', body: { email, password }, auth: false,
-    }),
+  sendUBCVerifyOTP: (email: string) =>
+    request<OTPSendResponse>('/auth/ubc-verify/send', { method: 'POST', body: { email } }),
 
-  refreshToken: (refresh_token: string) =>
-    request<{ access_token: string; id_token: string; token_type: string }>('/auth/refresh', {
-      method: 'POST', body: { refresh_token }, auth: false,
-    }),
-
-  forgotPassword: (email: string) =>
-    request<{ message: string }>('/auth/forgot-password', {
-      method: 'POST', body: { email }, auth: false,
-    }),
-
-  resetPassword: (email: string, confirmation_code: string, new_password: string) =>
-    request<{ message: string }>('/auth/reset-password', {
-      method: 'POST', body: { email, confirmation_code, new_password }, auth: false,
-    }),
+  confirmUBCVerify: (email: string, code: string) =>
+    request<UserResponse>('/auth/ubc-verify/confirm', { method: 'POST', body: { email, code } }),
 
   // Users
   getMe: () => request<UserResponse>('/users/me'),
 
   onboarding: (data: OnboardingRequest) =>
-    request<UserResponse>('/users/me/onboarding', { method: 'POST', body: data }),
+    request<UserResponse>('/users/onboarding', { method: 'POST', body: data }),
 
   updateProfile: (data: UpdateProfileRequest) =>
     request<UserResponse>('/users/me', { method: 'PUT', body: data }),
@@ -122,26 +118,21 @@ export const api = {
       params: { content_type },
     }),
 
-  uploadProfilePhoto: async (localUri: string): Promise<UserResponse> => {
-    const BASE = process.env.EXPO_PUBLIC_API_URL || 'http://ubc-newcomers-alb-2075450770.us-west-2.elb.amazonaws.com';
-    const token = useAuthStore.getState().accessToken;
-    if (!token) throw new ApiError(401, 'Not authenticated');
+  uploadProfilePhoto: async (localUri: string, contentType = 'image/jpeg'): Promise<UserResponse> => {
+    const { upload_url } = await api.getPresignedUpload(contentType);
 
-    const form = new FormData();
-    // React Native FormData accepts { uri, name, type }
-    form.append('file', { uri: localUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
-
-    const res = await fetch(`${BASE}/users/me/photo`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
+    const blob = await fetch(localUri).then(r => r.blob());
+    const putRes = await fetch(upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: blob,
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
-      throw new ApiError(res.status, err.detail || 'Upload failed');
+    if (!putRes.ok) {
+      throw new ApiError(putRes.status, 'S3 upload failed');
     }
-    return res.json();
+
+    return api.getMe();
   },
 
   getStats: () => request<UserStatsResponse>('/users/me/stats'),
@@ -155,6 +146,9 @@ export const api = {
   // Events
   listEvents: (skip = 0, limit = 20) =>
     request<EventListResponse>('/events', { params: { skip, limit }, auth: false }),
+
+  getEvent: (eventId: string) =>
+    request<EventResponse>(`/events/${eventId}`, { auth: false }),
 
   listNearbyEvents: (radius_km = 10.0, skip = 0, limit = 20) =>
     request<EventListResponse>('/events/nearby', { params: { radius_km, skip, limit } }),
@@ -199,31 +193,26 @@ export const api = {
   getMatchedEvents: (limit = 10) =>
     request<EventMatchListResponse>('/matching/events', { params: { limit } }),
 
-  // Landmarks
-  listLandmarks: () =>
-    request<LandmarkListResponse>('/landmarks', { auth: false }),
+  // Zones
+  unlockZone: (zoneId: string) =>
+    request<ZoneUnlockResponse>(`/zones/${zoneId}/unlock`, { method: 'POST' }),
 
-  getLandmark: (landmarkId: string) =>
-    request<LandmarkResponse>(`/landmarks/${landmarkId}`, { auth: false }),
-
-  // Meetups
-  createMeetup: (landmark_id: string, scheduled_time: string) =>
-    request<MeetupResponse>('/meetups', { method: 'POST', body: { landmark_id, scheduled_time } }),
-
-  listMeetups: (radius_km = 5.0) =>
-    request<MeetupListResponse>('/meetups', { params: { radius_km } }),
-
-  joinMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/join`, { method: 'PUT' }),
-
-  completeMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/complete`, { method: 'PUT' }),
-
-  cancelMeetup: (meetupId: string) =>
-    request<MeetupResponse>(`/meetups/${meetupId}/cancel`, { method: 'PUT' }),
+  getZoneProgress: () =>
+    request<ZoneProgressResponse>('/zones/progress'),
 };
 
 // Types matching backend schemas
+
+export interface OTPSendResponse {
+  message: string;
+  expires_in_seconds: number;
+}
+
+export interface OTPVerifyResponse {
+  firebase_custom_token: string;
+  is_new_user: boolean;
+  ubc_verified: boolean;
+}
 
 export interface UserResponse {
   id: string;
@@ -240,10 +229,9 @@ export interface UserResponse {
   home_latitude: number | null;
   home_longitude: number | null;
   is_available_to_meet: boolean;
+  ubc_verified: boolean;
   connections_count: number;
-  meetups_completed: number;
   events_attended: number;
-  onboarding_completed: boolean;
   created_at: string;
 }
 
@@ -258,6 +246,7 @@ export interface UserPublicResponse {
   bio: string | null;
   profile_picture_url: string | null;
   is_available_to_meet: boolean;
+  ubc_verified: boolean;
   connections_count: number;
 }
 
@@ -268,12 +257,12 @@ export interface NearbyUserResponse {
 
 export interface UserStatsResponse {
   connections_count: number;
-  meetups_completed: number;
   events_attended: number;
   member_since: string;
 }
 
 export interface OnboardingRequest {
+  full_name: string;
   major?: string;
   year_standing?: number;
   origin?: string;
@@ -299,9 +288,12 @@ export interface EventResponse {
   title: string;
   description: string | null;
   source: string;
+  source_label: 'ubc_official' | 'ams_club' | 'campus_community';
   source_url: string | null;
+  external_cta_label: string | null;
   club_name: string | null;
   image_url: string | null;
+  vibes: string[];
   latitude: number | null;
   longitude: number | null;
   location_name: string | null;
@@ -314,6 +306,10 @@ export interface CreateEventRequest {
   description?: string;
   club_name?: string;
   image_url?: string;
+  source_label?: 'ubc_official' | 'ams_club' | 'campus_community';
+  source_url?: string;
+  external_cta_label?: string;
+  vibes?: string[];
   latitude?: number;
   longitude?: number;
   location_name?: string;
@@ -403,32 +399,15 @@ export interface EventMatchListResponse {
   matches: MatchedEventResponse[];
 }
 
-export interface LandmarkResponse {
+export interface ZoneUnlockResponse {
   id: string;
-  name: string;
-  description: string | null;
-  latitude: number;
-  longitude: number;
-  image_url: string | null;
+  zone_id: string;
+  unlocked_at: string;
 }
 
-export interface LandmarkListResponse {
-  landmarks: LandmarkResponse[];
-}
-
-export interface MeetupResponse {
-  id: string;
-  creator_id: string;
-  joiner_id: string | null;
-  landmark_id: string;
-  scheduled_time: string;
-  status: 'active' | 'accepted' | 'completed' | 'cancelled';
-  created_at: string;
-}
-
-export interface MeetupListResponse {
-  meetups: MeetupResponse[];
-  total: number;
+export interface ZoneProgressResponse {
+  unlocks: ZoneUnlockResponse[];
+  total_points: number;
 }
 
 export { ApiError };

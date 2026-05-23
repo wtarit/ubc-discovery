@@ -11,8 +11,10 @@ import { useExploreStore } from '@/stores/useExploreStore';
 import { useNearbyStore } from '@/stores/useNearbyStore';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -80,7 +82,7 @@ export default function ProfileScreen() {
 
   const { introductions } = useNearbyStore();
 
-  const { user, fetchUser, accessToken, logout } = useAuthStore();
+  const { user, fetchUser, accessToken, logout, signInWithGoogle, isLoading, error: authError, clearError } = useAuthStore();
 
   const progress = getProgress();
 
@@ -89,6 +91,51 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (accessToken && !user) fetchUser();
   }, [accessToken]);
+
+  if (!accessToken) {
+    return (
+      <View style={[s.container, { paddingTop: insets.top + 32 }]}>
+        <View style={s.signInWrap}>
+          <View style={s.signInIcon}>
+            <Feather name="user" size={34} color={Brand.accent} />
+          </View>
+          <Text style={s.signInTitle}>Sign in to personalize UBC discovery</Text>
+          <Text style={s.signInBody}>
+            Save events, pick interests, request Meet access, and build your campus profile.
+          </Text>
+          <TouchableOpacity
+            style={s.signInButton}
+            onPress={signInWithGoogle}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Surfaces.background} size="small" />
+            ) : (
+              <>
+                <Text style={s.googleIcon}>G</Text>
+                <Text style={s.signInButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.emailButton}
+            onPress={() => router.push('/(auth)/email-login')}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Feather name="mail" size={18} color={Brand.primary} />
+            <Text style={s.emailButtonText}>Continue with Email</Text>
+          </TouchableOpacity>
+          {authError ? (
+            <TouchableOpacity onPress={clearError}>
+              <Text style={s.authError}>{authError}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
 
   const pickAvatar = async () => {
     try {
@@ -109,18 +156,13 @@ export default function ProfileScreen() {
 
       const localUri = result.assets[0].uri;
 
-      // Show local preview immediately
       setAvatarUri(localUri);
 
-      // Upload to backend → stored in S3, key saved to DB
       const updated = await api.uploadProfilePhoto(localUri);
-
-      // Replace local preview with the signed S3 URL returned by the server
       if (updated.profile_picture_url) {
         setAvatarUri(updated.profile_picture_url);
       }
 
-      // Refresh auth store so the rest of the app picks up the new picture
       await fetchUser();
     } catch (err) {
       console.error('Avatar upload error', err);
@@ -202,6 +244,18 @@ export default function ProfileScreen() {
           {profile.bio ? (
             <Text style={s.bio}>{profile.bio}</Text>
           ) : null}
+
+          {user?.ubc_verified ? (
+            <View style={s.verifiedBadge}>
+              <Feather name="check-circle" size={14} color={Brand.accent} />
+              <Text style={s.verifiedText}>Verified UBC Student</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.verifyLink} onPress={() => router.push('/ubc-verify')}>
+              <Feather name="shield" size={14} color={Brand.accent} />
+              <Text style={s.verifyLinkText}>Verify your UBC email</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={s.tags}>
             {profile.interests.map(i => (
@@ -427,6 +481,33 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
 
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.sm,
+    backgroundColor: `${Brand.accent}10`,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  verifiedText: {
+    fontFamily: Typography.fonts.h4,
+    fontSize: 13,
+    color: Brand.accent,
+  },
+  verifyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.sm,
+  },
+  verifyLinkText: {
+    fontFamily: Typography.fonts.body,
+    fontSize: 13,
+    color: Brand.accent,
+  },
+
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -544,5 +625,90 @@ const s = StyleSheet.create({
     fontFamily: Typography.fonts.h4,
     fontSize: 15,
     color: '#DC3545',
+  },
+
+  signInWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+
+  signInIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: Radius.xl,
+    backgroundColor: `${Brand.accent}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+
+  signInTitle: {
+    fontFamily: Typography.fonts.h1,
+    fontSize: 24,
+    color: Brand.primary,
+    textAlign: 'center',
+  },
+
+  signInBody: {
+    fontFamily: Typography.fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Brand.secondary,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+  },
+
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: Spacing.xl,
+    width: '100%',
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Brand.accent,
+  },
+
+  googleIcon: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 18,
+    color: Surfaces.background,
+  },
+
+  signInButtonText: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 15,
+    color: Surfaces.background,
+  },
+
+  emailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: Spacing.sm,
+    width: '100%',
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Surfaces.default,
+    borderWidth: 1,
+    borderColor: Surfaces.border,
+  },
+
+  emailButtonText: {
+    fontFamily: Typography.fonts.h3,
+    fontSize: 15,
+    color: Brand.primary,
+  },
+
+  authError: {
+    fontFamily: Typography.fonts.body,
+    fontSize: 14,
+    color: Brand.error,
+    textAlign: 'center',
+    marginTop: Spacing.md,
   },
 });

@@ -1,17 +1,21 @@
 import httpx
 from bs4 import BeautifulSoup
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.event import Event
+UBC_CLUB_INSTAGRAMS = [
+    "ubcstudentunion",
+    "ubccsss",
+    "ubcbcs",
+    "ubcengineers",
+    "ubcrec",
+    "ubcnss",
+    "ubcisa",
+    "ubcsailingclub",
+    "ubchiking",
+    "ubcphotoclub",
+]
 
 
 async def scrape_instagram_profile(username: str) -> list[dict]:
-    """Scrape public Instagram profile for event-like posts.
-
-    Instagram's public pages are heavily JS-rendered, so this uses
-    a lightweight approach that works for public profiles.
-    Falls back gracefully if blocked.
-    """
     url = f"https://www.instagram.com/{username}/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
@@ -34,37 +38,13 @@ async def scrape_instagram_profile(username: str) -> list[dict]:
                         "title": f"Post from @{username}",
                         "description": content[:500],
                         "source": "instagram",
+                        "source_label": "ams_club",
                         "source_url": url,
+                        "external_cta_label": "View Instagram",
                         "club_name": username,
+                        "vibes": ["social"],
                     })
     except httpx.HTTPError:
         pass
 
     return events
-
-
-async def scrape_and_store_events(db: AsyncSession, usernames: list[str]) -> int:
-    count = 0
-    for username in usernames:
-        posts = await scrape_instagram_profile(username)
-        for post in posts:
-            event = Event(**post)
-            db.add(event)
-            count += 1
-    if count > 0:
-        await db.commit()
-    return count
-
-
-UBC_CLUB_INSTAGRAMS = [
-    "ubcstudentunion",
-    "ubccsss",
-    "ubcbcs",
-    "ubcengineers",
-    "ubcrec",
-    "ubcnss",
-    "ubcisa",
-    "ubcsailingclub",
-    "ubchiking",
-    "ubcphotoclub",
-]

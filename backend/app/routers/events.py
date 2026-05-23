@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +9,6 @@ from app.dependencies import get_current_user
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse
-from app.services.scraper import UBC_CLUB_INSTAGRAMS, scrape_and_store_events
 from app.utils.geo import haversine_km
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -56,6 +57,15 @@ async def list_nearby_events(
     )
 
 
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(event_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return EventResponse.model_validate(event)
+
+
 @router.post("", response_model=EventResponse)
 async def create_event(
     body: CreateEventRequest,
@@ -67,12 +77,3 @@ async def create_event(
     await db.commit()
     await db.refresh(event)
     return EventResponse.model_validate(event)
-
-
-@router.post("/scrape", response_model=dict)
-async def trigger_scrape(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    count = await scrape_and_store_events(db, UBC_CLUB_INSTAGRAMS)
-    return {"message": f"Scraped {count} events from {len(UBC_CLUB_INSTAGRAMS)} club pages"}

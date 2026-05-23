@@ -1,6 +1,3 @@
-/**
- * Zone Detail Modal — Shows zone info and unlock action (UBC-Navigate)
- */
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -10,15 +7,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { EXPLORE_ZONES, CATEGORY_COLORS } from '@/constants/Zones';
 import { useExploreStore } from '@/stores/useExploreStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AuthPrompt } from '@/components/ui/AuthPrompt';
 import { Feather } from '@expo/vector-icons';
 
 export default function ZoneDetailScreen() {
   const { zoneId } = useLocalSearchParams<{ zoneId: string }>();
   const insets = useSafeAreaInsets();
-  const { unlockZone, isZoneUnlocked } = useExploreStore();
+  const { unlockZone, isZoneUnlocked, isUnlocking } = useExploreStore();
+  const { accessToken } = useAuthStore();
   const [justUnlocked, setJustUnlocked] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   const zone = EXPLORE_ZONES.find(z => z.id === zoneId);
   if (!zone) return <View style={s.container}><Text style={s.err}>Zone not found</Text></View>;
@@ -26,9 +27,18 @@ export default function ZoneDetailScreen() {
   const unlocked = isZoneUnlocked(zone.id);
   const catColor = CATEGORY_COLORS[zone.category];
 
-  const handleUnlock = () => {
-    unlockZone(zone.id);
-    setJustUnlocked(true);
+  const handleUnlock = async () => {
+    setUnlockError(null);
+    const result = await unlockZone(zone.id);
+    if (result.success) {
+      setJustUnlocked(true);
+    } else if (result.error === 'too_far') {
+      setUnlockError(`You're ${result.distance}m away. Get within ${result.required}m to unlock.`);
+    } else if (result.error === 'location_permission_denied') {
+      setUnlockError('Location permission is needed to verify you are at this zone.');
+    } else if (result.error === 'network') {
+      setUnlockError('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -88,6 +98,11 @@ export default function ZoneDetailScreen() {
               <Feather name="check" size={20} color={Brand.success} style={{ marginBottom: 8 }} />
               <Text style={s.exploredTxt}>You've explored this zone</Text>
             </Card>
+          ) : !accessToken ? (
+            <AuthPrompt
+              variant="inline"
+              message="Sign in to unlock zones and track your campus exploration"
+            />
           ) : (
             <View>
               <Button
@@ -95,10 +110,16 @@ export default function ZoneDetailScreen() {
                 variant="primary"
                 size="lg"
                 onPress={handleUnlock}
+                loading={isUnlocking}
+                disabled={isUnlocking}
               />
-              <Text style={s.hint}>
-                In the full app, you'll need to physically visit this location to unlock it.
-              </Text>
+              {unlockError ? (
+                <Text style={s.errorHint}>{unlockError}</Text>
+              ) : (
+                <Text style={s.hint}>
+                  You need to be within {zone.radiusMeters}m of this zone to unlock it.
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -135,4 +156,5 @@ const s = StyleSheet.create({
   exploredCard: { alignItems: 'center', paddingVertical: Spacing.lg, width: '100%', backgroundColor: '#F0FDF4', borderColor: Brand.success },
   exploredTxt: { fontFamily: Typography.fonts.h3, fontSize: 16, color: Brand.success },
   hint: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.secondary, textAlign: 'center', marginTop: Spacing.md, paddingHorizontal: Spacing.lg },
+  errorHint: { fontFamily: Typography.fonts.caption, fontSize: 12, color: Brand.error, textAlign: 'center', marginTop: Spacing.md, paddingHorizontal: Spacing.lg },
 });

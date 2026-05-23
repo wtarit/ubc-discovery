@@ -11,7 +11,10 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
+import { SignInSheet } from '@/components/ui/SignInSheet';
 import { Ionicons, Feather } from '@expo/vector-icons';
+
+const MEET_ENABLED = false;
 
 function fmtDist(m: number) {
   if (m < 50) return '< 50m away';
@@ -106,6 +109,7 @@ function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) 
           <View style={cc.info}>
             <View style={cc.nameRow}>
               <Text style={cc.name}>{user.displayName}</Text>
+              {user.ubcVerified && <Feather name="check-circle" size={14} color={Brand.accent} />}
               <Text style={cc.dist}>{fmtDist(user.distanceMeters)}</Text>
             </View>
             <Text style={cc.prog}>{user.program} · Year {user.year}</Text>
@@ -158,9 +162,10 @@ export default function NearbyScreen() {
   const [sortBy, setSortBy] = useState<'match'|'distance'>('match');
   const [isAvailable, setIsAvailable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
-    if (accessToken) {
+    if (accessToken && MEET_ENABLED) {
       api.getMe().then(u => setIsAvailable(u.is_available_to_meet));
       if (!user) fetchUser();
       fetchNearbyUsers();
@@ -209,10 +214,35 @@ export default function NearbyScreen() {
 
   const sorted = [...users].sort((a,b) => sortBy==='match' ? b.matchScore-a.matchScore : a.distanceMeters-b.distanceMeters);
 
+  if (!MEET_ENABLED) {
+    return (
+      <View style={[s.container, { paddingTop: insets.top }]}>
+        <View style={s.gateWrap}>
+          <View style={s.gateIcon}>
+            <Feather name="users" size={36} color={Brand.accent} />
+          </View>
+          <Text style={s.gateTitle}>Meet is coming soon</Text>
+          <Text style={s.gateBody}>
+            Meet will help members connect around shared interests and campus areas, without live location sharing.
+          </Text>
+          <TouchableOpacity
+            style={s.gateButton}
+            onPress={() => accessToken ? undefined : setShowSignIn(true)}
+            activeOpacity={0.8}
+          >
+            <Feather name={accessToken ? 'clock' : 'log-in'} size={18} color={Surfaces.background} />
+            <Text style={s.gateButtonText}>{accessToken ? 'Request access soon' : 'Sign in to request access'}</Text>
+          </TouchableOpacity>
+        </View>
+        <SignInSheet visible={showSignIn} onClose={() => setShowSignIn(false)} />
+      </View>
+    );
+  }
+
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <View style={s.hdr}>
-        <Text style={s.title}>People Nearby</Text>
+        <Text style={s.title}>Meet</Text>
         <Text style={s.sub}>{isLoading ? 'Scanning...' : `${sorted.length} people around you`}</Text>
         <View style={s.toggleRow}>
           <Feather name="eye" size={16} color={isAvailable ? Brand.accent : Brand.secondary} />
@@ -302,4 +332,10 @@ const s = StyleSheet.create({
   permDesc: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.secondary, textAlign: 'center', marginTop: Spacing.sm },
   retryBtn: { marginTop: Spacing.lg, paddingHorizontal: 24, paddingVertical: 12, borderRadius: Radius.full, backgroundColor: Brand.accent },
   retryT: { fontFamily: Typography.fonts.h4, fontSize: 14, color: Surfaces.background },
+  gateWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
+  gateIcon: { width: 88, height: 88, borderRadius: Radius.xl, backgroundColor: `${Brand.accent}10`, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg },
+  gateTitle: { fontFamily: Typography.fonts.h1, fontSize: 26, color: Brand.primary, textAlign: 'center' },
+  gateBody: { fontFamily: Typography.fonts.body, fontSize: 15, lineHeight: 22, color: Brand.secondary, textAlign: 'center', marginTop: Spacing.sm },
+  gateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: Spacing.xl, paddingHorizontal: 22, height: 48, borderRadius: Radius.md, backgroundColor: Brand.accent },
+  gateButtonText: { fontFamily: Typography.fonts.h3, fontSize: 15, color: Surfaces.background },
 });

@@ -1,0 +1,3 @@
+# Defer Meetups and Drop Backend Landmarks for V1
+
+Meetups (broadcast "I'll be at X, join me" between strangers) are removed from the V1 codebase. The feature requires user density to be useful, and early launch will not have it. The backend Landmark table and seed data are also removed because their only structural consumer was the Meetup foreign key; the frontend's hardcoded Zones in `constants/Zones.ts` become the single source of truth for campus locations, with the backend `ZONE_POINTS` dict in `routers/zones.py` kept in sync manually as the validation allowlist for zone unlocks. Meetup code is fully deleted rather than commented out; git history preserves it. Revisit Meetups for V2 once the user base supports mutual discovery.

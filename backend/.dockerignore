@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Firebase
+firebase-service-account.json
+
+# More exclusion that's not in .gitignore
+tests/
+.env.example

@@ -127,7 +127,7 @@ export default function ConnectionsScreen() {
             <Ionicons name="people-outline" size={48} color={Brand.secondary} />
             <Text style={s.emptyTitle}>No connections yet</Text>
             <Text style={s.emptyDesc}>
-              Go to the Nearby tab to discover and connect with people around you.
+              Meet is being redesigned around campus areas and shared interests.
             </Text>
           </View>
         )}
