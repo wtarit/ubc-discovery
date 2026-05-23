@@ -5,7 +5,7 @@ Campus discovery app for the UBC community to find events, explore places, and c
 ## Architecture
 
 - **Backend**: Python FastAPI in `backend/` — async SQLAlchemy + asyncpg
-- **Frontend**: React Native (Expo SDK 54) in `frontend/` — Expo Router + Zustand
+- **Frontend**: React Native (Expo SDK 55) in `frontend/` — Expo Router + Zustand
 - **Database**: PostgreSQL 17.4 on AWS RDS
 - **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching
 
