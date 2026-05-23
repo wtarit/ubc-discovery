@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
@@ -19,7 +18,7 @@ EVENT_VIBES = (
 
 
 class EventResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     title: str
     description: str | None
     source: str

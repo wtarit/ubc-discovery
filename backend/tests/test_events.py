@@ -7,7 +7,6 @@ Covers:
 - GET /events/nearby - nearby events (authenticated, needs location)
 """
 
-import uuid
 from datetime import datetime, timezone
 
 import pytest_asyncio
@@ -24,7 +23,6 @@ async def sample_events(db_session: AsyncSession) -> list[Event]:
     events = []
     for i in range(3):
         e = Event(
-            id=uuid.uuid4(),
             title=f"Test Event {i}",
             description=f"Description for event {i}",
             source="manual",
@@ -85,13 +83,14 @@ class TestGetEvent:
         resp = await unauthed_client.get(f"/events/{event.id}")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["id"] == str(event.id)
+        assert data["id"] == event.id
+        assert len(data["id"]) == 8
         assert data["title"] == event.title
         assert data["source_label"] == event.source_label
         assert data["vibes"] == event.vibes
 
     async def test_get_event_not_found(self, unauthed_client: AsyncClient):
-        resp = await unauthed_client.get(f"/events/{uuid.uuid4()}")
+        resp = await unauthed_client.get("/events/notfound")
         assert resp.status_code == 404
 
 

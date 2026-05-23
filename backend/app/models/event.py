@@ -1,8 +1,7 @@
-import uuid
 from datetime import datetime
 
+from nanoid import generate
 from sqlalchemy import DateTime, Float, JSON, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -11,7 +10,7 @@ from app.database import Base
 class Event(Base):
     __tablename__ = "events"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(8), primary_key=True, default=lambda: generate(size=8))
     title: Mapped[str] = mapped_column(String(500))
     description: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(String(50))  # "instagram", "manual"

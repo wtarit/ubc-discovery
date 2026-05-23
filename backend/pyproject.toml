@@ -17,6 +17,7 @@ dependencies = [
     "aiosmtplib>=3.0.0",
     "pydantic[email]>=2.0.0",
     "types-boto3[essential,s3]>=1.43.8",
+    "nanoid>=2.0.0",
 ]
 
 [dependency-groups]
