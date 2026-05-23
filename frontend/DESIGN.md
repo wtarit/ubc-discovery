@@ -29,7 +29,6 @@ Fonts use the standard Google Fonts provided, but with a stricter monochrome hie
 
 - **Headline Font**: Plus Jakarta Sans
 - **Body Font**: DM Sans
-- **Mono Font**: Fira Code
 
 - **H1**: Plus Jakarta Sans 26px bold, 1.2 line height
 - **H2**: Plus Jakarta Sans 22px bold, 1.25 line height

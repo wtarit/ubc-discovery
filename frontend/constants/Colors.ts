@@ -36,7 +36,6 @@ export const Typography = {
     body: 'DMSans_400Regular',
     bodySm: 'DMSans_400Regular',
     caption: 'DMSans_500Medium',
-    code: 'FiraCode_400Regular',
   },
 };
 
