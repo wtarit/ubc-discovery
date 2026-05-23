@@ -224,7 +224,7 @@ const s = StyleSheet.create({
     borderRadius: Radius.md, paddingHorizontal: 16, height: 48,
   },
   codeInput: {
-    fontFamily: Typography.fonts.code, fontSize: 32, color: Brand.primary,
+    fontFamily: Typography.fonts.h3, fontSize: 32, color: Brand.primary,
     textAlign: 'center', letterSpacing: 12, width: '100%',
     backgroundColor: Surfaces.default, borderWidth: 1, borderColor: Surfaces.border,
     borderRadius: Radius.md, paddingHorizontal: 16, height: 64,

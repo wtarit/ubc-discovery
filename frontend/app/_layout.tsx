@@ -9,18 +9,11 @@ import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import {
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold
-} from '@expo-google-fonts/plus-jakarta-sans';
-import {
-  DMSans_400Regular,
-  DMSans_500Medium
-} from '@expo-google-fonts/dm-sans';
-import {
-  FiraCode_400Regular
-} from '@expo-google-fonts/fira-code';
+import { PlusJakartaSans_500Medium } from '@expo-google-fonts/plus-jakarta-sans/500Medium';
+import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
+import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
+import { DMSans_500Medium } from '@expo-google-fonts/dm-sans/500Medium';
 
 import { Surfaces, Brand } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -93,7 +86,6 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold,
     DMSans_400Regular,
     DMSans_500Medium,
-    FiraCode_400Regular,
   });
 
   useEffect(() => {
