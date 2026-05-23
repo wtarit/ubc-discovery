@@ -12,8 +12,8 @@ import { useNearbyStore } from '@/stores/useNearbyStore';
 import {
   User, Mail, Camera, CheckCircle, Shield, Map, Award, MessageCircle,
   Flag, Briefcase, Calendar, LogOut,
-} from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
+} from '@/components/icons';
+import type { LucideIcon } from '@/components/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';

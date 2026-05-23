@@ -1,11 +1,11 @@
 /**
  * UBC Explore Zones — Predefined campus areas to discover
  */
-import type { LucideIcon } from 'lucide-react-native';
+import type { LucideIcon } from '@/components/icons';
 import {
   Feather as FeatherIcon, Sun, Sunset, ShoppingBag, Book, BookOpen,
   Globe, Coffee, Activity, Map, Eye, Music,
-} from 'lucide-react-native';
+} from '@/components/icons';
 
 export interface ExploreZone {
   id: string;

@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Map, List, Calendar, ChevronRight, MapPin } from 'lucide-react-native';
+import { Map, List, Calendar, ChevronRight, MapPin } from '@/components/icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';

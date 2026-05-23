@@ -13,7 +13,7 @@ import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Button } from '@/components/ui/Button';
-import { X, User, MapPin, Flag, Users, CheckCircle } from 'lucide-react-native';
+import { X, User, MapPin, Flag, Users, CheckCircle } from '@/components/icons';
 
 export default function UserDetailScreen() {
   const { userId, fromConnection } = useLocalSearchParams<{ userId: string; fromConnection?: string }>();

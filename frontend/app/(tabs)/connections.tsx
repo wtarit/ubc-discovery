@@ -9,7 +9,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { useAuthStore } from '@/stores/useAuthStore';
 import { api, type ConnectionLocationResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
-import { User, MapPin, Users as UsersIcon } from 'lucide-react-native';
+import { User, MapPin, Users as UsersIcon } from '@/components/icons';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();

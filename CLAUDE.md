@@ -98,6 +98,7 @@ frontend/
 - `EXPO_PUBLIC_API_URL` env var points to the ALB (defaults to production)
 - Zone categories: nature, academic, social, culture, athletics (color-coded)
 - Gamification: zone unlock points, exploration progress tracking
+- Icons: import app icons from `components/icons.ts`, not directly from `lucide-react-native`. Metro does not tree-shake lucide's root barrel, so root imports pull the whole icon catalog. `components/icons.ts` deep-imports only used icon modules via relative `../node_modules/lucide-react-native/dist/esm/icons/*.mjs` paths to keep bundles small and avoid Metro package-exports warnings.
 
 ## Testing
 

@@ -3,8 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import {
   Map, Calendar, Feather as FeatherIcon, BookOpen, Users, Globe, Activity,
   Check, MapPin, CheckCircle, Info, Clock,
-} from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
+} from '@/components/icons';
+import type { LucideIcon } from '@/components/icons';
 import { router } from 'expo-router';
 
 import { Brand, Spacing } from '@/constants/Colors';

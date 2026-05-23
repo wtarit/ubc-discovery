@@ -2,7 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { router } from 'expo-router';
-import { Check, Calendar, Navigation, User } from 'lucide-react-native';
+import { Check, Calendar, Navigation, User } from '@/components/icons';
 
 import { Brand, Surfaces } from '@/constants/Colors';
 import { CATEGORY_COLORS, UBC_CENTER, type ExploreZone } from '@/constants/Zones';
