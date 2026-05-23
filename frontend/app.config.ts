@@ -39,7 +39,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-font",
     "expo-image",
-    "expo-web-browser",
     "@react-native-firebase/app",
     "@react-native-google-signin/google-signin",
     [
