@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Feather } from '@expo/vector-icons';
+import { ArrowLeft, Mail } from 'lucide-react-native';
 
 export default function OTPVerifyScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -66,12 +66,12 @@ export default function OTPVerifyScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-        <Feather name="arrow-left" size={20} color={Brand.primary} />
+        <ArrowLeft size={20} color={Brand.primary} />
       </TouchableOpacity>
 
       <View style={s.content}>
         <View style={s.iconWrap}>
-          <Feather name="mail" size={32} color={Brand.accent} />
+          <Mail size={32} color={Brand.accent} />
         </View>
         <Text style={s.title}>Enter verification code</Text>
         <Text style={s.subtitle}>

@@ -9,7 +9,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { useAuthStore } from '@/stores/useAuthStore';
 import { api, type ConnectionLocationResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { User, MapPin, Users as UsersIcon } from 'lucide-react-native';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -30,7 +30,7 @@ function ConnectionCard({ conn }: { conn: ConnectionLocationResponse }) {
       <Card style={{ marginBottom: Spacing.sm }}>
         <View style={cc.row}>
           <View style={cc.avatarWrap}>
-            <Ionicons name="person" size={24} color={Brand.secondary} />
+            <User size={24} color={Brand.secondary} />
             {conn.is_available_to_meet && <View style={cc.dot} />}
           </View>
           <View style={cc.info}>
@@ -44,7 +44,7 @@ function ConnectionCard({ conn }: { conn: ConnectionLocationResponse }) {
             <Text style={cc.time}>{timeAgo(conn.connected_at)}</Text>
             {conn.latitude != null && (
               <View style={cc.locBadge}>
-                <Feather name="map-pin" size={10} color={Brand.accent} />
+                <MapPin size={10} color={Brand.accent} />
               </View>
             )}
           </View>
@@ -124,7 +124,7 @@ export default function ConnectionsScreen() {
       >
         {connections.length === 0 && !isLoading && (
           <View style={s.empty}>
-            <Ionicons name="people-outline" size={48} color={Brand.secondary} />
+            <UsersIcon size={48} color={Brand.secondary} />
             <Text style={s.emptyTitle}>No connections yet</Text>
             <Text style={s.emptyDesc}>
               Meet is being redesigned around campus areas and shared interests.

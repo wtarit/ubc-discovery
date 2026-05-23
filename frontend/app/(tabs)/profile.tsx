@@ -9,7 +9,11 @@ import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useExploreStore } from '@/stores/useExploreStore';
 import { useNearbyStore } from '@/stores/useNearbyStore';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import {
+  User, Mail, Camera, CheckCircle, Shield, Map, Award, MessageCircle,
+  Flag, Briefcase, Calendar, LogOut,
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -25,24 +29,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function StatRow({
-  icon,
-  iconFamily,
+  Icon,
   label,
   value,
   color
 }: {
-  icon: string;
-  iconFamily: 'Feather' | 'Ionicons';
+  Icon: LucideIcon;
   label: string;
   value: string;
   color: string;
 }) {
-  const IconComponent = iconFamily === 'Feather' ? Feather : Ionicons;
-
   return (
     <View style={rs.row}>
-      <IconComponent
-        name={icon as any}
+      <Icon
         size={18}
         color={Brand.secondary}
         style={rs.icon}
@@ -97,7 +96,7 @@ export default function ProfileScreen() {
       <View style={[s.container, { paddingTop: insets.top + 32 }]}>
         <View style={s.signInWrap}>
           <View style={s.signInIcon}>
-            <Feather name="user" size={34} color={Brand.accent} />
+            <User size={34} color={Brand.accent} />
           </View>
           <Text style={s.signInTitle}>Sign in to personalize UBC discovery</Text>
           <Text style={s.signInBody}>
@@ -124,7 +123,7 @@ export default function ProfileScreen() {
             disabled={isLoading}
             activeOpacity={0.8}
           >
-            <Feather name="mail" size={18} color={Brand.primary} />
+            <Mail size={18} color={Brand.primary} />
             <Text style={s.emailButtonText}>Continue with Email</Text>
           </TouchableOpacity>
           {authError ? (
@@ -231,7 +230,7 @@ export default function ProfileScreen() {
             )}
 
             <View style={s.editBadge}>
-              <Feather name="camera" size={12} color="#fff" />
+              <Camera size={12} color="#fff" />
             </View>
           </TouchableOpacity>
 
@@ -247,12 +246,12 @@ export default function ProfileScreen() {
 
           {user?.ubc_verified ? (
             <View style={s.verifiedBadge}>
-              <Feather name="check-circle" size={14} color={Brand.accent} />
+              <CheckCircle size={14} color={Brand.accent} />
               <Text style={s.verifiedText}>Verified UBC Student</Text>
             </View>
           ) : (
             <TouchableOpacity style={s.verifyLink} onPress={() => router.push('/ubc-verify')}>
-              <Feather name="shield" size={14} color={Brand.accent} />
+              <Shield size={14} color={Brand.accent} />
               <Text style={s.verifyLinkText}>Verify your UBC email</Text>
             </TouchableOpacity>
           )}
@@ -281,24 +280,21 @@ export default function ProfileScreen() {
 
               <View style={s.progressInfo}>
                 <StatRow
-                  icon="map"
-                  iconFamily="Feather"
+                  Icon={Map}
                   label="Zones Explored"
                   value={`${progress.unlocked}/${progress.total}`}
                   color={Brand.primary}
                 />
 
                 <StatRow
-                  icon="award"
-                  iconFamily="Feather"
+                  Icon={Award}
                   label="Total Points"
                   value={`${totalPoints}`}
                   color={Brand.primary}
                 />
 
                 <StatRow
-                  icon="message-circle"
-                  iconFamily="Feather"
+                  Icon={MessageCircle}
                   label="Intros Sent"
                   value={`${introductions.length}`}
                   color={Brand.primary}
@@ -364,8 +360,7 @@ export default function ProfileScreen() {
           <Card>
             {profile.origin ? (
               <StatRow
-                icon="flag"
-                iconFamily="Feather"
+                Icon={Flag}
                 label="Origin"
                 value={profile.origin}
                 color={Brand.primary}
@@ -373,16 +368,14 @@ export default function ProfileScreen() {
             ) : null}
 
             <StatRow
-              icon="briefcase"
-              iconFamily="Feather"
+              Icon={Briefcase}
               label="Connections"
               value={`${user?.connections_count || 0}`}
               color={Brand.primary}
             />
 
             <StatRow
-              icon="calendar"
-              iconFamily="Feather"
+              Icon={Calendar}
               label="Joined"
               value={profile.joinedDate || 'N/A'}
               color={Brand.primary}
@@ -396,7 +389,7 @@ export default function ProfileScreen() {
           onPress={logout}
           activeOpacity={0.7}
         >
-          <Feather name="log-out" size={18} color="#DC3545" />
+          <LogOut size={18} color="#DC3545" />
           <Text style={s.logoutText}>Log Out</Text>
         </TouchableOpacity>
 

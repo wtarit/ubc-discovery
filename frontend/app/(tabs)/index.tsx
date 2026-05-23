@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Map, List, Calendar, ChevronRight, MapPin } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';
@@ -109,11 +109,10 @@ export default function DiscoverScreen() {
             style={[styles.modeButton, mode === value && styles.modeButtonActive]}
             activeOpacity={0.75}
           >
-            <Feather
-              name={value === 'map' ? 'map' : 'list'}
-              size={14}
-              color={mode === value ? Surfaces.background : Brand.primary}
-            />
+            {value === 'map'
+              ? <Map size={14} color={mode === value ? Surfaces.background : Brand.primary} />
+              : <List size={14} color={mode === value ? Surfaces.background : Brand.primary} />
+            }
             <Text style={[styles.modeText, mode === value && styles.modeTextActive]}>
               {value === 'map' ? 'Map' : 'List'}
             </Text>
@@ -187,7 +186,7 @@ function DiscoverList({
 
       {events.length === 0 && (
         <Card style={styles.emptyCard}>
-          <Feather name="calendar" size={22} color={Brand.secondary} />
+          <Calendar size={22} color={Brand.secondary} />
           <Text style={styles.emptyTitle}>No events match these filters</Text>
           <Text style={styles.emptyText}>Try a different date, source, or vibe.</Text>
         </Card>
@@ -202,7 +201,7 @@ function DiscoverList({
           <Card style={styles.eventCard}>
             <View style={styles.eventTop}>
               <View style={styles.eventIcon}>
-                <Feather name="calendar" size={18} color={Brand.accent} />
+                <Calendar size={18} color={Brand.accent} />
               </View>
               <View style={styles.eventCopy}>
                 <Text style={styles.eventTitle}>{event.title}</Text>
@@ -210,7 +209,7 @@ function DiscoverList({
                   {formatDate(event.event_date)} · {SOURCE_LABELS[event.source_label]}
                 </Text>
               </View>
-              <Feather name="chevron-right" size={18} color={Brand.secondary} />
+              <ChevronRight size={18} color={Brand.secondary} />
             </View>
             {event.description && (
               <Text style={styles.eventDescription} numberOfLines={2}>
@@ -225,7 +224,7 @@ function DiscoverList({
               ))}
               {event.location_name && (
                 <Text style={styles.location} numberOfLines={1}>
-                  <Feather name="map-pin" size={11} /> {event.location_name}
+                  <MapPin size={11} /> {event.location_name}
                 </Text>
               )}
             </View>

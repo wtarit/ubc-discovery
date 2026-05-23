@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Feather } from '@expo/vector-icons';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function EmailLoginScreen() {
   const insets = useSafeAreaInsets();
@@ -36,7 +36,7 @@ export default function EmailLoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color={Brand.primary} />
+          <ArrowLeft size={20} color={Brand.primary} />
         </TouchableOpacity>
 
         <Text style={s.title}>Continue with email</Text>

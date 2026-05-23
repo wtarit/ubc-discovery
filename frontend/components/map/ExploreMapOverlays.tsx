@@ -1,6 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import {
+  Map, Calendar, Feather as FeatherIcon, BookOpen, Users, Globe, Activity,
+  Check, MapPin, CheckCircle, Info, Clock,
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 import { Brand, Spacing } from '@/constants/Colors';
@@ -13,14 +17,14 @@ import type { EventResponse } from '@/services/api';
 
 type CategoryFilter = ExploreZone['category'] | 'all' | 'events';
 
-const CATEGORIES: { key: CategoryFilter; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'all', label: 'All', icon: 'map' },
-  { key: 'events', label: 'Events', icon: 'calendar' },
-  { key: 'nature', label: 'Nature', icon: 'feather' },
-  { key: 'academic', label: 'Academic', icon: 'book-open' },
-  { key: 'social', label: 'Social', icon: 'users' },
-  { key: 'culture', label: 'Culture', icon: 'globe' },
-  { key: 'athletics', label: 'Athletics', icon: 'activity' },
+const CATEGORIES: { key: CategoryFilter; label: string; Icon: LucideIcon }[] = [
+  { key: 'all', label: 'All', Icon: Map },
+  { key: 'events', label: 'Events', Icon: Calendar },
+  { key: 'nature', label: 'Nature', Icon: FeatherIcon },
+  { key: 'academic', label: 'Academic', Icon: BookOpen },
+  { key: 'social', label: 'Social', Icon: Users },
+  { key: 'culture', label: 'Culture', Icon: Globe },
+  { key: 'athletics', label: 'Athletics', Icon: Activity },
 ];
 
 // --- ExploreStats ---
@@ -69,8 +73,7 @@ export function CategoryFilters({ activeCategory, onCategoryChange, insetTop }: 
         {CATEGORIES.map(cat => (
           <TouchableOpacity key={cat.key} onPress={() => onCategoryChange(cat.key)} activeOpacity={0.7}>
             <View style={[s.pill, activeCategory === cat.key && s.pillA]}>
-              <Feather
-                name={cat.icon as any}
+              <cat.Icon
                 size={14}
                 color={activeCategory === cat.key ? '#fff' : Brand.primary}
               />
@@ -109,14 +112,14 @@ export function ZoneBottomCard({
         <View style={{ padding: Spacing.lg }}>
           <View style={s.cardH}>
             <View style={[s.cardIcon, { backgroundColor: `${catColor}15` }]}>
-              <Feather name={zone.icon as any} size={24} color={catColor} />
+              <zone.Icon size={24} color={catColor} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={s.cardNR}>
                 <Text style={s.cardN}>{zone.name}</Text>
                 {isUnlocked && (
                   <View style={s.expB}>
-                    <Feather name="check" size={12} color={Brand.success} />
+                    <Check size={12} color={Brand.success} />
                     <Text style={s.expBT}>Explored</Text>
                   </View>
                 )}
@@ -129,7 +132,7 @@ export function ZoneBottomCard({
             <View style={[s.catTag, { backgroundColor: `${catColor}15` }]}>
               <Text style={[s.catTT, { color: catColor }]}>{zone.category}</Text>
             </View>
-            <Text style={s.radT}><Feather name="map-pin" size={10} /> {zone.radiusMeters}m</Text>
+            <Text style={s.radT}><MapPin size={10} /> {zone.radiusMeters}m</Text>
             <View style={s.ptBadge}>
               <Text style={s.ptText}>+{zone.points} pts</Text>
             </View>
@@ -138,7 +141,7 @@ export function ZoneBottomCard({
           <View style={s.acts}>
             {justUnlocked === zone.id ? (
               <View style={s.unlockMsg}>
-                <Feather name="check-circle" size={24} color={Brand.success} />
+                <CheckCircle size={24} color={Brand.success} />
                 <Text style={s.unlockText}>Zone Unlocked! +{zone.points} pts</Text>
               </View>
             ) : isUnlocked ? (
@@ -168,7 +171,7 @@ export function ZoneBottomCard({
                     onPress={() => router.push({ pathname: '/zone-detail', params: { zoneId: zone.id } })}
                     activeOpacity={0.8}
                   >
-                    <Feather name="info" size={20} color={Brand.primary} />
+                    <Info size={20} color={Brand.primary} />
                   </TouchableOpacity>
                 </View>
                 {unlockError && (
@@ -198,7 +201,7 @@ export function EventBottomCard({ event, insetBottom }: EventBottomCardProps) {
         <View style={{ padding: Spacing.lg }}>
           <View style={s.cardH}>
             <View style={[s.cardIcon, { backgroundColor: '#FFF9F0' }]}>
-              <Feather name="calendar" size={24} color={Brand.accent} />
+              <Calendar size={24} color={Brand.accent} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={s.cardNR}>
@@ -219,7 +222,7 @@ export function EventBottomCard({ event, insetBottom }: EventBottomCardProps) {
             ))}
             {event.event_date && (
               <Text style={s.radT}>
-                <Feather name="clock" size={10} /> {new Date(event.event_date).toLocaleDateString()}
+                <Clock size={10} /> {new Date(event.event_date).toLocaleDateString()}
               </Text>
             )}
           </View>

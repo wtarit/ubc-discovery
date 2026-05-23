@@ -4,7 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Mail } from 'lucide-react-native';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -60,7 +60,7 @@ export function SignInSheet({ visible, onClose }: SignInSheetProps) {
           disabled={isLoading}
           activeOpacity={0.8}
         >
-          <Feather name="mail" size={18} color={Brand.primary} />
+          <Mail size={18} color={Brand.primary} />
           <Text style={s.emailText}>Continue with Email</Text>
         </TouchableOpacity>
       </View>

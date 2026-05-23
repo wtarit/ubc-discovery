@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Lock } from 'lucide-react-native';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { SignInSheet } from '@/components/ui/SignInSheet';
@@ -45,7 +45,7 @@ export function AuthPrompt({
   return (
     <>
       <View style={s.inlineWrap}>
-        <Feather name="lock" size={24} color={Brand.secondary} />
+        <Lock size={24} color={Brand.secondary} />
         <Text style={s.inlineMsg}>{message}</Text>
         <Button title="Sign In" variant="primary" size="md" onPress={openSheet} />
       </View>

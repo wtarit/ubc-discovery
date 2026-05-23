@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
-import { Feather } from '@expo/vector-icons';
+import { X, Shield } from 'lucide-react-native';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -95,7 +95,7 @@ export default function UBCVerifyScreen() {
       <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={s.header}>
           <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-            <Feather name="x" size={20} color={Brand.primary} />
+            <X size={20} color={Brand.primary} />
           </TouchableOpacity>
           <Text style={s.headerTitle}>Verify UBC Email</Text>
           <View style={{ width: 40 }} />
@@ -103,7 +103,7 @@ export default function UBCVerifyScreen() {
 
         <View style={s.content}>
           <View style={s.iconWrap}>
-            <Feather name="shield" size={32} color={Brand.accent} />
+            <Shield size={32} color={Brand.accent} />
           </View>
 
           {step === 'email' ? (

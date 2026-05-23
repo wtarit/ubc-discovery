@@ -4,18 +4,19 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Map, Users, Bookmark, User, LogIn, MessageSquare } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { Brand, Surfaces, Typography, Spacing } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+function TabBarIcon({ Icon, color, focused }: {
+  Icon: LucideIcon;
   color: string;
   focused: boolean;
 }) {
   return (
-    <View style={[styles.iconWrap, props.focused && styles.iconWrapActive]}>
-      <FontAwesome size={22} {...props} />
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Icon size={22} color={color} />
     </View>
   );
 }
@@ -39,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: 'Discover',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="map" color={color} focused={focused} />
+            <TabBarIcon Icon={Map} color={color} focused={focused} />
           ),
         }}
       />
@@ -48,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Meet',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="users" color={color} focused={focused} />
+            <TabBarIcon Icon={Users} color={color} focused={focused} />
           ),
         }}
       />
@@ -57,7 +58,7 @@ export default function TabLayout() {
         options={{
           title: 'Saved',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="bookmark" color={color} focused={focused} />
+            <TabBarIcon Icon={Bookmark} color={color} focused={focused} />
           ),
         }}
       />
@@ -66,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: accessToken ? 'Profile' : 'Sign In',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={accessToken ? 'user' : 'sign-in'} color={color} focused={focused} />
+            <TabBarIcon Icon={accessToken ? User : LogIn} color={color} focused={focused} />
           ),
         }}
       />
@@ -76,7 +77,7 @@ export default function TabLayout() {
           title: 'Connections',
           href: null,
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="comments" color={color} focused={focused} />
+            <TabBarIcon Icon={MessageSquare} color={color} focused={focused} />
           ),
         }}
       />
