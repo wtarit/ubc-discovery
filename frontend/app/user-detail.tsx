@@ -13,7 +13,7 @@ import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Button } from '@/components/ui/Button';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { X, User, MapPin, Flag, Users, CheckCircle } from 'lucide-react-native';
 
 export default function UserDetailScreen() {
   const { userId, fromConnection } = useLocalSearchParams<{ userId: string; fromConnection?: string }>();
@@ -89,13 +89,13 @@ export default function UserDetailScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={s.hero}>
           <View style={s.avatarWrap}>
-            <Ionicons name="person" size={48} color={Brand.secondary} />
+            <User size={48} color={Brand.secondary} />
           </View>
           <Text style={s.name}>{user.displayName}</Text>
           <Text style={s.prog}>{user.program} · Year {user.year}</Text>
@@ -115,20 +115,20 @@ export default function UserDetailScreen() {
         <Card style={s.card}>
           {user.distanceMeters > 0 && (
             <View style={s.detRow}>
-              <Feather name="map-pin" size={16} color={Brand.secondary} style={s.detIcon} />
+              <MapPin size={16} color={Brand.secondary} style={s.detIcon} />
               <Text style={s.detLabel}>Distance</Text>
               <Text style={[s.detVal, { color: Brand.primary }]}>{user.distanceMeters}m away</Text>
             </View>
           )}
           {user.origin ? (
             <View style={s.detRow}>
-              <Feather name="flag" size={16} color={Brand.secondary} style={s.detIcon} />
+              <Flag size={16} color={Brand.secondary} style={s.detIcon} />
               <Text style={s.detLabel}>From</Text>
               <Text style={s.detVal}>{user.origin}</Text>
             </View>
           ) : null}
           <View style={[s.detRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Feather name="users" size={16} color={Brand.secondary} style={s.detIcon} />
+            <Users size={16} color={Brand.secondary} style={s.detIcon} />
             <Text style={s.detLabel}>Connections</Text>
             <Text style={[s.detVal, { color: Brand.primary }]}>{user.connectionsCount}</Text>
           </View>
@@ -149,7 +149,7 @@ export default function UserDetailScreen() {
           {fromConnection === '1' || accepted ? (
             <Card style={{ backgroundColor: '#F0FDF4', borderColor: Brand.success }}>
               <View style={s.sentRow}>
-                <Feather name="check-circle" size={18} color={Brand.success} />
+                <CheckCircle size={18} color={Brand.success} />
                 <Text style={s.sentLabel}>Connected!</Text>
               </View>
             </Card>
@@ -163,7 +163,7 @@ export default function UserDetailScreen() {
           ) : existingIntro ? (
             <Card style={{ backgroundColor: '#F0FDF4', borderColor: Brand.success }}>
               <View style={s.sentRow}>
-                <Feather name="check-circle" size={18} color={Brand.success} />
+                <CheckCircle size={18} color={Brand.success} />
                 <Text style={s.sentLabel}>Connection request sent</Text>
               </View>
             </Card>

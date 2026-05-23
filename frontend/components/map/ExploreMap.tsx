@@ -4,7 +4,7 @@ import { View, TouchableOpacity, Image } from 'react-native';
 import { Map, Marker, Source, Layer } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import { router } from 'expo-router';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Check, Calendar, Navigation, User } from 'lucide-react-native';
 
 import { Brand } from '@/constants/Colors';
 import { CATEGORY_COLORS, UBC_CENTER, type ExploreZone } from '@/constants/Zones';
@@ -158,14 +158,10 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
             >
               <TouchableOpacity activeOpacity={0.85} onPress={() => handleMarkerPress(zone)}>
                 <View style={[s.marker, isSelected && s.markerSel, unlocked && s.markerDone]}>
-                  <Feather
-                    name={zone.icon as any}
-                    size={20}
-                    color={isSelected ? Brand.accent : unlocked ? Brand.success : Brand.primary}
-                  />
+                  <zone.Icon size={20} color={isSelected ? Brand.accent : unlocked ? Brand.success : Brand.primary} />
                   {unlocked && (
                     <View style={s.chk}>
-                      <Feather name="check" size={10} color="#fff" />
+                      <Check size={10} color="#fff" />
                     </View>
                   )}
                 </View>
@@ -189,7 +185,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
               {conn.profile_picture_url ? (
                 <Image source={{ uri: conn.profile_picture_url }} style={s.connAvatar} />
               ) : (
-                <Ionicons name="person" size={18} color={Brand.accent} />
+                <User size={18} color={Brand.accent} />
               )}
               {conn.is_available_to_meet && <View style={s.connDot} />}
             </View>
@@ -216,8 +212,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
                   { borderColor: Brand.accent, backgroundColor: '#FFF9F0' },
                   isSelected && s.markerSel,
                 ]}>
-                  <Feather
-                    name="calendar"
+                  <Calendar
                     size={20}
                     color={isSelected ? Brand.accent : Brand.primary}
                   />
@@ -242,7 +237,7 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
         }}
         activeOpacity={0.8}
       >
-        <Feather name="navigation" size={20} color={Brand.primary} />
+        <Navigation size={20} color={Brand.primary} />
       </TouchableOpacity>
 
       {selectedZone && (

@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AuthPrompt } from '@/components/ui/AuthPrompt';
-import { Feather } from '@expo/vector-icons';
+import { X, MapPin, Award, Crosshair, CheckCircle, Check } from 'lucide-react-native';
 
 export default function ZoneDetailScreen() {
   const { zoneId } = useLocalSearchParams<{ zoneId: string }>();
@@ -44,13 +44,13 @@ export default function ZoneDetailScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <TouchableOpacity style={s.closeBtn} onPress={() => expoRouter.back()}>
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={[s.hero, { backgroundColor: Surfaces.background }]}>
           <View style={[s.iconWrap, { backgroundColor: `${catColor}15`, borderColor: `${catColor}30` }]}>
-            <Feather name={zone.icon as any} size={48} color={catColor} />
+            <zone.Icon size={48} color={catColor} />
           </View>
           <Text style={s.name}>{zone.name}</Text>
           <View style={[s.catTag, { backgroundColor: `${catColor}10`, borderColor: `${catColor}30` }]}>
@@ -70,17 +70,17 @@ export default function ZoneDetailScreen() {
 
         <Card style={s.card}>
           <View style={s.detailRow}>
-            <Feather name="map-pin" size={16} color={Brand.secondary} style={s.detailIcon} />
+            <MapPin size={16} color={Brand.secondary} style={s.detailIcon} />
             <Text style={s.detailLabel}>Radius</Text>
             <Text style={s.detailVal}>{zone.radiusMeters}m</Text>
           </View>
           <View style={s.detailRow}>
-            <Feather name="award" size={16} color={Brand.secondary} style={s.detailIcon} />
+            <Award size={16} color={Brand.secondary} style={s.detailIcon} />
             <Text style={s.detailLabel}>Points</Text>
             <Text style={[s.detailVal, { color: Brand.primary }]}>+{zone.points}</Text>
           </View>
           <View style={[s.detailRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Feather name="crosshair" size={16} color={Brand.secondary} style={s.detailIcon} />
+            <Crosshair size={16} color={Brand.secondary} style={s.detailIcon} />
             <Text style={s.detailLabel}>Coordinates</Text>
             <Text style={s.detailVal}>{zone.latitude.toFixed(4)}, {zone.longitude.toFixed(4)}</Text>
           </View>
@@ -89,13 +89,13 @@ export default function ZoneDetailScreen() {
         <View style={s.actionArea}>
           {justUnlocked ? (
             <View style={s.unlockedMsg}>
-              <Feather name="check-circle" size={48} color={Brand.success} />
+              <CheckCircle size={48} color={Brand.success} />
               <Text style={s.unlockedTitle}>Zone Unlocked</Text>
               <Text style={s.unlockedSub}>+{zone.points} points earned</Text>
             </View>
           ) : unlocked ? (
             <Card style={s.exploredCard}>
-              <Feather name="check" size={20} color={Brand.success} style={{ marginBottom: 8 }} />
+              <Check size={20} color={Brand.success} style={{ marginBottom: 8 }} />
               <Text style={s.exploredTxt}>You've explored this zone</Text>
             </Card>
           ) : !accessToken ? (

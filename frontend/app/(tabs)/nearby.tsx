@@ -12,7 +12,7 @@ import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { SignInSheet } from '@/components/ui/SignInSheet';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { UserPlus, X, Check, User, CheckCircle, Users, Clock, LogIn, Eye, MapPin, Bell } from 'lucide-react-native';
 
 const MEET_ENABLED = false;
 
@@ -43,7 +43,7 @@ function PendingRequestCard({ conn, onAccept, onDecline }: { conn: PendingConnec
     <Card style={{ marginBottom: Spacing.sm }}>
       <View style={pc.row}>
         <View style={pc.avatarWrap}>
-          <Ionicons name="person-add" size={20} color={Brand.accent} />
+          <UserPlus size={20} color={Brand.accent} />
         </View>
         <View style={pc.info}>
           <Text style={pc.name}>{conn.requester.fullName}</Text>
@@ -52,11 +52,11 @@ function PendingRequestCard({ conn, onAccept, onDecline }: { conn: PendingConnec
       </View>
       <View style={pc.actions}>
         <TouchableOpacity style={pc.declineBtn} onPress={handleDecline} disabled={acting}>
-          <Feather name="x" size={16} color={Brand.secondary} />
+          <X size={16} color={Brand.secondary} />
           <Text style={pc.declineT}>Decline</Text>
         </TouchableOpacity>
         <TouchableOpacity style={pc.acceptBtn} onPress={handleAccept} disabled={acting}>
-          <Feather name="check" size={16} color={Surfaces.background} />
+          <Check size={16} color={Surfaces.background} />
           <Text style={pc.acceptT}>{acting ? '...' : 'Accept'}</Text>
         </TouchableOpacity>
       </View>
@@ -102,14 +102,14 @@ function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) 
         <View style={cc.row}>
           <View>
             <View style={cc.avatarWrap}>
-              <Ionicons name="person" size={32} color={Brand.secondary} />
+              <User size={32} color={Brand.secondary} />
             </View>
             {user.isAvailableToMeet && <View style={cc.dot} />}
           </View>
           <View style={cc.info}>
             <View style={cc.nameRow}>
               <Text style={cc.name}>{user.displayName}</Text>
-              {user.ubcVerified && <Feather name="check-circle" size={14} color={Brand.accent} />}
+              {user.ubcVerified && <CheckCircle size={14} color={Brand.accent} />}
               <Text style={cc.dist}>{fmtDist(user.distanceMeters)}</Text>
             </View>
             <Text style={cc.prog}>{user.program} · Year {user.year}</Text>
@@ -219,7 +219,7 @@ export default function NearbyScreen() {
       <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={s.gateWrap}>
           <View style={s.gateIcon}>
-            <Feather name="users" size={36} color={Brand.accent} />
+            <Users size={36} color={Brand.accent} />
           </View>
           <Text style={s.gateTitle}>Meet is coming soon</Text>
           <Text style={s.gateBody}>
@@ -230,7 +230,7 @@ export default function NearbyScreen() {
             onPress={() => accessToken ? undefined : setShowSignIn(true)}
             activeOpacity={0.8}
           >
-            <Feather name={accessToken ? 'clock' : 'log-in'} size={18} color={Surfaces.background} />
+            {accessToken ? <Clock size={18} color={Surfaces.background} /> : <LogIn size={18} color={Surfaces.background} />}
             <Text style={s.gateButtonText}>{accessToken ? 'Request access soon' : 'Sign in to request access'}</Text>
           </TouchableOpacity>
         </View>
@@ -245,7 +245,7 @@ export default function NearbyScreen() {
         <Text style={s.title}>Meet</Text>
         <Text style={s.sub}>{isLoading ? 'Scanning...' : `${sorted.length} people around you`}</Text>
         <View style={s.toggleRow}>
-          <Feather name="eye" size={16} color={isAvailable ? Brand.accent : Brand.secondary} />
+          <Eye size={16} color={isAvailable ? Brand.accent : Brand.secondary} />
           <Text style={[s.toggleLabel, isAvailable && s.toggleLabelActive]}>Visible to others</Text>
           <Switch
             value={isAvailable}
@@ -267,7 +267,7 @@ export default function NearbyScreen() {
       </View>
       {locationPermissionDenied ? (
         <View style={s.permMsg}>
-          <Ionicons name="location-outline" size={48} color={Brand.secondary} />
+          <MapPin size={48} color={Brand.secondary} />
           <Text style={s.permTitle}>Location Access Needed</Text>
           <Text style={s.permDesc}>
             Enable location permissions in your device settings to discover people nearby.
@@ -287,7 +287,7 @@ export default function NearbyScreen() {
           {pendingConnections.length > 0 && (
             <View style={s.pendingSection}>
               <View style={s.pendingHeader}>
-                <Feather name="bell" size={16} color={Brand.accent} />
+                <Bell size={16} color={Brand.accent} />
                 <Text style={s.pendingTitle}>Connection Requests ({pendingConnections.length})</Text>
               </View>
               {pendingConnections.map(conn => (

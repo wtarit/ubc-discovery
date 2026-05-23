@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { SignInSheet } from '@/components/ui/SignInSheet';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Feather } from '@expo/vector-icons';
+import { Bookmark } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ export default function SavedScreen() {
     return (
       <View style={[s.container, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}>
         <View style={s.emptyIcon}>
-          <Feather name="bookmark" size={36} color={Brand.accent} />
+          <Bookmark size={36} color={Brand.accent} />
         </View>
         <Text style={s.title}>Save events for later</Text>
         <Text style={s.body}>
@@ -42,7 +42,7 @@ export default function SavedScreen() {
     >
       <Text style={s.title}>Saved</Text>
       <View style={s.placeholder}>
-        <Feather name="bookmark" size={28} color={Brand.secondary} />
+        <Bookmark size={28} color={Brand.secondary} />
         <Text style={s.placeholderTitle}>No saved events yet</Text>
         <Text style={s.body}>
           Saved Events will appear here once event saving is wired up.

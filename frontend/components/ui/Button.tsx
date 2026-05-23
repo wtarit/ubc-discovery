@@ -4,14 +4,13 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, type ViewStyle, ActivityIndicator } from 'react-native';
 import { Brand, Surfaces, Typography, Radius } from '@/constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -68,7 +67,6 @@ export function Button({
         <ActivityIndicator color={getIconColor()} size="small" />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={s.fontSize + 2} color={getIconColor()} style={{ marginRight: 6 }} />}
           <Text
             style={[
               styles.text,

@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Map } from 'lucide-react-native';
 import { Surfaces, Typography, Brand, Spacing } from '@/constants/Colors';
 
 export default function NotFoundScreen() {
@@ -8,7 +8,7 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <View style={s.container}>
-        <Feather name="map" size={48} color={Brand.secondary} style={s.icon} />
+        <Map size={48} color={Brand.secondary} style={s.icon} />
         <Text style={s.title}>Page not found</Text>
         <Link href="/" style={s.link}>
           <Text style={s.linkText}>Go back to exploring</Text>

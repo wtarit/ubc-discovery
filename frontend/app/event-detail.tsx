@@ -11,7 +11,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { useExploreStore } from '@/stores/useExploreStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Feather } from '@expo/vector-icons';
+import { X, Calendar, MapPin, Link2, Flag } from 'lucide-react-native';
 import { api, type EventResponse } from '@/services/api';
 
 const PROJECT_INSTAGRAM_URL = process.env.EXPO_PUBLIC_INSTAGRAM_URL || 'https://www.instagram.com/';
@@ -88,7 +88,7 @@ export default function EventDetailScreen() {
   if (isLoading) return (
     <View style={[s.container, { paddingTop: insets.top + 20 }]}>
       <TouchableOpacity style={s.closeBtn} onPress={goBack}>
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
       <Text style={s.err}>Loading event...</Text>
     </View>
@@ -97,7 +97,7 @@ export default function EventDetailScreen() {
   if (!event || error) return (
     <View style={[s.container, { paddingTop: insets.top + 20 }]}>
       <TouchableOpacity style={s.closeBtn} onPress={goBack}>
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
       <Text style={s.err}>{error || 'Event not found'}</Text>
     </View>
@@ -109,7 +109,7 @@ export default function EventDetailScreen() {
         style={[s.closeBtn, { top: Platform.OS === 'ios' ? 20 : 56 }]} 
         onPress={goBack}
       >
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
@@ -118,7 +118,7 @@ export default function EventDetailScreen() {
             <Image source={{ uri: event.image_url }} style={s.heroImg} />
           ) : (
             <View style={[s.iconWrap, { backgroundColor: `${Brand.accent}15`, borderColor: `${Brand.accent}30` }]}>
-              <Feather name="calendar" size={48} color={Brand.accent} />
+              <Calendar size={48} color={Brand.accent} />
             </View>
           )}
           <Text style={s.name}>{event.title}</Text>
@@ -154,21 +154,21 @@ export default function EventDetailScreen() {
         <Card style={s.card}>
           {event.event_date && (
             <View style={s.detailRow}>
-              <Feather name="calendar" size={16} color={Brand.secondary} style={s.detailIcon} />
+              <Calendar size={16} color={Brand.secondary} style={s.detailIcon} />
               <Text style={s.detailLabel}>Date</Text>
               <Text style={s.detailVal}>{new Date(event.event_date).toLocaleDateString()}</Text>
             </View>
           )}
           {event.location_name && (
             <View style={s.detailRow}>
-              <Feather name="map-pin" size={16} color={Brand.secondary} style={s.detailIcon} />
+              <MapPin size={16} color={Brand.secondary} style={s.detailIcon} />
               <Text style={s.detailLabel}>Location</Text>
               <Text style={s.detailVal}>{event.location_name}</Text>
             </View>
           )}
           {event.source_url && (
             <View style={[s.detailRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-              <Feather name="link" size={16} color={Brand.secondary} style={s.detailIcon} />
+              <Link2 size={16} color={Brand.secondary} style={s.detailIcon} />
               <Text style={s.detailLabel}>Source</Text>
               <Text style={s.detailVal} numberOfLines={1}>{SOURCE_LABELS[event.source_label] ?? event.source_url}</Text>
             </View>
@@ -205,7 +205,7 @@ export default function EventDetailScreen() {
             style={s.actionButton}
           />
           <TouchableOpacity style={s.reportLink} onPress={() => Linking.openURL(PROJECT_INSTAGRAM_URL)}>
-            <Feather name="flag" size={14} color={Brand.secondary} />
+            <Flag size={14} color={Brand.secondary} />
             <Text style={s.reportText}>Report issue</Text>
           </TouchableOpacity>
         </View>

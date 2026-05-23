@@ -8,7 +8,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { api, type ConnectionMessageResponse, type ConnectionResponse, type ConnectionLocationPairResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Feather } from '@expo/vector-icons';
+import { X } from 'lucide-react-native';
 
 function peerForConnection(connection: ConnectionResponse, myUserId?: string) {
   if (!myUserId) return connection.receiver;
@@ -78,7 +78,7 @@ export default function ConnectionDetailScreen() {
     return (
       <View style={[s.container, { paddingTop: insets.top }]}>
         <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-          <Feather name="x" size={20} color={Brand.primary} />
+          <X size={20} color={Brand.primary} />
         </TouchableOpacity>
         <View style={s.emptyWrap}><Text style={s.empty}>Connection not found.</Text></View>
       </View>
@@ -88,7 +88,7 @@ export default function ConnectionDetailScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-        <Feather name="x" size={20} color={Brand.primary} />
+        <X size={20} color={Brand.primary} />
       </TouchableOpacity>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <Text style={s.title}>{peer.full_name}</Text>

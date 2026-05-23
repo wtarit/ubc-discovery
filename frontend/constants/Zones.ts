@@ -1,6 +1,11 @@
 /**
  * UBC Explore Zones — Predefined campus areas to discover
  */
+import type { LucideIcon } from 'lucide-react-native';
+import {
+  Feather as FeatherIcon, Sun, Sunset, ShoppingBag, Book, BookOpen,
+  Globe, Coffee, Activity, Map, Eye, Music,
+} from 'lucide-react-native';
 
 export interface ExploreZone {
   id: string;
@@ -11,7 +16,7 @@ export interface ExploreZone {
   radiusMeters: number;
   points: number;
   category: 'nature' | 'academic' | 'social' | 'culture' | 'athletics';
-  icon: string; // Changed from emoji to Feather icon string
+  Icon: LucideIcon;
   funFact: string;
 }
 
@@ -25,7 +30,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 80,
     points: 50,
     category: 'nature',
-    icon: 'feather',
+    Icon: FeatherIcon,
     funFact: 'Named after Dr. Inazo Nitobe, a Japanese educator who promoted cross-cultural understanding.',
   },
   {
@@ -37,7 +42,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 40,
     category: 'nature',
-    icon: 'sun',
+    Icon: Sun,
     funFact: 'The garden has over 250 varieties of roses and was established in 1969.',
   },
   {
@@ -49,7 +54,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 120,
     points: 60,
     category: 'nature',
-    icon: 'sunset',
+    Icon: Sunset,
     funFact: 'Wreck Beach is one of the longest clothing-optional beaches in North America.',
   },
   {
@@ -61,7 +66,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 50,
     points: 30,
     category: 'social',
-    icon: 'shopping-bag',
+    Icon: ShoppingBag,
     funFact: 'The UBC Bookstore was established in 1926 and is one of the largest in Canada.',
   },
   {
@@ -73,7 +78,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 35,
     category: 'academic',
-    icon: 'book',
+    Icon: Book,
     funFact: 'Designed by Arthur Erickson, one of Canada\'s most celebrated architects.',
   },
   {
@@ -85,7 +90,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 35,
     category: 'academic',
-    icon: 'book-open',
+    Icon: BookOpen,
     funFact: 'IKB incorporates the 1925 Main Library facade into its modern design.',
   },
   {
@@ -97,7 +102,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 100,
     points: 60,
     category: 'culture',
-    icon: 'globe',
+    Icon: Globe,
     funFact: 'Houses over 50,000 ethnographic objects from cultures around the world.',
   },
   {
@@ -109,7 +114,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 70,
     points: 40,
     category: 'social',
-    icon: 'coffee',
+    Icon: Coffee,
     funFact: 'The Nest cost $112 million and opened in 2015 with a 6-story timber structure.',
   },
   {
@@ -121,7 +126,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 80,
     points: 45,
     category: 'athletics',
-    icon: 'activity',
+    Icon: Activity,
     funFact: 'The pool was used as a training venue for the 2010 Winter Olympics.',
   },
   {
@@ -133,7 +138,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 150,
     points: 70,
     category: 'nature',
-    icon: 'map',
+    Icon: Map,
     funFact: 'Home to over 150 bird species and some trees over 500 years old.',
   },
   {
@@ -145,7 +150,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 60,
     points: 45,
     category: 'culture',
-    icon: 'eye',
+    Icon: Eye,
     funFact: 'The blue whale skeleton was found on a beach in PEI in 1987.',
   },
   {
@@ -157,7 +162,7 @@ export const EXPLORE_ZONES: ExploreZone[] = [
     radiusMeters: 70,
     points: 45,
     category: 'culture',
-    icon: 'music',
+    Icon: Music,
     funFact: 'The cylindrical concert hall was designed to mimic the inside of a cello.',
   },
 ];

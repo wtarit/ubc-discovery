@@ -9,7 +9,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { api } from '@/services/api';
-import { Feather } from '@expo/vector-icons';
+import { ArrowLeft } from 'lucide-react-native';
 
 function getNameFromIdToken(idToken: string | null): string {
   if (!idToken) return '';
@@ -112,7 +112,7 @@ export default function OnboardingScreen() {
         <View style={s.progressWrap}>
           {step > 0 && (
             <TouchableOpacity onPress={handleBack} style={s.backBtn}>
-              <Feather name="arrow-left" size={20} color={Brand.primary} />
+              <ArrowLeft size={20} color={Brand.primary} />
             </TouchableOpacity>
           )}
           <View style={s.progressBar}>

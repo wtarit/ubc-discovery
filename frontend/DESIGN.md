@@ -6,7 +6,7 @@ UBC-Navigate is a clean, minimal, and highly professional social application. Ta
 
 The aesthetic is "Calm Blue": stark whites, deep blacks, subtle grays for borders, and a vibrant yet reassuring blue for primary actions. 
 
-We strictly avoid "AI-generated" aesthetics (no excessive gradients, neon colors, or emoji-heavy UI). We use crisp `@expo/vector-icons` instead of native text emojis to ensure a consistent, professional look across all devices.
+We strictly avoid "AI-generated" aesthetics (no excessive gradients, neon colors, or emoji-heavy UI). We use crisp SVG icons from `lucide-react-native` instead of native text emojis to ensure a consistent, professional look across all devices.
 
 ---
 
@@ -64,4 +64,4 @@ Fonts use the standard Google Fonts provided, but with a stricter monochrome hie
 ## Iconography & Emojis
 
 **Rule:** Do not use native emojis.
-We use vector icons (specifically `Ionicons` or `Feather` from `@expo/vector-icons`). Icons should generally match the text color they accompany (e.g., `#111827` for headers, `#6B7280` for metadata) or `#007AFF` for interactive elements.
+We use SVG icons from `lucide-react-native` — each icon is imported individually as a component (e.g., `import { MapPin } from 'lucide-react-native'`). Icons should generally match the text color they accompany (e.g., `#111827` for headers, `#6B7280` for metadata) or `#007AFF` for interactive elements.
