@@ -1,6 +1,6 @@
-# UBC Newcomers
+# UBC Discovery
 
-Community app for UBC newcomers to find events, meet people, and build connections.
+Campus discovery app for the UBC community to find events, explore places, and connect with people.
 
 ## Architecture
 
@@ -81,7 +81,8 @@ frontend/
 ### Backend
 - All Pydantic models use `model_config = {"from_attributes": True}` for ORM compatibility
 - AWS clients use `@lru_cache` lazy init (not module-level) to avoid import-time credential issues
-- Email validation: only `*.ubc.ca` emails allowed; `test_allowed_emails` in config for test accounts
+- Auth: public discovery (events, places, zones) requires no login; social features are member-only
+- UBC email not required for membership — optional verification for trust badge (code still enforces `*.ubc.ca`, needs updating)
 - Profile pictures: S3 presigned URLs (upload + download), key stored in DB
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
 - Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
@@ -105,21 +106,10 @@ cd backend
 uv run pytest tests/ -v
 ```
 
-Test accounts are allowlisted via `test_allowed_emails` in config.
 
 ## Deployment
 
-Docker image pushed to ECR, runs on ECS Fargate behind ALB. See `.env` for ECR URI, ALB hostname, and ECS cluster/service names.
-
-```bash
-# Build and push (substitute values from .env)
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com
-docker build -t ubc-newcomers-backend backend/
-docker tag ubc-newcomers-backend:latest $AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/ubc-newcomers-backend:latest
-docker push $AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/ubc-newcomers-backend:latest
-# Force new deployment
-aws ecs update-service --cluster ubc-newcomers-cluster --service ubc-newcomers-backend --force-new-deployment
-```
+CI/CD pipeline (TBD).
 
 ## DB Credentials
 

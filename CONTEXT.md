@@ -1,6 +1,6 @@
-# UBC Newcomers
+# UBC Discovery
 
-UBC Newcomers is the current project name for an independent, student-built event and campus discovery product for UBC. The public product may be renamed because its discovery value is broader than newcomers alone, with social connection as a signed-in member layer rather than the primary public promise.
+UBC Discovery is the public product name for an independent, student-built event and campus discovery product for UBC. The name reflects the product's core value of helping anyone in the UBC community discover what is happening on campus, with social connection as a signed-in member layer rather than the primary public promise.
 
 ## Language
 
@@ -121,7 +121,7 @@ A generated social media-friendly summary of a Member's Exploration Progress or 
 _Avoid_: Public activity feed, location history
 
 **Event Listing**:
-A public, shareable pointer to an external campus or club event, usually with an organizer name, source link, location text, and optional map coordinate. Event Listing coordinates may be approximate when precise venue information is unavailable; location text is the human-facing source of truth. Event Listing sharing starts with canonical public URL sharing, and each Event Listing detail page should open directly on web without requiring the app or prior in-app state; interactions are outbound-only in the current product model, and an Event Listing is not an RSVP, attendance record, ticket, or organizer-managed registration inside UBC Newcomers.
+A public, shareable pointer to an external campus or club event, usually with an organizer name, source link, location text, and optional map coordinate. Event Listing coordinates may be approximate when precise venue information is unavailable; location text is the human-facing source of truth. Event Listing sharing starts with canonical public URL sharing, and each Event Listing detail page should open directly on web without requiring the app or prior in-app state; interactions are outbound-only in the current product model, and an Event Listing is not an RSVP, attendance record, ticket, or organizer-managed registration inside UBC Discovery.
 _Avoid_: RSVP, attendance, booking
 
 **Event Source**:
@@ -229,7 +229,7 @@ Dev: "Should Visitors sign in before browsing the map?"
 Domain expert: "No. Sign-up should be prompted only when a Visitor reaches for a member-only capability."
 
 Dev: "Can a Member RSVP to an Event Listing?"
-Domain expert: "No. UBC Newcomers only points people to the external club or organizer page."
+Domain expert: "No. UBC Discovery only points people to the external club or organizer page."
 
 Dev: "Can Members submit Event Listings inside the app?"
 Domain expert: "No, not in the current product model. Listings can come from external Event Sources or manually reviewed submissions received outside the app."
@@ -244,7 +244,7 @@ Dev: "How should an unofficial public event around campus be labeled?"
 Domain expert: "Use Campus Community when it is relevant and manually reviewed, without implying UBC or AMS endorsement."
 
 Dev: "Are Event Source labels verification badges?"
-Domain expert: "No. They explain source type only; UBC Newcomers does not verify or guarantee events."
+Domain expert: "No. They explain source type only; UBC Discovery does not verify or guarantee events."
 
 Dev: "Do all Event Listings need a disclaimer?"
 Domain expert: "No. UBC Official and AMS Club listings can rely on source labels and outbound links; Campus Community listings need lightweight clarification."
