@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { ArrowLeft, Mail } from 'lucide-react-native';
+import { ArrowLeft, Mail } from '@/components/icons';
 
 export default function OTPVerifyScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();

@@ -8,7 +8,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { api, type ConnectionMessageResponse, type ConnectionResponse, type ConnectionLocationPairResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { X } from 'lucide-react-native';
+import { X } from '@/components/icons';
 
 function peerForConnection(connection: ConnectionResponse, myUserId?: string) {
   if (!myUserId) return connection.receiver;

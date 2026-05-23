@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { SignInSheet } from '@/components/ui/SignInSheet';
 import { Brand, Radius, Spacing, Surfaces, Typography } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Bookmark } from 'lucide-react-native';
+import { Bookmark } from '@/components/icons';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AuthPrompt } from '@/components/ui/AuthPrompt';
-import { X, MapPin, Award, Crosshair, CheckCircle, Check } from 'lucide-react-native';
+import { X, MapPin, Award, Crosshair, CheckCircle, Check } from '@/components/icons';
 
 export default function ZoneDetailScreen() {
   const { zoneId } = useLocalSearchParams<{ zoneId: string }>();

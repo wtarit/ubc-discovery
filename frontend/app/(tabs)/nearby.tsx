@@ -12,7 +12,7 @@ import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { SignInSheet } from '@/components/ui/SignInSheet';
-import { UserPlus, X, Check, User, CheckCircle, Users, Clock, LogIn, Eye, MapPin, Bell } from 'lucide-react-native';
+import { UserPlus, X, Check, User, CheckCircle, Users, Clock, LogIn, Eye, MapPin, Bell } from '@/components/icons';
 
 const MEET_ENABLED = false;
 

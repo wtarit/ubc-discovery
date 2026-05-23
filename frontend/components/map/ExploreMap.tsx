@@ -4,7 +4,7 @@ import { View, TouchableOpacity, Image } from 'react-native';
 import { Map, Marker, Source, Layer } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import { router } from 'expo-router';
-import { Check, Calendar, Navigation, User } from 'lucide-react-native';
+import { Check, Calendar, Navigation, User } from '@/components/icons';
 
 import { Brand } from '@/constants/Colors';
 import { CATEGORY_COLORS, UBC_CENTER, type ExploreZone } from '@/constants/Zones';

@@ -4,7 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Mail } from 'lucide-react-native';
+import { Mail } from '@/components/icons';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
 

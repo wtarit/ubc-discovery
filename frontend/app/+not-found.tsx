@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
-import { Map } from 'lucide-react-native';
+import { Map } from '@/components/icons';
 import { Surfaces, Typography, Brand, Spacing } from '@/constants/Colors';
 
 export default function NotFoundScreen() {

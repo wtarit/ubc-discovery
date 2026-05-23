@@ -4,8 +4,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Map, Users, Bookmark, User, LogIn, MessageSquare } from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
+import { Map, Users, Bookmark, User, LogIn, MessageSquare } from '@/components/icons';
+import type { LucideIcon } from '@/components/icons';
 import { Brand, Surfaces, Typography, Spacing } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
 

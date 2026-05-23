@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
-import { X, Shield } from 'lucide-react-native';
+import { X, Shield } from '@/components/icons';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 

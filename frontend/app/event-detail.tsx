@@ -11,7 +11,7 @@ import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors
 import { useExploreStore } from '@/stores/useExploreStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { X, Calendar, MapPin, Link2, Flag } from 'lucide-react-native';
+import { X, Calendar, MapPin, Link2, Flag } from '@/components/icons';
 import { api, type EventResponse } from '@/services/api';
 
 const PROJECT_INSTAGRAM_URL = process.env.EXPO_PUBLIC_INSTAGRAM_URL || 'https://www.instagram.com/';
