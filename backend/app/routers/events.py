@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +56,7 @@ async def list_nearby_events(
 
 
 @router.get("/{event_id}", response_model=EventResponse)
-async def get_event(event_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_event(event_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Event).where(Event.id == event_id))
     event = result.scalar_one_or_none()
     if not event:

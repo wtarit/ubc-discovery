@@ -108,7 +108,6 @@ class TestMatchEvents:
     ):
         # Seed an event
         event = Event(
-            id=uuid.uuid4(),
             title="Coding Workshop",
             description="Learn Python",
             source="manual",
@@ -153,7 +152,6 @@ class TestMatchEvents:
     ):
         """If Bedrock raises, match_events catches and returns []."""
         event = Event(
-            id=uuid.uuid4(),
             title="Some Event",
             source="manual",
         )
