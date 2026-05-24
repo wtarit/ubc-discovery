@@ -31,7 +31,12 @@ export default function EventDetailScreen() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!eventId || cachedEvent) {
+    if (cachedEvent) {
+      setEvent(cachedEvent);
+      setIsLoading(false);
+      return;
+    }
+    if (!eventId) {
       setIsLoading(false);
       return;
     }
