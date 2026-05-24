@@ -79,10 +79,10 @@ export default function EventDetailScreen() {
 
   const shareEvent = async () => {
     if (!event) return;
-    const path = `/events/${event.id}`;
-    const url = Platform.OS === 'web' && typeof window !== 'undefined'
-      ? `${window.location.origin}${path}`
-      : path;
+    const origin = Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.EXPO_PUBLIC_FRONTEND_URL;
+    const url = `${origin}/events/${event.id}`;
     await Share.share({
       title: event.title,
       message: `${event.title}\n${url}`,
@@ -119,8 +119,8 @@ export default function EventDetailScreen() {
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={[s.hero, { backgroundColor: Surfaces.background }]}>
-          {event.image_url ? (
-            <Image source={{ uri: event.image_url }} style={s.heroImg} />
+          {event.event_picture_url ? (
+            <Image source={{ uri: event.event_picture_url }} style={s.heroImg} />
           ) : (
             <View style={[s.iconWrap, { backgroundColor: `${Brand.accent}15`, borderColor: `${Brand.accent}30` }]}>
               <Calendar size={48} color={Brand.accent} />
