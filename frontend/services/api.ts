@@ -286,13 +286,13 @@ export interface UpdateProfileRequest {
 export interface EventResponse {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   source: string;
   source_label: 'ubc_official' | 'ams_club' | 'campus_community';
   source_url: string | null;
   external_cta_label: string | null;
   club_name: string | null;
-  image_url: string | null;
+  event_picture_url: string | null;
   vibes: string[];
   latitude: number | null;
   longitude: number | null;
@@ -305,7 +305,7 @@ export interface CreateEventRequest {
   title: string;
   description?: string;
   club_name?: string;
-  image_url?: string;
+  event_picture_key?: string;
   source_label?: 'ubc_official' | 'ams_club' | 'campus_community';
   source_url?: string;
   external_cta_label?: string;
