@@ -7,9 +7,17 @@ from app.dependencies import get_current_user
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse
+from app.services import s3
 from app.utils.geo import haversine_km
 
 router = APIRouter(prefix="/events", tags=["Events"])
+
+
+def _to_response(event: Event) -> EventResponse:
+    r = EventResponse.model_validate(event)
+    if event.event_picture_key:
+        r.event_picture_url = s3.public_url(event.event_picture_key)
+    return r
 
 
 @router.get("", response_model=EventListResponse)
@@ -25,7 +33,7 @@ async def list_events(
         select(Event).order_by(Event.event_date.desc().nullslast(), Event.created_at.desc()).offset(skip).limit(limit)
     )
     events = result.scalars().all()
-    return EventListResponse(events=[EventResponse.model_validate(e) for e in events], total=total)
+    return EventListResponse(events=[_to_response(e) for e in events], total=total)
 
 
 @router.get("/nearby", response_model=EventListResponse)
@@ -50,7 +58,7 @@ async def list_nearby_events(
     nearby.sort(key=lambda e: e.event_date or e.created_at, reverse=True)
 
     return EventListResponse(
-        events=[EventResponse.model_validate(e) for e in nearby[skip : skip + limit]],
+        events=[_to_response(e) for e in nearby[skip : skip + limit]],
         total=len(nearby),
     )
 
@@ -61,7 +69,7 @@ async def get_event(event_id: str, db: AsyncSession = Depends(get_db)):
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    return EventResponse.model_validate(event)
+    return _to_response(event)
 
 
 @router.post("", response_model=EventResponse)
@@ -74,4 +82,4 @@ async def create_event(
     db.add(event)
     await db.commit()
     await db.refresh(event)
-    return EventResponse.model_validate(event)
+    return _to_response(event)

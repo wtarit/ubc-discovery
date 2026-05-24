@@ -20,13 +20,13 @@ EVENT_VIBES = (
 class EventResponse(BaseModel):
     id: str
     title: str
-    description: str | None
+    description: str
     source: str
     source_label: str
     source_url: str | None
     external_cta_label: str | None
     club_name: str | None
-    image_url: str | None
+    event_picture_url: str | None = None
     vibes: list[str]
     latitude: float | None
     longitude: float | None
@@ -39,9 +39,9 @@ class EventResponse(BaseModel):
 
 class CreateEventRequest(BaseModel):
     title: str
-    description: str | None = None
+    description: str = ""
     club_name: str | None = None
-    image_url: str | None = None
+    event_picture_key: str | None = None
     source_label: str = "campus_community"
     source_url: str | None = None
     external_cta_label: str | None = None

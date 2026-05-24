@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3
 
+    frontend_url: str = "http://localhost:8081"
+
     cors_allowed_origins: list[str] = [
         "http://localhost:8081",  # Expo web dev server
     ]

@@ -7,38 +7,10 @@ Covers:
 - GET /events/nearby - nearby events (authenticated, needs location)
 """
 
-from datetime import datetime, timezone
-
-import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
 from app.models.user import User
-
-
-@pytest_asyncio.fixture(loop_scope="session")
-async def sample_events(db_session: AsyncSession) -> list[Event]:
-    """Seed a few events for listing tests."""
-    events = []
-    for i in range(3):
-        e = Event(
-            title=f"Test Event {i}",
-            description=f"Description for event {i}",
-            source="manual",
-            source_label="ubc_official" if i == 0 else "campus_community",
-            external_cta_label="View details",
-            club_name=f"Club {i}",
-            vibes=["social", "academic"] if i == 0 else ["social"],
-            latitude=49.2665 + i * 0.001,
-            longitude=-123.2490 + i * 0.001,
-            location_name=f"Location {i}",
-            event_date=datetime(2026, 6, 1 + i, tzinfo=timezone.utc),
-        )
-        db_session.add(e)
-        events.append(e)
-    await db_session.flush()
-    return events
 
 
 class TestListEvents:
@@ -129,7 +101,7 @@ class TestCreateEvent:
         assert resp.status_code == 200
         data = resp.json()
         assert data["title"] == "Minimal Event"
-        assert data["description"] is None
+        assert data["description"] == ""
         assert data["source_label"] == "campus_community"
         assert data["vibes"] == []
 

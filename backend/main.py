@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base, ensure_event_discovery_columns
-from app.routers import auth, users, events, connections, matching, zones
+from app.routers import auth, users, events, connections, matching, zones, og
 from app.seed import seed_events
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ app.include_router(events.router)
 app.include_router(connections.router)
 app.include_router(matching.router)
 app.include_router(zones.router)
+app.include_router(og.router)
 
 
 @app.get("/", tags=["Health"])
