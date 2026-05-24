@@ -83,7 +83,7 @@ frontend/
 - AWS clients use `@lru_cache` lazy init (not module-level) to avoid import-time credential issues
 - Auth: public discovery (events, places, zones) requires no login; social features are member-only
 - UBC email not required for membership — optional verification for trust badge (code still enforces `*.ubc.ca`, needs updating)
-- Profile pictures: S3 presigned URLs (upload + download), key stored in DB
+- Profile pictures and event images: S3 presigned URLs (upload + download), key stored in DB (`profile_picture_key`, `event_picture_key`)
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
 - Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
 

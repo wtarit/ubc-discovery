@@ -12,13 +12,13 @@ class Event(Base):
 
     id: Mapped[str] = mapped_column(String(8), primary_key=True, default=lambda: generate(size=8))
     title: Mapped[str] = mapped_column(String(500))
-    description: Mapped[str | None] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text, default="")
     source: Mapped[str] = mapped_column(String(50))  # "instagram", "manual"
     source_label: Mapped[str] = mapped_column(String(50), default="campus_community")
     source_url: Mapped[str | None] = mapped_column(String(1024))
     external_cta_label: Mapped[str | None] = mapped_column(String(80))
     club_name: Mapped[str | None] = mapped_column(String(255))
-    image_url: Mapped[str | None] = mapped_column(String(1024))
+    event_picture_key: Mapped[str | None] = mapped_column(String(256))
     vibes: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     latitude: Mapped[float | None] = mapped_column(Float)

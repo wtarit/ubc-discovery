@@ -43,6 +43,7 @@ UBC_EVENTS = [
         "source_url": "https://botanicalgarden.ubc.ca/",
         "external_cta_label": "View organizer page",
         "vibes": ["outdoors", "wellness"],
+        "event_picture_key": "event-pictures/wHh80G7Z.jpg",
         "club_name": "Botanical Garden",
         "latitude": 49.2530,
         "longitude": -123.2520,
