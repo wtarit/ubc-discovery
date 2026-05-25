@@ -5,7 +5,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
-import { api, type ConnectionMessageResponse, type ConnectionResponse, type ConnectionLocationPairResponse } from '@/services/api';
+import { api, type ConnectionMessageResponse, type ConnectionResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { X } from '@/components/icons';
@@ -20,7 +20,6 @@ export default function ConnectionDetailScreen() {
   const insets = useSafeAreaInsets();
   const [connection, setConnection] = useState<ConnectionResponse | null>(null);
   const [myUserId, setMyUserId] = useState<string | undefined>(undefined);
-  const [locations, setLocations] = useState<ConnectionLocationPairResponse | null>(null);
   const [messages, setMessages] = useState<ConnectionMessageResponse[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -34,11 +33,7 @@ export default function ConnectionDetailScreen() {
     const conn = list.connections.find((c) => c.id === connectionId) || null;
     setConnection(conn);
     if (!conn) return;
-    const [locRes, msgRes] = await Promise.all([
-      api.getConnectionLocations(connectionId),
-      api.listConnectionMessages(connectionId),
-    ]);
-    setLocations(locRes);
+    const msgRes = await api.listConnectionMessages(connectionId);
     setMessages(msgRes.messages);
   };
 
@@ -91,14 +86,8 @@ export default function ConnectionDetailScreen() {
         <X size={20} color={Brand.primary} />
       </TouchableOpacity>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>{peer.full_name}</Text>
+        <Text style={s.title}>{peer.preferred_name}</Text>
         <Text style={s.sub}>{peer.major || 'Undeclared'}</Text>
-
-        <Card style={s.card}>
-          <Text style={s.sectionTitle}>Live Location</Text>
-          <Text style={s.line}>You: {locations?.mine.latitude ?? '-'}, {locations?.mine.longitude ?? '-'}</Text>
-          <Text style={s.line}>{peer.full_name}: {locations?.theirs.latitude ?? '-'}, {locations?.theirs.longitude ?? '-'}</Text>
-        </Card>
 
         <Card style={s.card}>
           <View style={s.row}>
@@ -121,7 +110,7 @@ export default function ConnectionDetailScreen() {
             return (
               <View key={msg.id} style={[s.msg, mine ? s.msgMine : s.msgPeer]}>
                 <Text style={s.msgBody}>{msg.body}</Text>
-                <Text style={s.msgMeta}>{mine ? 'You' : msg.sender.full_name}</Text>
+                <Text style={s.msgMeta}>{mine ? 'You' : msg.sender.preferred_name}</Text>
               </View>
             );
           })}
@@ -163,7 +152,6 @@ const s = StyleSheet.create({
   sub: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.secondary, marginTop: 2, marginBottom: Spacing.md },
   card: { marginTop: Spacing.sm },
   sectionTitle: { fontFamily: Typography.fonts.h3, fontSize: 15, color: Brand.primary, marginBottom: 8 },
-  line: { fontFamily: Typography.fonts.body, fontSize: 14, color: Brand.secondary, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   msg: { borderRadius: Radius.md, padding: 10, marginBottom: 8, maxWidth: '88%' },
   msgMine: { backgroundColor: '#E8F1FF', alignSelf: 'flex-end' },

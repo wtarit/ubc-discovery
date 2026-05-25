@@ -5,17 +5,12 @@ from sqlalchemy import or_, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.services import s3
 from app.dependencies import get_current_user
 from app.models.connection import Connection
 from app.models.connection_message import ConnectionMessage
 from app.models.user import User
 from app.schemas.connection import (
     ConnectionListResponse,
-    ConnectionLocationBriefResponse,
-    ConnectionLocationPairResponse,
-    ConnectionLocationResponse,
-    ConnectionLocationsListResponse,
     ConnectionMessageListResponse,
     ConnectionMessageResponse,
     ConnectionResponse,
@@ -129,42 +124,6 @@ async def list_connections(
     )
 
 
-@router.get("/locations", response_model=ConnectionLocationsListResponse)
-async def list_connection_locations(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Connection).where(
-            or_(Connection.requester_id == current_user.id, Connection.receiver_id == current_user.id),
-            Connection.status == "accepted",
-        )
-    )
-    connections = result.scalars().all()
-
-    locations = []
-    for conn in connections:
-        other_id = conn.receiver_id if conn.requester_id == current_user.id else conn.requester_id
-        user_result = await db.execute(select(User).where(User.id == other_id))
-        other_user = user_result.scalar_one()
-        locations.append(
-            ConnectionLocationResponse(
-                id=other_user.id,
-                full_name=other_user.full_name,
-                major=other_user.major,
-                origin=other_user.origin,
-                interests=other_user.interests,
-                profile_picture_url=s3.public_url(other_user.profile_picture_key) if other_user.profile_picture_key else None,
-                is_available_to_meet=other_user.is_available_to_meet,
-                latitude=other_user.last_latitude,
-                longitude=other_user.last_longitude,
-                connected_at=conn.created_at,
-            )
-        )
-
-    return ConnectionLocationsListResponse(connections=locations, total=len(locations))
-
-
 @router.get("/pending", response_model=ConnectionListResponse)
 async def list_pending(
     current_user: User = Depends(get_current_user),
@@ -177,36 +136,6 @@ async def list_pending(
     return ConnectionListResponse(
         connections=[ConnectionResponse.model_validate(c) for c in connections],
         total=len(connections),
-    )
-
-
-@router.get("/{connection_id}/location", response_model=ConnectionLocationPairResponse)
-async def get_connection_locations(
-    connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    connection = await _get_connection_for_user(connection_id, current_user, db)
-    if connection.status != "accepted":
-        raise HTTPException(status_code=400, detail="Connection must be accepted")
-
-    other = connection.receiver if connection.requester_id == current_user.id else connection.requester
-    me = connection.requester if connection.requester_id == current_user.id else connection.receiver
-    return ConnectionLocationPairResponse(
-        mine=ConnectionLocationBriefResponse(
-            user_id=me.id,
-            full_name=me.full_name,
-            latitude=me.last_latitude,
-            longitude=me.last_longitude,
-            last_active_at=me.last_active_at,
-        ),
-        theirs=ConnectionLocationBriefResponse(
-            user_id=other.id,
-            full_name=other.full_name,
-            latitude=other.last_latitude,
-            longitude=other.last_longitude,
-            last_active_at=other.last_active_at,
-        ),
     )
 
 

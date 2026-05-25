@@ -13,7 +13,7 @@ import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { MatchBadge } from '@/components/ui/MatchBadge';
 import { Button } from '@/components/ui/Button';
-import { X, User, MapPin, Flag, Users, CheckCircle } from '@/components/icons';
+import { X, User, MapPin, Users, CheckCircle } from '@/components/icons';
 
 export default function UserDetailScreen() {
   const { userId, fromConnection } = useLocalSearchParams<{ userId: string; fromConnection?: string }>();
@@ -41,11 +41,10 @@ export default function UserDetailScreen() {
       api.getUser(userId).then(u => {
         setFetchedUser({
           id: u.id,
-          displayName: u.full_name,
+          displayName: u.preferred_name,
           program: u.major || 'Undeclared',
           year: u.year_standing || 1,
           interests: u.interests || [],
-          origin: u.origin || '',
           bio: u.bio || '',
           matchScore: 0,
           distanceMeters: 0,
@@ -120,13 +119,6 @@ export default function UserDetailScreen() {
               <Text style={[s.detVal, { color: Brand.primary }]}>{user.distanceMeters}m away</Text>
             </View>
           )}
-          {user.origin ? (
-            <View style={s.detRow}>
-              <Flag size={16} color={Brand.secondary} style={s.detIcon} />
-              <Text style={s.detLabel}>From</Text>
-              <Text style={s.detVal}>{user.origin}</Text>
-            </View>
-          ) : null}
           <View style={[s.detRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
             <Users size={16} color={Brand.secondary} style={s.detIcon} />
             <Text style={s.detLabel}>Connections</Text>

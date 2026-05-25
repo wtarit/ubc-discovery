@@ -14,19 +14,15 @@ def _client():
 
 
 def _user_profile_text(user: User) -> str:
-    parts = [f"Name: {user.full_name}"]
+    parts = [f"Name: {user.preferred_name}"]
     if user.major:
         parts.append(f"Major: {user.major}")
     if user.faculty:
         parts.append(f"Faculty: {user.faculty}")
     if user.year_standing:
         parts.append(f"Year: {user.year_standing}")
-    if user.origin:
-        parts.append(f"From: {user.origin}")
     if user.interests:
         parts.append(f"Interests: {', '.join(user.interests)}")
-    if user.transfer_from:
-        parts.append(f"Transferred from: {user.transfer_from}")
     if user.bio:
         parts.append(f"Bio: {user.bio}")
     return " | ".join(parts)
@@ -85,10 +81,6 @@ def _fallback_user_matches(current_user: User, candidates: list[User]) -> list[d
         ):
             score += 0.1
             reasons.append("similar year")
-
-        if current_user.origin and candidate.origin and current_user.origin.lower() == candidate.origin.lower():
-            score += 0.1
-            reasons.append("same origin")
 
         if score > 0:
             matches.append(

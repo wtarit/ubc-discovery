@@ -39,16 +39,15 @@ export default function OnboardingScreen() {
   const { fetchUser, idToken } = useAuthStore();
   const nameFromToken = useMemo(() => getNameFromIdToken(idToken), [idToken]);
   const needsNameStep = !nameFromToken;
-  const TOTAL_STEPS = needsNameStep ? 6 : 5;
+  const TOTAL_STEPS = needsNameStep ? 5 : 4;
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [fullName, setFullName] = useState(nameFromToken);
+  const [preferredName, setPreferredName] = useState(nameFromToken);
   const [faculty, setFaculty] = useState('');
   const [major, setMajor] = useState('');
   const [yearStanding, setYearStanding] = useState<number | null>(null);
-  const [origin, setOrigin] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [bio, setBio] = useState('');
 
@@ -63,14 +62,13 @@ export default function OnboardingScreen() {
   const offset = needsNameStep ? 1 : 0;
 
   const canAdvance = () => {
-    if (needsNameStep && step === 0) return fullName.trim().length > 0;
+    if (needsNameStep && step === 0) return preferredName.trim().length > 0;
     const s = step - offset;
     switch (s) {
       case 0: return faculty.length > 0;
       case 1: return major.trim().length > 0 && yearStanding !== null;
-      case 2: return origin.trim().length > 0;
-      case 3: return interests.length >= 3;
-      case 4: return true;
+      case 2: return interests.length >= 3;
+      case 3: return true;
       default: return false;
     }
   };
@@ -83,11 +81,10 @@ export default function OnboardingScreen() {
     setIsSubmitting(true);
     try {
       await api.onboarding({
-        full_name: fullName.trim(),
+        preferred_name: preferredName.trim(),
         faculty,
         major: major.trim(),
         year_standing: yearStanding!,
-        origin: origin.trim(),
         interests,
         bio: bio.trim() || undefined,
       });
@@ -126,12 +123,11 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {needsNameStep && step === 0 && <NameStep name={fullName} setName={setFullName} />}
+          {needsNameStep && step === 0 && <NameStep name={preferredName} setName={setPreferredName} />}
           {step === offset + 0 && (!needsNameStep || step > 0) && <FacultyStep faculty={faculty} setFaculty={setFaculty} />}
           {step === offset + 1 && <ProgramStep major={major} setMajor={setMajor} year={yearStanding} setYear={setYearStanding} />}
-          {step === offset + 2 && <OriginStep origin={origin} setOrigin={setOrigin} />}
-          {step === offset + 3 && <InterestsStep interests={interests} toggleInterest={toggleInterest} />}
-          {step === offset + 4 && <BioStep bio={bio} setBio={setBio} />}
+          {step === offset + 2 && <InterestsStep interests={interests} toggleInterest={toggleInterest} />}
+          {step === offset + 3 && <BioStep bio={bio} setBio={setBio} />}
         </ScrollView>
 
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
@@ -162,7 +158,7 @@ function NameStep({ name, setName }: { name: string; setName: (n: string) => voi
       <Text style={s.stepDesc}>This is how other people on campus will see you</Text>
 
       <View style={s.field}>
-        <Text style={s.label}>Full Name</Text>
+        <Text style={s.label}>Preferred Name</Text>
         <TextInput
           style={s.input}
           placeholder="Jane Doe"
@@ -232,27 +228,6 @@ function ProgramStep({ major, setMajor, year, setYear }: {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-    </View>
-  );
-}
-
-function OriginStep({ origin, setOrigin }: { origin: string; setOrigin: (o: string) => void }) {
-  return (
-    <View style={s.stepContent}>
-      <Text style={s.stepTitle}>Where are you from?</Text>
-      <Text style={s.stepDesc}>Help us match you with people from similar backgrounds or who want to learn about your culture</Text>
-
-      <View style={s.field}>
-        <Text style={s.label}>Country / City</Text>
-        <TextInput
-          style={s.input}
-          placeholder="e.g. Vancouver, Canada"
-          placeholderTextColor={Brand.secondary}
-          value={origin}
-          onChangeText={setOrigin}
-          autoCapitalize="words"
-        />
       </View>
     </View>
   );

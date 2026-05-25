@@ -4,13 +4,11 @@ Tests for the /events endpoints.
 Covers:
 - GET /events - list all events (paginated)
 - POST /events - create a manual event (authenticated)
-- GET /events/nearby - nearby events (authenticated, needs location)
 """
 
 from httpx import AsyncClient
 
 from app.models.event import Event
-from app.models.user import User
 
 
 class TestListEvents:
@@ -124,13 +122,3 @@ class TestCreateEvent:
         assert resp.json()["event_date"] is not None
 
 
-class TestNearbyEvents:
-    async def test_nearby_events(
-        self, client: AsyncClient, sample_events: list[Event], test_user: User
-    ):
-        """test_user has home_latitude/home_longitude set; events are near UBC."""
-        resp = await client.get("/events/nearby", params={"radius_km": 10.0})
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "events" in data
-        assert "total" in data

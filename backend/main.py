@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.database import engine, Base, ensure_event_discovery_columns
+from app.database import engine, Base
 from app.routers import auth, users, events, connections, matching, zones, og
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,6 @@ async def lifespan(app: FastAPI):
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await ensure_event_discovery_columns(conn)
     yield
     await engine.dispose()
 

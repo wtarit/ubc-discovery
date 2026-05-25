@@ -78,7 +78,7 @@ class TestMatchUsers:
             id=uuid.uuid4(),
             firebase_uid="fallback-uid-333",
             email="fallback@student.ubc.ca",
-            full_name="Fallback User",
+            preferred_name="Fallback User",
             major=test_user.major,
             faculty=test_user.faculty,
             year_standing=test_user.year_standing,
