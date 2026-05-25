@@ -5,7 +5,7 @@ UBC Discovery is the public product name for an independent, student-built event
 ## Language
 
 **Visitor**:
-An unauthenticated person using the public experience to explore UBC newcomer life before creating an account. A Visitor can see public discovery content but is not a participant in member-only social features.
+An unauthenticated person using the public experience to explore UBC Discovery life before creating an account. A Visitor can see public discovery content but is not a participant in member-only social features.
 _Avoid_: Guest, anonymous user
 
 **Member**:
@@ -61,7 +61,7 @@ A temporary Member-controlled status that allows the Member to appear in Nearby 
 _Avoid_: Online now, live sharing
 
 **UBC-verified Member**:
-A Member who has proven control of a UBC email address and carries a durable trust badge. UBC verification is not required to become a Member, and the badge does not expire in the current product model.
+A Member who has proven control of a UBC email address and carries a durable trust badge. UBC verification is not required to become a Member, and the badge does not expire in the current product model. Deferred to V3 (Meet/social features) — verification builds trust between users, which has no value until users interact with each other.
 _Avoid_: Confirmed student, eligible user
 
 **Independent Campus Product**:
@@ -93,8 +93,8 @@ The initial public launch posture prioritizing mobile web and desktop web discov
 _Avoid_: App-download-first launch
 
 **Discover**:
-The primary map-first surface for Student-centered Discovery. Discover centers Event Listings, Places, Vibes, and campus context spatially, with Map and List browsing modes inside the same surface rather than a separate Events tab.
-_Avoid_: Event wall, plain feed, separate Events tab
+The primary event-first surface for Student-centered Discovery. Discover centers Event Listings filtered by Vibe, source, and date, with an optional map view for location context. Users choose events by what they are about, not where they are; spatial browsing is secondary to content-based filtering.
+_Avoid_: Map-first, campus exploration tracker, separate Events tab
 
 **Zone**:
 A broad campus area used for orientation, clustering, and exploration progress. Zones should be visually secondary to Event Listings and Places on Discover, but may still support location-gated unlocks.
@@ -160,8 +160,12 @@ _Avoid_: Visitor profile
 A fixed student-facing label describing the feel or intent of an Event Listing, such as social, career, academic, arts, culture, outdoors, sports, food, wellness, or volunteering. Vibes are distinct from Interests even when their labels overlap; AI may suggest Vibes, but it should choose from the fixed taxonomy rather than inventing new labels.
 _Avoid_: Free-form category, AI-generated tag
 
+**Event Rating**:
+A Member's post-attendance rating of an Event Listing, framed as a recommendation signal ("help us find better events for you") rather than a public review. Event Ratings power the Personalized Event Feed immediately; they will be surfaced as public reviews for recurring events in a future version, but are private in v1.
+_Avoid_: Public review (in v1), Yelp-style rating, organizer feedback
+
 **Personalized Event Feed**:
-A member-only For You mode inside Discover that ranks Event Listings for a Member using their Interests, Event Listing Vibes, timing, location, and other preference signals. For You should affect both map and list views; it sits on top of public event discovery and does not replace the general public feed.
+A member-only For You mode inside Discover that ranks Event Listings for a Member using their Interests, Event Listing Vibes, Event Ratings, Saved Events, timing, and other preference signals. For You sits on top of public event discovery and does not replace the general public feed.
 _Avoid_: Public feed, all events
 
 ## Example Dialogue
@@ -190,11 +194,11 @@ Domain expert: "Campus Explorers broadly, while making the first version especia
 Dev: "Is the public pitch mainly about finding nearby people?"
 Domain expert: "No. The public pitch is Student-centered Discovery; meeting people is a signed-in layer around shared events and places."
 
-Dev: "Should event discovery be a plain list?"
-Domain expert: "No. Discover should be map-first, with lists and filters supporting spatial event and campus discovery."
+Dev: "Should event discovery be map-first?"
+Domain expert: "No. Users choose events by what they're about, not where they are. Discover is event-list-first with vibe/source/date filtering; a map view is available for location context but is secondary."
 
 Dev: "Should Events be a separate bottom tab?"
-Domain expert: "No. Events are browsed through Map and List modes inside Discover."
+Domain expert: "No. Events are the primary content of Discover itself."
 
 Dev: "Should public launch require downloading the native app?"
 Domain expert: "No. Launch is web-first so Visitors can discover value before installing anything."
@@ -291,3 +295,12 @@ Domain expert: "No. Visitors can browse the public feed; Members can get a Perso
 
 Dev: "Is For You a separate top-level page?"
 Domain expert: "No, not in the current product model. For You is a signed-in mode inside Discover."
+
+Dev: "Can Members review events?"
+Domain expert: "Members can rate events, but in v1 ratings are framed as recommendation input, not public reviews. The data is collected for future public display on recurring events."
+
+Dev: "Should V1 include the native mobile app?"
+Domain expert: "No. V1 is web-first using React Router 7 with SSR. Native app adds install friction and delays launch."
+
+Dev: "How does event content get onto the platform?"
+Domain expert: "Instagram scraping with LLM extraction into structured Event Listings. High-confidence extractions auto-publish; low-confidence ones go to an admin review queue."
