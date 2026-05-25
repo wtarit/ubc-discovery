@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useExploreStore } from '@/stores/useExploreStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { api, type ConnectionLocationResponse, type EventResponse } from '@/services/api';
+import { api, type EventResponse } from '@/services/api';
 import type { ExploreZone } from '@/constants/Zones';
 
 type CategoryFilter = ExploreZone['category'] | 'all' | 'events';
@@ -12,7 +12,6 @@ export function useExploreMap() {
   const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [connections, setConnections] = useState<ConnectionLocationResponse[]>([]);
 
   const {
     zones, events, fetchEvents,
@@ -21,11 +20,6 @@ export function useExploreMap() {
   } = useExploreStore();
   const { accessToken } = useAuthStore();
   const progress = getProgress();
-
-  useEffect(() => {
-    if (!accessToken) return;
-    api.listConnectionLocations().then(data => setConnections(data.connections)).catch(() => {});
-  }, [accessToken]);
 
   useEffect(() => {
     fetchEvents();
@@ -76,7 +70,6 @@ export function useExploreMap() {
     activeCategory, setActiveCategory,
     selectedZone, selectedEvent,
     justUnlocked, unlockError,
-    connections,
     filteredZones, filteredEvents,
     progress, totalPoints, isUnlocking, accessToken,
     isZoneUnlocked,

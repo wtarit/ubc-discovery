@@ -11,7 +11,7 @@ import { useExploreStore } from '@/stores/useExploreStore';
 import { useNearbyStore } from '@/stores/useNearbyStore';
 import {
   User, Mail, Camera, CheckCircle, Shield, Map, Award, MessageCircle,
-  Flag, Briefcase, Calendar, LogOut,
+  Briefcase, Calendar, LogOut,
 } from '@/components/icons';
 import type { LucideIcon } from '@/components/icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -170,11 +170,10 @@ export default function ProfileScreen() {
   };
 
   const profile = {
-    displayName: user?.full_name || 'Guest',
+    displayName: user?.preferred_name || 'Guest',
     program: user?.major || 'Undeclared',
     year: user?.year_standing || 1,
     interests: user?.interests || [],
-    origin: user?.origin || '',
     bio: user?.bio || '',
     joinedDate: user?.created_at
       ? new Date(user.created_at).toLocaleDateString('en-US', {
@@ -358,15 +357,6 @@ export default function ProfileScreen() {
           <Text style={s.secTitle}>Account</Text>
 
           <Card>
-            {profile.origin ? (
-              <StatRow
-                Icon={Flag}
-                label="Origin"
-                value={profile.origin}
-                color={Brand.primary}
-              />
-            ) : null}
-
             <StatRow
               Icon={Briefcase}
               label="Connections"

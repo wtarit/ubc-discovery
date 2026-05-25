@@ -104,12 +104,6 @@ export const api = {
   updateProfile: (data: UpdateProfileRequest) =>
     request<UserResponse>('/users/me', { method: 'PUT', body: data }),
 
-  updateLocation: (latitude: number, longitude: number) =>
-    request<UserResponse>('/users/me/location', { method: 'PUT', body: { latitude, longitude } }),
-
-  setHomeLocation: (latitude: number, longitude: number) =>
-    request<UserResponse>('/users/me/home-location', { method: 'PUT', body: { latitude, longitude } }),
-
   updateAvailability: (is_available_to_meet: boolean) =>
     request<UserResponse>('/users/me/availability', { method: 'PUT', body: { is_available_to_meet } }),
 
@@ -150,9 +144,6 @@ export const api = {
   getEvent: (eventId: string) =>
     request<EventResponse>(`/events/${eventId}`, { auth: false }),
 
-  listNearbyEvents: (radius_km = 10.0, skip = 0, limit = 20) =>
-    request<EventListResponse>('/events/nearby', { params: { radius_km, skip, limit } }),
-
   createEvent: (data: CreateEventRequest) =>
     request<EventResponse>('/events', { method: 'POST', body: data }),
 
@@ -169,13 +160,9 @@ export const api = {
   listConnections: () =>
     request<ConnectionListResponse>('/connections'),
 
-  listConnectionLocations: () =>
-    request<ConnectionLocationsListResponse>('/connections/locations'),
-
   listPendingConnections: () =>
     request<ConnectionListResponse>('/connections/pending'),
-  getConnectionLocations: (connectionId: string) =>
-    request<ConnectionLocationPairResponse>(`/connections/${connectionId}/location`),
+
   listConnectionMessages: (connectionId: string) =>
     request<ConnectionMessageListResponse>(`/connections/${connectionId}/messages`),
   sendConnectionMessage: (connectionId: string, body: string) =>
@@ -217,32 +204,26 @@ export interface OTPVerifyResponse {
 export interface UserResponse {
   id: string;
   email: string;
-  full_name: string;
+  preferred_name: string;
   major: string | null;
   year_standing: number | null;
-  origin: string | null;
-  interests: string[] | null;
-  transfer_from: string | null;
   faculty: string | null;
+  interests: string[] | null;
   bio: string | null;
   profile_picture_url: string | null;
-  home_latitude: number | null;
-  home_longitude: number | null;
   is_available_to_meet: boolean;
   ubc_verified: boolean;
   connections_count: number;
-  events_attended: number;
   created_at: string;
 }
 
 export interface UserPublicResponse {
   id: string;
-  full_name: string;
+  preferred_name: string;
   major: string | null;
   year_standing: number | null;
-  origin: string | null;
-  interests: string[] | null;
   faculty: string | null;
+  interests: string[] | null;
   bio: string | null;
   profile_picture_url: string | null;
   is_available_to_meet: boolean;
@@ -257,29 +238,24 @@ export interface NearbyUserResponse {
 
 export interface UserStatsResponse {
   connections_count: number;
-  events_attended: number;
   member_since: string;
 }
 
 export interface OnboardingRequest {
-  full_name: string;
+  preferred_name: string;
   major?: string;
   year_standing?: number;
-  origin?: string;
-  interests?: string[];
-  transfer_from?: string;
   faculty?: string;
+  interests?: string[];
   bio?: string;
 }
 
 export interface UpdateProfileRequest {
-  full_name?: string;
+  preferred_name?: string;
   major?: string;
   year_standing?: number;
-  origin?: string;
-  interests?: string[];
-  transfer_from?: string;
   faculty?: string;
+  interests?: string[];
   bio?: string;
 }
 
@@ -333,37 +309,6 @@ export interface ConnectionResponse {
 export interface ConnectionListResponse {
   connections: ConnectionResponse[];
   total: number;
-}
-
-export interface ConnectionLocationResponse {
-  id: string;
-  full_name: string;
-  major: string | null;
-  origin: string | null;
-  interests: string[] | null;
-  profile_picture_url: string | null;
-  is_available_to_meet: boolean;
-  latitude: number | null;
-  longitude: number | null;
-  connected_at: string;
-}
-
-export interface ConnectionLocationsListResponse {
-  connections: ConnectionLocationResponse[];
-  total: number;
-}
-
-export interface ConnectionLocationBriefResponse {
-  user_id: string;
-  full_name: string;
-  latitude: number | null;
-  longitude: number | null;
-  last_active_at: string | null;
-}
-
-export interface ConnectionLocationPairResponse {
-  mine: ConnectionLocationBriefResponse;
-  theirs: ConnectionLocationBriefResponse;
 }
 
 export interface ConnectionMessageResponse {

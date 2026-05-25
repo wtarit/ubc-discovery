@@ -7,9 +7,9 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand, Surfaces, Typography, Spacing, Radius } from '@/constants/Colors';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { api, type ConnectionLocationResponse } from '@/services/api';
+import { api, type ConnectionResponse } from '@/services/api';
 import { Card } from '@/components/ui/Card';
-import { User, MapPin, Users as UsersIcon } from '@/components/icons';
+import { User, Users as UsersIcon } from '@/components/icons';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -21,37 +21,32 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-function ConnectionCard({ conn }: { conn: ConnectionLocationResponse }) {
+function ConnectionCard({ conn, myId }: { conn: ConnectionResponse; myId: string }) {
+  const peer = conn.requester.id === myId ? conn.receiver : conn.requester;
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={() => router.push({ pathname: '/user-detail', params: { userId: conn.id, fromConnection: '1' } })}
+      onPress={() => router.push({ pathname: '/user-detail', params: { userId: peer.id, fromConnection: '1' } })}
     >
       <Card style={{ marginBottom: Spacing.sm }}>
         <View style={cc.row}>
           <View style={cc.avatarWrap}>
             <User size={24} color={Brand.secondary} />
-            {conn.is_available_to_meet && <View style={cc.dot} />}
+            {peer.is_available_to_meet && <View style={cc.dot} />}
           </View>
           <View style={cc.info}>
-            <Text style={cc.name}>{conn.full_name}</Text>
+            <Text style={cc.name}>{peer.preferred_name}</Text>
             <Text style={cc.sub}>
-              {conn.major || 'Undeclared'}
-              {conn.origin ? ` · ${conn.origin}` : ''}
+              {peer.major || 'Undeclared'}
             </Text>
           </View>
           <View style={cc.meta}>
-            <Text style={cc.time}>{timeAgo(conn.connected_at)}</Text>
-            {conn.latitude != null && (
-              <View style={cc.locBadge}>
-                <MapPin size={10} color={Brand.accent} />
-              </View>
-            )}
+            <Text style={cc.time}>{timeAgo(conn.created_at)}</Text>
           </View>
         </View>
-        {conn.interests && conn.interests.length > 0 && (
+        {peer.interests && peer.interests.length > 0 && (
           <View style={cc.tags}>
-            {conn.interests.slice(0, 3).map(i => (
+            {peer.interests.slice(0, 3).map(i => (
               <View key={i} style={cc.tag}><Text style={cc.tagT}>{i}</Text></View>
             ))}
           </View>
@@ -70,7 +65,6 @@ const cc = StyleSheet.create({
   sub: { fontFamily: Typography.fonts.bodySm, fontSize: 12, color: Brand.secondary, marginTop: 2 },
   meta: { alignItems: 'flex-end', gap: 4 },
   time: { fontFamily: Typography.fonts.caption, fontSize: 11, color: Brand.secondary },
-  locBadge: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#EBF5FF', alignItems: 'center', justifyContent: 'center' },
   tags: { flexDirection: 'row', gap: 6, marginTop: Spacing.sm, flexWrap: 'wrap' },
   tag: { backgroundColor: Surfaces.default, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm, borderWidth: 1, borderColor: Surfaces.border },
   tagT: { fontFamily: Typography.fonts.caption, fontSize: 10, color: Brand.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -78,8 +72,8 @@ const cc = StyleSheet.create({
 
 export default function ConnectionsScreen() {
   const insets = useSafeAreaInsets();
-  const { accessToken } = useAuthStore();
-  const [connections, setConnections] = useState<ConnectionLocationResponse[]>([]);
+  const { accessToken, user } = useAuthStore();
+  const [connections, setConnections] = useState<ConnectionResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -87,7 +81,7 @@ export default function ConnectionsScreen() {
     if (!accessToken) return;
     setIsLoading(true);
     try {
-      const data = await api.listConnectionLocations();
+      const data = await api.listConnections();
       setConnections(data.connections);
     } catch {
       // silent
@@ -132,7 +126,7 @@ export default function ConnectionsScreen() {
           </View>
         )}
         {connections.map(conn => (
-          <ConnectionCard key={conn.id} conn={conn} />
+          <ConnectionCard key={conn.id} conn={conn} myId={user?.id || ''} />
         ))}
         <View style={{ height: 32 }} />
       </ScrollView>

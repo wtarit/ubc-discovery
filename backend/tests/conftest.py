@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import SessionTransaction
 
 from app.config import settings
-from app.database import Base, ensure_event_discovery_columns, get_db
+from app.database import Base, get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.event import Event
 from app.models.user import User
@@ -56,7 +56,6 @@ async def _setup_tables():
     engine = _get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await ensure_event_discovery_columns(conn)
     yield
     await engine.dispose()
     global _engine
@@ -98,19 +97,14 @@ async def test_user(db_session: AsyncSession) -> User:
         id=uuid.uuid4(),
         firebase_uid="test-uid-111",
         email="testuser@student.ubc.ca",
-        full_name="Test User",
+        preferred_name="Test User",
         major="Computer Science",
         year_standing=3,
-        origin="Canada",
         interests=["hiking", "coding", "photography"],
         faculty="Science",
         bio="A test user for unit tests",
         onboarding_completed=True,
         is_available_to_meet=True,
-        last_latitude=49.2606,
-        last_longitude=-123.2460,
-        home_latitude=49.2606,
-        home_longitude=-123.2460,
     )
     db_session.add(user)
     await db_session.flush()
@@ -123,19 +117,14 @@ async def other_user(db_session: AsyncSession) -> User:
         id=uuid.uuid4(),
         firebase_uid="test-uid-222",
         email="other@student.ubc.ca",
-        full_name="Other User",
+        preferred_name="Other User",
         major="Biology",
         year_standing=2,
-        origin="Japan",
         interests=["music", "cooking"],
         faculty="Science",
         bio="Another test user",
         onboarding_completed=True,
         is_available_to_meet=True,
-        last_latitude=49.2650,
-        last_longitude=-123.2500,
-        home_latitude=49.2650,
-        home_longitude=-123.2500,
     )
     db_session.add(user)
     await db_session.flush()

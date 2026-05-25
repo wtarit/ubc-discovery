@@ -63,7 +63,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
     activeCategory, setActiveCategory,
     selectedZone, selectedEvent,
     justUnlocked, unlockError,
-    connections,
     filteredZones, filteredEvents,
     progress, totalPoints, isUnlocking, accessToken,
     isZoneUnlocked,
@@ -169,28 +168,6 @@ export default function ExploreMapWeb({ insetTop, insetBottom }: ExploreMapProps
             </Marker>
           );
         })}
-
-        {connections.filter(c => c.latitude != null && c.longitude != null).map(conn => (
-          <Marker
-            key={`conn-${conn.id}`}
-            longitude={conn.longitude!}
-            latitude={conn.latitude!}
-            anchor="center"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              router.push({ pathname: '/user-detail', params: { userId: conn.id, fromConnection: '1' } });
-            }}
-          >
-            <View style={s.connMarker}>
-              {conn.profile_picture_url ? (
-                <Image source={{ uri: conn.profile_picture_url }} style={s.connAvatar} />
-              ) : (
-                <User size={18} color={Brand.accent} />
-              )}
-              {conn.is_available_to_meet && <View style={s.connDot} />}
-            </View>
-          </Marker>
-        ))}
 
         {filteredEvents.map(event => {
           if (!event.latitude || !event.longitude) return null;

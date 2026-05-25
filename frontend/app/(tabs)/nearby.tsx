@@ -46,8 +46,8 @@ function PendingRequestCard({ conn, onAccept, onDecline }: { conn: PendingConnec
           <UserPlus size={20} color={Brand.accent} />
         </View>
         <View style={pc.info}>
-          <Text style={pc.name}>{conn.requester.fullName}</Text>
-          <Text style={pc.sub}>{conn.requester.major}{conn.requester.origin ? ` · ${conn.requester.origin}` : ''}</Text>
+          <Text style={pc.name}>{conn.requester.preferredName}</Text>
+          <Text style={pc.sub}>{conn.requester.major}</Text>
         </View>
       </View>
       <View style={pc.actions}>
@@ -88,9 +88,8 @@ function computeProfileScore(myUser: any, otherUser: NearbyUser): number {
 
   const majorScore = myUser.major && otherUser.program && myUser.major.toLowerCase() === otherUser.program.toLowerCase() ? 1 : 0;
   const yearScore = myUser.year_standing ? Math.max(0, 1 - Math.min(Math.abs((myUser.year_standing || 1) - otherUser.year), 4) / 4) : 0;
-  const originScore = myUser.origin && otherUser.origin && myUser.origin.toLowerCase() === otherUser.origin.toLowerCase() ? 1 : 0;
 
-  const weighted = (interestScore * 0.6) + (majorScore * 0.2) + (yearScore * 0.15) + (originScore * 0.05);
+  const weighted = (interestScore * 0.65) + (majorScore * 0.2) + (yearScore * 0.15);
   return Math.round(weighted * 100);
 }
 
@@ -122,7 +121,7 @@ function UserCard({ user, onPress }: { user: NearbyUser; onPress: () => void }) 
         </View>
         <View style={cc.foot}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={cc.meta}>{user.origin || 'Nearby'}</Text>
+            <Text style={cc.meta}>{user.program}</Text>
             {user.matchReason ? <Text style={cc.reason}>{user.matchReason}</Text> : null}
           </View>
           <MatchBadge score={user.matchScore} size="sm" />

@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -9,19 +8,15 @@ from app.database import get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.user import User
 from app.schemas.user import (
-    NearbyUserResponse,
     OnboardingRequest,
     PresignedUploadResponse,
-    SetHomeLocationRequest,
     UpdateAvailabilityRequest,
-    UpdateLocationRequest,
     UpdateProfileRequest,
     UserPublicResponse,
     UserResponse,
     UserStatsResponse,
 )
 from app.services import s3
-from app.utils.geo import haversine_km
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -53,13 +48,11 @@ async def complete_onboarding(
     user = User(
         firebase_uid=identity.uid,
         email=identity.email,
-        full_name=body.full_name,
+        preferred_name=body.preferred_name,
         major=body.major,
         year_standing=body.year_standing,
-        origin=body.origin,
-        interests=body.interests,
-        transfer_from=body.transfer_from,
         faculty=body.faculty,
+        interests=body.interests,
         bio=body.bio,
         ubc_verified=_is_ubc_email(identity.email),
         onboarding_completed=True,
@@ -78,33 +71,6 @@ async def update_profile(
 ):
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(current_user, field, value)
-    await db.commit()
-    await db.refresh(current_user)
-    return UserResponse.model_validate(current_user)
-
-
-@router.put("/me/location", response_model=UserResponse)
-async def update_location(
-    body: UpdateLocationRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    current_user.last_latitude = body.latitude
-    current_user.last_longitude = body.longitude
-    current_user.last_active_at = datetime.now(timezone.utc)
-    await db.commit()
-    await db.refresh(current_user)
-    return UserResponse.model_validate(current_user)
-
-
-@router.put("/me/home-location", response_model=UserResponse)
-async def set_home_location(
-    body: SetHomeLocationRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    current_user.home_latitude = body.latitude
-    current_user.home_longitude = body.longitude
     await db.commit()
     await db.refresh(current_user)
     return UserResponse.model_validate(current_user)
@@ -140,38 +106,8 @@ async def get_presigned_upload(
 async def get_stats(current_user: User = Depends(get_current_user)):
     return UserStatsResponse(
         connections_count=current_user.connections_count,
-        events_attended=current_user.events_attended,
         member_since=current_user.created_at,
     )
-
-
-@router.get("/nearby", response_model=list[NearbyUserResponse])
-async def get_nearby_users(
-    radius_km: float = Query(default=5.0, le=50.0),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    if not current_user.last_latitude or not current_user.last_longitude:
-        raise HTTPException(status_code=400, detail="Update your location first")
-
-    result = await db.execute(
-        select(User).where(
-            User.is_available_to_meet == True,
-            User.id != current_user.id,
-            User.last_latitude.is_not(None),
-            User.last_longitude.is_not(None),
-        )
-    )
-    users = result.scalars().all()
-
-    nearby = []
-    for user in users:
-        dist = haversine_km(current_user.last_latitude, current_user.last_longitude, user.last_latitude, user.last_longitude)
-        if dist <= radius_km:
-            nearby.append(NearbyUserResponse(user=UserPublicResponse.model_validate(user), distance_km=round(dist, 2)))
-
-    nearby.sort(key=lambda x: x.distance_km)
-    return nearby
 
 
 @router.get("/{user_id}", response_model=UserPublicResponse)
