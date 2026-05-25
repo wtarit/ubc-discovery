@@ -20,6 +20,10 @@ _Avoid_: Legal name, real name
 A fixed preference label a Member selects during onboarding and can edit later to describe what they want to explore or meet people around. Interests power the Personalized Event Feed and social matching, and are distinct from Vibes even when their labels overlap.
 _Avoid_: Free-text hobby, arbitrary tag
 
+**Academic Context**:
+A Member's faculty, major, and year standing, collected during onboarding and editable later. Academic Context informs the Personalized Event Feed by filtering or ranking Event Listings by relevance — for example, a third-year student is less likely to see a first-year orientation event. Academic Context is a recommendation signal, distinct from Interests and not used for social matching in Meet.
+_Avoid_: Required for membership, social matching signal
+
 **Newcomer**:
 A person who is newly arriving at or newly orienting themselves around UBC. Newcomers are an important audience, but they are not the full audience for campus and event discovery.
 _Avoid_: All users, all students
