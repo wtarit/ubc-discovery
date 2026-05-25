@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, ensure_event_discovery_columns
 from app.routers import auth, users, events, connections, matching, zones, og
-from app.seed import seed_events
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +23,6 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await ensure_event_discovery_columns(conn)
-    from app.database import async_session
-    async with async_session() as db:
-        await seed_events(db)
     yield
     await engine.dispose()
 

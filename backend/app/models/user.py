@@ -36,6 +36,7 @@ class User(Base):
     connections_count: Mapped[int] = mapped_column(Integer, default=0)
     events_attended: Mapped[int] = mapped_column(Integer, default=0)
 
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     ubc_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
 

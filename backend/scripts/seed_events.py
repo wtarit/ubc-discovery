@@ -1,16 +1,20 @@
-"""Seed UBC events into the database."""
+"""Seed UBC events via the API. Requires ADMIN_API_KEY.
 
-from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
+Usage:
+    ADMIN_API_KEY=secret uv run python scripts/seed_events.py
+    ADMIN_API_KEY=secret uv run python scripts/seed_events.py --api-url https://api.example.com
+"""
 
-from app.models.event import Event
+import argparse
+import os
+import sys
+
+import httpx
 
 UBC_EVENTS = [
     {
         "title": "SEEDS Sustainability Symposium",
         "description": "A showcase of student-led research that uses the UBC campus as a 'living lab.' Innovative projects on urban biodiversity, waste reduction, and climate resilience.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://sustain.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -24,7 +28,6 @@ UBC_EVENTS = [
     {
         "title": "Science Rendezvous",
         "description": "Part of a national science festival, legendary for hands-on experiments like 'Liquid Nitrogen Ice Cream' and 'Mysterious Minerals'.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://science.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -38,7 +41,6 @@ UBC_EVENTS = [
     {
         "title": "Morning Bird Walk",
         "description": "Led by expert birders, focusing on identifying spring migrating species. Explore diverse habitats from forest floor to canopy.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://botanicalgarden.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -53,7 +55,6 @@ UBC_EVENTS = [
     {
         "title": "Summer Session Residence Move-In",
         "description": "Primary move-in day for students enrolled in the Summer Term. The campus will be busy with new arrivals.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://vancouver.housing.ubc.ca/",
         "external_cta_label": "View details",
@@ -67,7 +68,6 @@ UBC_EVENTS = [
     {
         "title": "Summer Session Term 1 Official Start",
         "description": "The first day of the 2026 Summer Session. Fast-paced accelerated courses begin campus-wide.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://students.ubc.ca/enrolment/courses/summer-session",
         "external_cta_label": "View academic dates",
@@ -81,7 +81,6 @@ UBC_EVENTS = [
     {
         "title": "Chung | Lind Gallery Drop-In Tour",
         "description": "Archivists lead this tour through rare maps, photographs, and artifacts focused on the history of the Gold Rush and Chinese immigration.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://about.library.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -95,7 +94,6 @@ UBC_EVENTS = [
     {
         "title": "T-Birds in Tech & Sauder Rooftop BBQ",
         "description": "High-profile networking event with tech leaders, local alumni, and students for informal networking and BBQ.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://www.sauder.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -109,7 +107,6 @@ UBC_EVENTS = [
     {
         "title": "Biodiversity Farm Tour",
         "description": "A guided walk through the 24-hectare working farm. Highlights agroecology and organic crop production.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://ubcfarm.ubc.ca/",
         "external_cta_label": "View organizer page",
@@ -123,7 +120,6 @@ UBC_EVENTS = [
     {
         "title": "MOA Exhibition: 'I Use My Haida Eyes'",
         "description": "World premiere of history robes by Haida artist Jut-ke-Nay Hazel Wilson. Opening night documents Haida perspectives.",
-        "source": "manual",
         "source_label": "ubc_official",
         "source_url": "https://moa.ubc.ca/",
         "external_cta_label": "View exhibition",
@@ -137,16 +133,35 @@ UBC_EVENTS = [
 ]
 
 
-async def seed_events(db: AsyncSession) -> int:
-    # Clear existing events
-    await db.execute(delete(Event))
-    
-    count = 0
-    for data in UBC_EVENTS:
-        event_data = data.copy()
-        event_data["event_date"] = datetime.fromisoformat(data["event_date"].replace("Z", "+00:00"))
-        db.add(Event(**event_data))
-        count += 1
+def main():
+    parser = argparse.ArgumentParser(description="Seed UBC events via the API")
+    parser.add_argument("--api-url", default="http://localhost:8000", help="Base API URL")
+    args = parser.parse_args()
 
-    await db.commit()
-    return count
+    api_key = os.environ.get("ADMIN_API_KEY")
+    if not api_key:
+        print("Error: ADMIN_API_KEY environment variable is required")
+        sys.exit(1)
+
+    headers = {"Authorization": f"Api-Key {api_key}"}
+    url = f"{args.api_url.rstrip('/')}/events"
+
+    created = 0
+    failed = 0
+    with httpx.Client() as client:
+        for event in UBC_EVENTS:
+            resp = client.post(url, json=event, headers=headers)
+            if resp.status_code == 200:
+                created += 1
+                print(f"  Created: {event['title']}")
+            else:
+                failed += 1
+                print(f"  FAILED:  {event['title']} — {resp.status_code} {resp.text}")
+
+    print(f"\nDone: {created} created, {failed} failed")
+    if failed:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

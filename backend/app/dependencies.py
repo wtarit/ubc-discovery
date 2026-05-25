@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services import firebase_auth
@@ -42,3 +43,25 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=404, detail="User profile not found. Complete onboarding first.")
     return user
+
+
+async def require_admin(
+    authorization: str = Header(..., description="Bearer <id_token> or Api-Key <key>"),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    if authorization.startswith("Api-Key "):
+        key = authorization[8:]
+        if not settings.admin_api_key or key != settings.admin_api_key:
+            raise HTTPException(status_code=403, detail="Invalid API key")
+        return
+
+    if authorization.startswith("Bearer "):
+        token = authorization[7:]
+        decoded = firebase_auth.verify_id_token(token)
+        result = await db.execute(select(User).where(User.firebase_uid == decoded["uid"]))
+        user = result.scalar_one_or_none()
+        if user and user.is_admin:
+            return
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    raise HTTPException(status_code=401, detail="Invalid authorization header")

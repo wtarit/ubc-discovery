@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_admin
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse
@@ -72,10 +72,9 @@ async def get_event(event_id: str, db: AsyncSession = Depends(get_db)):
     return _to_response(event)
 
 
-@router.post("", response_model=EventResponse)
+@router.post("", response_model=EventResponse, dependencies=[Depends(require_admin)])
 async def create_event(
     body: CreateEventRequest,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     event = Event(**body.model_dump(), source="manual")
