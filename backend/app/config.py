@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3
 
+    admin_api_key: str = ""
+
     frontend_url: str = "http://localhost:8081"
 
     cors_allowed_origins: list[str] = [
