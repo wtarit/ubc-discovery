@@ -5,13 +5,19 @@ Campus discovery app for the UBC community to find events, explore places, and c
 ## Architecture
 
 - **Backend**: Python FastAPI in `backend/` — async SQLAlchemy + asyncpg
-- **Frontend**: React Native (Expo SDK 55) in `frontend/` — Expo Router + Zustand
+- **Frontend**: React web app in `web/` — React Router 7 + React 19 + Tailwind CSS
+- **Mobile**: React Native app in `mobile/` — Expo SDK 55 + Expo Router + Zustand
 - **Database**: PostgreSQL 17.4 on AWS RDS
 - **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching
 
+## Product Focus
+
+- Build the web frontend first. Mobile exists in `mobile/`, but it is not the current implementation priority and will be developed later.
+- In project conversations and tasks, "frontend" means the web app in `web/` unless mobile is explicitly mentioned.
+
 ## AWS Resources (us-west-2)
 
-All resource IDs (RDS host, Cognito pool/client, S3 bucket, ALB, etc.) are in `backend/.env`. Frontend env is in `frontend/.env`. See respective `.env.example` files for the full list.
+All resource IDs (RDS host, Cognito pool/client, S3 bucket, ALB, etc.) are in `backend/.env`. Mobile env is in `mobile/.env`. See respective `.env.example` files for the full list.
 
 ## Dev Setup
 
@@ -25,14 +31,23 @@ uv run fastapi dev main.py
 
 Swagger docs: http://localhost:8000/docs
 
-### Frontend
+### Frontend (Web)
 ```bash
-cd frontend
+cd web
+npm install
+npm run dev
+```
+
+Runs the web frontend at http://localhost:5173.
+
+### Mobile
+```bash
+cd mobile
 npm install
 npx expo start
 ```
 
-Runs on iOS/Android (react-native-maps) and web (styled map fallback).
+Mobile runs on iOS/Android with Expo and will be developed after the web frontend.
 
 ## Project Structure
 
@@ -51,29 +66,22 @@ backend/
 │   └── services/        # cognito, s3, bedrock, sns, scraper
 └── tests/               # pytest async test suite
 
-frontend/
+web/
 ├── app/
-│   ├── _layout.tsx          # Root layout (fonts, theme, Stack navigator)
-│   ├── (tabs)/
-│   │   ├── _layout.tsx      # Bottom tabs: Explore, Nearby, Profile
-│   │   ├── index.tsx        # Explore tab — full-screen campus map with zone markers
-│   │   ├── nearby.tsx       # Nearby tab — proximity-based user discovery
-│   │   └── profile.tsx      # Profile tab — stats, progress, account info
-│   ├── zone-detail.tsx      # Modal — zone details when marker tapped
-│   └── user-detail.tsx      # Modal — nearby user details
-├── components/
-│   ├── map/                 # Platform-specific map (native + web fallback)
-│   └── ui/                  # Button, Card, MatchBadge, ProgressRing
-├── services/
-│   └── api.ts               # Typed API client (auth, users, events, matching, etc.)
-├── stores/
-│   ├── useAuthStore.ts      # Auth state (login, signup, token refresh)
-│   ├── useExploreStore.ts   # Zone unlock/progress + events from API
-│   └── useNearbyStore.ts    # Nearby/matched users from API, connections
-└── constants/
-    ├── Colors.ts            # Design tokens (Brand, Surfaces, Typography, Spacing)
-    ├── Zones.ts             # 12 UBC campus zones with lat/lng + categories
-    └── MockUsers.ts         # Mock nearby users + AI intro templates
+│   ├── root.tsx                 # React Router root shell
+│   ├── routes.ts                # Route config
+│   ├── routes/                  # Discover, event detail, organizers, profile, saved, auth/onboarding
+│   ├── components/              # Web UI components
+│   └── lib/                     # API client, constants, date utilities
+├── package.json
+└── vite.config.ts
+
+mobile/
+├── app/                         # Expo Router app routes
+├── components/                  # Native UI/icons
+├── constants/                   # Colors, zones, mock users
+├── services/                    # Mobile API/Firebase clients
+└── stores/                      # Zustand stores
 ```
 
 ## Key Patterns
@@ -87,10 +95,17 @@ frontend/
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
 - Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
 
-### Frontend
+### Frontend (Web)
+- `web/` is the default frontend target for new feature work and UI fixes.
+- React Router 7 routes live in `web/app/routes/`; shared web UI lives in `web/app/components/`.
+- Tailwind CSS is available through the React Router/Vite setup.
+- API helpers live in `web/app/lib/api.ts`.
+
+### Mobile
+- Mobile work lives in `mobile/` and is lower priority until the web frontend is further along.
 - Expo Router file-based routing with typed routes enabled
 - Zustand for state management (no Redux)
-- Platform-specific components via `.native.tsx` / `.tsx` suffixes (e.g., ExploreMap)
+- Platform-specific components via `.native.tsx` / `.tsx` suffixes
 - Design system: Plus Jakarta Sans (headings), DM Sans (body), Fira Code (monospace)
 - Color theme: Calm Blue (`#007AFF` accent) on white, minimal shadows
 - API client in `services/api.ts` — typed fetch wrapper with auto token refresh
