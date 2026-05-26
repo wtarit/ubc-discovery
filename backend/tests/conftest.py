@@ -31,7 +31,7 @@ from sqlalchemy.orm import SessionTransaction
 
 from app.config import settings
 from app.database import Base, get_db
-from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
+from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user, require_admin
 from app.models.event import Event
 from app.models.user import User
 
@@ -222,6 +222,29 @@ async def onboarding_client(
 
 
 @pytest_asyncio.fixture(loop_scope="session")
+async def admin_client(
+    db_session: AsyncSession,
+) -> AsyncGenerator[AsyncClient, None]:
+    """Admin-authenticated HTTP client for endpoints guarded by require_admin."""
+    from main import app
+
+    async def _override_get_db():
+        yield db_session
+
+    async def _override_require_admin():
+        return None
+
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[require_admin] = _override_require_admin
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(loop_scope="session")
 async def unauthed_client(
     db_session: AsyncSession,
 ) -> AsyncGenerator[AsyncClient, None]:
@@ -256,7 +279,8 @@ async def sample_events(db_session: AsyncSession) -> list[Event]:
             latitude=49.2665 + i * 0.001,
             longitude=-123.2490 + i * 0.001,
             location_name=f"Location {i}",
-            event_date=datetime(2026, 6, 1 + i, tzinfo=timezone.utc),
+            event_date=datetime(2026, 9, 1 + i, 10, 0, tzinfo=timezone.utc),
+            event_end_date=datetime(2026, 9, 1 + i, 13, 0, tzinfo=timezone.utc),
         )
         db_session.add(e)
         events.append(e)

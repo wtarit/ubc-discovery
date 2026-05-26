@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 EVENT_SOURCE_LABELS = ("ubc_official", "ams_club", "campus_community")
 EVENT_VIBES = (
@@ -32,6 +32,7 @@ class EventResponse(BaseModel):
     longitude: float | None
     location_name: str | None
     event_date: datetime | None
+    event_end_date: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -50,6 +51,13 @@ class CreateEventRequest(BaseModel):
     longitude: float | None = None
     location_name: str | None = None
     event_date: datetime | None = None
+    event_end_date: datetime | None = None
+
+    @model_validator(mode="after")
+    def validate_end_after_start(self) -> "CreateEventRequest":
+        if self.event_date and self.event_end_date and self.event_end_date < self.event_date:
+            raise ValueError("event_end_date must not be before event_date")
+        return self
 
     @field_validator("source_label")
     @classmethod

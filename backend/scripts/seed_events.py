@@ -1,5 +1,7 @@
 """Seed UBC events via the API. Requires ADMIN_API_KEY.
 
+Dates are computed relative to today so seed data always produces future events.
+
 Usage:
     ADMIN_API_KEY=secret uv run python scripts/seed_events.py
     ADMIN_API_KEY=secret uv run python scripts/seed_events.py --api-url https://api.example.com
@@ -8,8 +10,17 @@ Usage:
 import argparse
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 import httpx
+
+
+def _dt(day_offset: int, hour: int, minute: int = 0) -> str:
+    """Return an ISO-8601 UTC timestamp *day_offset* days from today at the given hour."""
+    t = datetime.now(timezone.utc).replace(hour=hour, minute=minute, second=0, microsecond=0)
+    t += timedelta(days=day_offset)
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 UBC_EVENTS = [
     {
@@ -23,7 +34,8 @@ UBC_EVENTS = [
         "latitude": 49.2625,
         "longitude": -123.2531,
         "location_name": "CIRS (2260 West Mall)",
-        "event_date": "2026-05-07T09:00:00Z",
+        "event_date": _dt(3, 9),
+        "event_end_date": _dt(3, 16),
     },
     {
         "title": "Science Rendezvous",
@@ -36,7 +48,8 @@ UBC_EVENTS = [
         "latitude": 49.2631,
         "longitude": -123.2513,
         "location_name": "Beaty Biodiversity Museum (2212 Main Mall)",
-        "event_date": "2026-05-09T10:00:00Z",
+        "event_date": _dt(5, 10),
+        "event_end_date": _dt(5, 16),
     },
     {
         "title": "Morning Bird Walk",
@@ -50,7 +63,8 @@ UBC_EVENTS = [
         "latitude": 49.2530,
         "longitude": -123.2520,
         "location_name": "UBC Botanical Garden (6804 SW Marine Dr)",
-        "event_date": "2026-05-09T09:00:00Z",
+        "event_date": _dt(7, 7),
+        "event_end_date": _dt(7, 9),
     },
     {
         "title": "Summer Session Residence Move-In",
@@ -63,7 +77,8 @@ UBC_EVENTS = [
         "latitude": 49.2611,
         "longitude": -123.2581,
         "location_name": "Various Student Residences (Marine Drive Hub)",
-        "event_date": "2026-05-10T09:00:00Z",
+        "event_date": _dt(10, 9),
+        "event_end_date": _dt(10, 17),
     },
     {
         "title": "Summer Session Term 1 Official Start",
@@ -76,7 +91,8 @@ UBC_EVENTS = [
         "latitude": 49.2668,
         "longitude": -123.2499,
         "location_name": "Campus-wide (AMS Nest)",
-        "event_date": "2026-05-11T08:00:00Z",
+        "event_date": _dt(12, 8),
+        "event_end_date": _dt(12, 17),
     },
     {
         "title": "Chung | Lind Gallery Drop-In Tour",
@@ -89,7 +105,8 @@ UBC_EVENTS = [
         "latitude": 49.2677,
         "longitude": -123.2527,
         "location_name": "IKB Learning Centre (1961 East Mall)",
-        "event_date": "2026-05-13T13:30:00Z",
+        "event_date": _dt(14, 13, 30),
+        "event_end_date": _dt(14, 15),
     },
     {
         "title": "T-Birds in Tech & Sauder Rooftop BBQ",
@@ -102,7 +119,8 @@ UBC_EVENTS = [
         "latitude": 49.2651,
         "longitude": -123.2539,
         "location_name": "UBC Sauder (2053 Main Mall)",
-        "event_date": "2026-05-13T17:00:00Z",
+        "event_date": _dt(17, 17),
+        "event_end_date": _dt(17, 20),
     },
     {
         "title": "Biodiversity Farm Tour",
@@ -115,7 +133,8 @@ UBC_EVENTS = [
         "latitude": 49.2534,
         "longitude": -123.2381,
         "location_name": "UBC Farm (3461 Ross Drive)",
-        "event_date": "2026-05-13T12:00:00Z",
+        "event_date": _dt(20, 10),
+        "event_end_date": _dt(20, 12, 30),
     },
     {
         "title": "MOA Exhibition: 'I Use My Haida Eyes'",
@@ -128,7 +147,8 @@ UBC_EVENTS = [
         "latitude": 49.2695,
         "longitude": -123.2594,
         "location_name": "Museum of Anthropology (6393 NW Marine Dr)",
-        "event_date": "2026-05-14T18:00:00Z",
+        "event_date": _dt(24, 18),
+        "event_end_date": _dt(24, 21),
     },
 ]
 
