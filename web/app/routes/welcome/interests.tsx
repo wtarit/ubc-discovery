@@ -1,0 +1,129 @@
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { VIBES } from "~/lib/constants";
+import {
+  OnboardingTop,
+  OnboardingFooter,
+  OnboardingDesktopShell,
+} from "~/components/onboarding-shell";
+
+export function meta() {
+  return [{ title: "What are you into? — UBC Discovery" }];
+}
+
+export default function OnboardingInterests() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as Record<string, unknown> | null;
+  const [selected, setSelected] = useState<string[]>([]);
+
+  function toggle(id: string) {
+    setSelected((s) =>
+      s.includes(id) ? s.filter((x) => x !== id) : [...s, id]
+    );
+  }
+
+  const enough = selected.length >= 3;
+
+  function handleContinue() {
+    navigate("/welcome/done", { state: { ...state, interests: selected } });
+  }
+
+  const ctaLabel = enough
+    ? `Continue · ${selected.length} picked`
+    : `Pick ${3 - selected.length} more`;
+
+  function InterestGrid() {
+    return (
+      <div className="grid grid-cols-2 border border-ink">
+        {VIBES.map((v, i) => {
+          const on = selected.includes(v.id);
+          return (
+            <button
+              key={v.id}
+              onClick={() => toggle(v.id)}
+              className={`py-3.5 px-3 border-none text-left font-display font-bold text-[17px] tracking-tight cursor-pointer flex items-center gap-2.5 ${
+                on ? "bg-ink text-bg" : "bg-transparent text-ink"
+              }`}
+              style={{
+                borderRight:
+                  i % 2 === 0 ? "1px solid var(--color-ink)" : "none",
+                borderBottom:
+                  i < VIBES.length - 2
+                    ? "1px solid var(--color-ink)"
+                    : "none",
+              }}
+            >
+              <span
+                className={`w-4 h-4 rounded-full border-[1.5px] inline-flex items-center justify-center shrink-0 ${
+                  on ? "border-bg bg-accent" : "border-ink bg-transparent"
+                }`}
+              >
+                {on && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </span>
+              {v.label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-bg text-ink font-body">
+      {/* Mobile */}
+      <div className="md:hidden pb-32">
+        <OnboardingTop
+          step={3}
+          total={4}
+          onBack={() => navigate("/welcome/academic")}
+        />
+        <div className="px-[22px] pt-6 pb-4">
+          <div className="font-mono text-[10px] text-accent font-bold tracking-wide uppercase">
+            Pick at least 3
+          </div>
+          <h1 className="mt-1.5 mb-2 font-display font-extrabold text-4xl text-ink tracking-tight leading-none">
+            What are you
+            <br />
+            into?
+          </h1>
+          <p className="text-[13.5px] text-ink-soft leading-relaxed">
+            We use these to rank your <em>For you</em> feed. Editable anytime.
+          </p>
+
+          <div className="mt-5">
+            <InterestGrid />
+          </div>
+        </div>
+        <OnboardingFooter
+          canContinue={enough}
+          onContinue={handleContinue}
+          ctaLabel={ctaLabel}
+        />
+      </div>
+
+      {/* Desktop */}
+      <OnboardingDesktopShell
+        step={3}
+        total={4}
+        kicker="Pick at least 3"
+        title="What are you into?"
+        subtitle={
+          <>
+            We use these to rank your <em>For you</em> feed. Editable any time.
+          </>
+        }
+        sideTitle="Your taste shapes the feed."
+        sideBody="Pick the vibes that resonate. The more you tell us, the sharper your For you ranking gets — and you can always tune it later from Profile."
+        canContinue={enough}
+        ctaLabel={ctaLabel}
+        onContinue={handleContinue}
+        onBack={() => navigate("/welcome/academic")}
+      >
+        <InterestGrid />
+      </OnboardingDesktopShell>
+    </div>
+  );
+}
