@@ -26,4 +26,5 @@ class Event(Base):
     location_name: Mapped[str | None] = mapped_column(String(255))
 
     event_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    event_end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
