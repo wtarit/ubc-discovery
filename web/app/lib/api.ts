@@ -57,6 +57,10 @@ export interface SavedEventResponse {
   created_at: string;
 }
 
+export interface SavedEventWithEventResponse extends SavedEventResponse {
+  event: ApiEvent;
+}
+
 export interface EventRatingResponse {
   id: string;
   user_id: string;
@@ -151,7 +155,7 @@ export const api = {
   },
   saved: {
     list: (token: string, skip = 0, limit = 100) =>
-      apiFetch<{ saved_events: SavedEventResponse[]; total: number }>(
+      apiFetch<{ saved_events: SavedEventWithEventResponse[]; total: number }>(
         `/saved-events?skip=${skip}&limit=${limit}`,
         {},
         token

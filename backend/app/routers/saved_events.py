@@ -7,9 +7,22 @@ from app.dependencies import get_current_user
 from app.models.event import Event
 from app.models.saved_event import SavedEvent
 from app.models.user import User
-from app.schemas.saved_event import SavedEventListResponse, SavedEventResponse
+from app.schemas.event import EventResponse
+from app.schemas.saved_event import (
+    SavedEventListResponse,
+    SavedEventResponse,
+    SavedEventWithEventResponse,
+)
+from app.services import s3
 
 router = APIRouter(prefix="/saved-events", tags=["Saved Events"])
+
+
+def _event_to_response(event: Event) -> EventResponse:
+    response = EventResponse.model_validate(event)
+    if event.event_picture_key:
+        response.event_picture_url = s3.public_url(event.event_picture_key)
+    return response
 
 
 @router.get("", response_model=SavedEventListResponse)
@@ -25,15 +38,22 @@ async def list_saved_events(
     total = count_result.scalar()
 
     result = await db.execute(
-        select(SavedEvent)
+        select(SavedEvent, Event)
+        .join(Event, Event.id == SavedEvent.event_id)
         .where(SavedEvent.user_id == user.id)
         .order_by(SavedEvent.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
-    saved = result.scalars().all()
+    saved = result.all()
     return SavedEventListResponse(
-        saved_events=[SavedEventResponse.model_validate(s) for s in saved],
+        saved_events=[
+            SavedEventWithEventResponse(
+                **SavedEventResponse.model_validate(saved_event).model_dump(),
+                event=_event_to_response(event),
+            )
+            for saved_event, event in saved
+        ],
         total=total,
     )
 
