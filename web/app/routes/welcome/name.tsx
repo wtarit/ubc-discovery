@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
 } from "~/components/onboarding-shell";
+import { useAuth } from "~/lib/auth";
+import { mergeOnboardingDraft, readOnboardingDraft } from "~/lib/onboarding";
 
 export function meta() {
   return [{ title: "What should we call you? — UBC Discovery" }];
@@ -12,13 +14,21 @@ export function meta() {
 
 export default function OnboardingName() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const { loading, profile, token } = useAuth();
+  const [name, setName] = useState(() => readOnboardingDraft().preferred_name ?? "");
+
+  useEffect(() => {
+    if (loading) return;
+    if (profile) navigate("/", { replace: true });
+    if (!token) navigate("/sign-in", { replace: true });
+  }, [loading, navigate, profile, token]);
 
   const canContinue = name.trim().length > 0;
 
   function handleContinue() {
     if (!canContinue) return;
-    navigate("/welcome/academic", { state: { name: name.trim() } });
+    mergeOnboardingDraft({ preferred_name: name.trim() });
+    navigate("/welcome/academic");
   }
 
   return (
@@ -55,14 +65,6 @@ export default function OnboardingName() {
         total={4}
         kicker="A few quick things"
         title="What should we call you?"
-        sideTitle={
-          <>
-            Welcome.
-            <br />
-            Let&rsquo;s set you up.
-          </>
-        }
-        sideBody="This takes about a minute. We use what you tell us to rank your For you feed."
         canContinue={canContinue}
         ctaLabel="Continue"
         onContinue={handleContinue}

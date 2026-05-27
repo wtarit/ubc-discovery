@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { VIBES } from "~/lib/constants";
 import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
 } from "~/components/onboarding-shell";
+import { useAuth } from "~/lib/auth";
+import { mergeOnboardingDraft, readOnboardingDraft } from "~/lib/onboarding";
 
 export function meta() {
   return [{ title: "What are you into? — UBC Discovery" }];
@@ -13,9 +15,17 @@ export function meta() {
 
 export default function OnboardingInterests() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as Record<string, unknown> | null;
-  const [selected, setSelected] = useState<string[]>([]);
+  const { loading, profile, token } = useAuth();
+  const [selected, setSelected] = useState<string[]>(
+    () => readOnboardingDraft().interests ?? []
+  );
+
+  useEffect(() => {
+    if (loading) return;
+    if (profile) navigate("/", { replace: true });
+    if (!token) navigate("/sign-in", { replace: true });
+    if (!readOnboardingDraft().preferred_name) navigate("/welcome/name", { replace: true });
+  }, [loading, navigate, profile, token]);
 
   function toggle(id: string) {
     setSelected((s) =>
@@ -26,7 +36,8 @@ export default function OnboardingInterests() {
   const enough = selected.length >= 3;
 
   function handleContinue() {
-    navigate("/welcome/done", { state: { ...state, interests: selected } });
+    mergeOnboardingDraft({ interests: selected });
+    navigate("/welcome/done");
   }
 
   const ctaLabel = enough
@@ -90,7 +101,8 @@ export default function OnboardingInterests() {
             into?
           </h1>
           <p className="text-[13.5px] text-ink-soft leading-relaxed">
-            We use these to rank your <em>For you</em> feed. Editable anytime.
+            This helps us rank your <em>For you</em> feed around what you
+            actually like.
           </p>
 
           <div className="mt-5">
@@ -112,11 +124,10 @@ export default function OnboardingInterests() {
         title="What are you into?"
         subtitle={
           <>
-            We use these to rank your <em>For you</em> feed. Editable any time.
+            This helps us rank your <em>For you</em> feed around what you
+            actually like.
           </>
         }
-        sideTitle="Your taste shapes the feed."
-        sideBody="Pick the vibes that resonate. The more you tell us, the sharper your For you ranking gets — and you can always tune it later from Profile."
         canContinue={enough}
         ctaLabel={ctaLabel}
         onContinue={handleContinue}

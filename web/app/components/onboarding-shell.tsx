@@ -85,8 +85,14 @@ export function OnboardingDesktopShell({
   kicker,
   title,
   subtitle,
-  sideTitle,
-  sideBody,
+  sideTitle = (
+    <>
+      Welcome.
+      <br />
+      Let&rsquo;s set you up.
+    </>
+  ),
+  sideBody = "This takes about a minute. We use what you tell us to rank your For you feed.",
   canContinue,
   ctaLabel = "Continue",
   onContinue,
@@ -99,7 +105,7 @@ export function OnboardingDesktopShell({
   kicker: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  sideTitle: React.ReactNode;
+  sideTitle?: React.ReactNode;
   sideBody?: string;
   canContinue: boolean;
   ctaLabel?: string;

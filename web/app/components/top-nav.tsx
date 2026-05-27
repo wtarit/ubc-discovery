@@ -1,4 +1,5 @@
 import { Link, NavLink } from "react-router";
+import { AccountMenu } from "~/components/account-menu";
 
 const NAV_ITEMS = [
   { id: "discover", label: "Discover", to: "/" },
@@ -49,14 +50,7 @@ export function TopNav({
           Search · ⌘K
         </div>
         {memberName ? (
-          <Link to="/profile" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-accent to-[#7990FF] flex items-center justify-center text-white font-display font-extrabold text-[13px]">
-              {memberName[0]?.toUpperCase()}
-            </div>
-            <span className="font-mono text-[11px] font-semibold">
-              {memberName}
-            </span>
-          </Link>
+          <AccountMenu memberName={memberName} />
         ) : (
           <Link
             to="/sign-in"
