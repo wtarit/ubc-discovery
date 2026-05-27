@@ -1,11 +1,18 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { FACULTIES, YEARS } from "~/lib/constants";
 import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
 } from "~/components/onboarding-shell";
+import { useAuth } from "~/lib/auth";
+import {
+  mergeOnboardingDraft,
+  readOnboardingDraft,
+  yearLabelToStanding,
+  yearStandingToLabel,
+} from "~/lib/onboarding";
 
 export function meta() {
   return [{ title: "Academic context — UBC Discovery" }];
@@ -85,20 +92,30 @@ function PillGrid({
 
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as { name?: string } | null;
-  const [faculty, setFaculty] = useState("");
-  const [major, setMajor] = useState("");
-  const [year, setYear] = useState("");
+  const { loading, profile, token } = useAuth();
+  const draft = readOnboardingDraft();
+  const [faculty, setFaculty] = useState(draft.faculty ?? "");
+  const [major, setMajor] = useState(draft.major ?? "");
+  const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
+
+  useEffect(() => {
+    if (loading) return;
+    if (profile) navigate("/", { replace: true });
+    if (!token) navigate("/sign-in", { replace: true });
+    if (!readOnboardingDraft().preferred_name) navigate("/welcome/name", { replace: true });
+  }, [loading, navigate, profile, token]);
 
   function handleContinue() {
-    navigate("/welcome/interests", {
-      state: { ...state, faculty, major, year },
+    mergeOnboardingDraft({
+      faculty: faculty || undefined,
+      major: major.trim() || undefined,
+      year_standing: yearLabelToStanding(year),
     });
+    navigate("/welcome/interests");
   }
 
   function handleSkip() {
-    navigate("/welcome/interests", { state });
+    navigate("/welcome/interests");
   }
 
   return (
@@ -120,8 +137,8 @@ export default function OnboardingAcademic() {
             in your degree?
           </h1>
           <p className="text-[13.5px] text-ink-soft leading-relaxed">
-            We use this to surface less first-year orientation stuff if
-            you&rsquo;re past it, and vice versa.
+            This helps us rank first-year, upper-year, and faculty-specific
+            events more appropriately.
           </p>
 
           <div className="mt-5 space-y-4">
@@ -171,9 +188,7 @@ export default function OnboardingAcademic() {
             in your degree?
           </>
         }
-        subtitle="We use this to surface less first-year orientation stuff if you're past it, and vice versa."
-        sideTitle="The right events at the right time."
-        sideBody="A third-year shouldn't see Imagine Day, and a frosh probably wants to. Tell us where you are and we'll keep what you see relevant."
+        subtitle="This helps us rank first-year, upper-year, and faculty-specific events more appropriately."
         canContinue
         onSkip={handleSkip}
         onBack={() => navigate("/welcome/name")}

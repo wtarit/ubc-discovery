@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { AccountMenu } from "~/components/account-menu";
 
 export function MobileHeader({
   memberName,
@@ -20,6 +21,7 @@ export function MobileHeader({
           <button className="font-mono text-accent text-base leading-none">
             ⌕
           </button>
+          {memberName && <AccountMenu memberName={memberName} compact />}
           <Link
             to="/organizers"
             className="font-mono text-[10.5px] font-semibold text-muted tracking-wide uppercase"

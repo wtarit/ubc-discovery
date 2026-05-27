@@ -1,7 +1,10 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { VIBES, FACULTIES, YEARS } from "~/lib/constants";
 import { VibeTag } from "~/components/vibe-tag";
+import { type UserResponse } from "~/lib/api";
+import { useAuth } from "~/lib/auth";
+import { yearLabelToStanding, yearStandingToLabel } from "~/lib/onboarding";
 
 export function meta() {
   return [{ title: "Profile — UBC Discovery" }];
@@ -97,29 +100,45 @@ function VisitorProfile() {
 }
 
 export default function Profile() {
-  // TODO: Replace with real auth state
-  const isMember = false;
+  const { loading, profile } = useAuth();
 
-  if (!isMember) return <VisitorProfile />;
+  if (loading) return null;
+  if (!profile) return <VisitorProfile />;
 
-  return <MemberProfile />;
+  return <MemberProfile user={profile} />;
 }
 
-function MemberProfile() {
+function formatMemberSince(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function MemberProfile({ user }: { user: UserResponse }) {
+  const { updateProfile, uploadProfilePhoto } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("Jamie");
-  const [faculty, setFaculty] = useState("Science");
-  const [major, setMajor] = useState("Cognitive Systems");
-  const [year, setYear] = useState("3rd year");
-  const [interests, setInterests] = useState([
-    "arts",
-    "outdoors",
-    "social",
-    "food",
-    "wellness",
-  ]);
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const [name, setName] = useState(user.preferred_name);
+  const [faculty, setFaculty] = useState(user.faculty ?? "");
+  const [major, setMajor] = useState(user.major ?? "");
+  const [year, setYear] = useState(yearStandingToLabel(user.year_standing));
+  const [interests, setInterests] = useState(user.interests ?? []);
+  const [avatar, setAvatar] = useState<string | null>(user.profile_picture_url);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const memberSince = formatMemberSince(user.created_at);
+
+  function resetForm() {
+    setName(user.preferred_name);
+    setFaculty(user.faculty ?? "");
+    setMajor(user.major ?? "");
+    setYear(yearStandingToLabel(user.year_standing));
+    setInterests(user.interests ?? []);
+    setAvatar(user.profile_picture_url);
+    setError("");
+    setEditing(false);
+  }
 
   function toggle(id: string) {
     setInterests((s) =>
@@ -127,10 +146,41 @@ function MemberProfile() {
     );
   }
 
-  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     setAvatar(URL.createObjectURL(f));
+    try {
+      await uploadProfilePhoto(f);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function saveProfile() {
+    if (!name.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const next = await updateProfile({
+        preferred_name: name.trim(),
+        faculty: faculty || undefined,
+        major: major.trim() || undefined,
+        year_standing: yearLabelToStanding(year),
+        interests,
+      });
+      setName(next.preferred_name);
+      setFaculty(next.faculty ?? "");
+      setMajor(next.major ?? "");
+      setYear(yearStandingToLabel(next.year_standing));
+      setInterests(next.interests ?? []);
+      setAvatar(next.profile_picture_url);
+      setEditing(false);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -210,7 +260,7 @@ function MemberProfile() {
             )}
             {!editing && (
               <div className="mt-1.5 text-[13px] text-ink-soft">
-                {major} · {year}
+                {[major, year].filter(Boolean).join(" · ") || "Profile ready"}
               </div>
             )}
           </div>
@@ -290,30 +340,31 @@ function MemberProfile() {
         </Section>
 
         <Section label="Activity">
-          <KV k="Saved events" v="12" />
-          <KV k="Events rated" v="4" />
-          <KV k="Member since" v="Sep 2026" />
+          <KV k="Saved events" v="Soon" />
+          <KV k="Connections" v={String(user.connections_count)} />
+          <KV k="Member since" v={memberSince} />
         </Section>
 
         <Section label="Account">
-          <KV k="Email" v="j.lim@gmail.com" />
-          <KV k="Notifications" v="Off" />
-          <KV k="Sign out" v="→" danger />
+          <KV k="Email" v={user.email} />
+          <KV k="UBC verified" v={user.ubc_verified ? "Yes" : "No"} />
+          {error && <p className="mt-2 text-[12px] text-[#D63A2E] font-mono">{error}</p>}
         </Section>
 
         {editing && (
           <div className="fixed bottom-0 left-0 right-0 px-[18px] py-3 pb-7 bg-bg border-t border-ink flex gap-2 z-50 md:hidden">
             <button
-              onClick={() => setEditing(false)}
+              onClick={resetForm}
               className="px-3.5 py-3 border border-ink bg-transparent text-ink cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase"
             >
               Cancel
             </button>
             <button
-              onClick={() => setEditing(false)}
-              className="flex-1 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase"
+              onClick={saveProfile}
+              disabled={saving || !name.trim()}
+              className="flex-1 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
             >
-              Save changes
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </div>
         )}
@@ -403,11 +454,11 @@ function MemberProfile() {
                   </h1>
                   <div className="mt-2 flex gap-3.5 items-center text-[14.5px] text-ink-soft">
                     <span>
-                      {major} · {year}
+                      {[major, year].filter(Boolean).join(" · ") || "Profile ready"}
                     </span>
                     <span className="w-1 h-1 rounded-full bg-muted" />
                     <span className="font-mono text-xs text-muted tracking-wide">
-                      Member since Sep 2026
+                      Member since {memberSince}
                     </span>
                   </div>
                 </>
@@ -504,15 +555,15 @@ function MemberProfile() {
             </Section>
 
             <Section label="Activity">
-              <KV k="Saved events" v="12" />
-              <KV k="Events rated" v="4" />
-              <KV k="Member since" v="Sep 2026" />
+              <KV k="Saved events" v="Soon" />
+              <KV k="Connections" v={String(user.connections_count)} />
+              <KV k="Member since" v={memberSince} />
             </Section>
 
             <Section label="Account">
-              <KV k="Email" v="j.lim@gmail.com" />
-              <KV k="Notifications" v="Off" />
-              <KV k="Sign out" v="→" danger />
+              <KV k="Email" v={user.email} />
+              <KV k="UBC verified" v={user.ubc_verified ? "Yes" : "No"} />
+              {error && <p className="mt-2 text-[12px] text-[#D63A2E] font-mono">{error}</p>}
             </Section>
           </div>
         </div>
@@ -520,16 +571,17 @@ function MemberProfile() {
         {editing && (
           <div className="sticky bottom-0 left-0 right-0 px-8 py-3.5 bg-bg border-t-2 border-ink flex justify-end gap-2.5">
             <button
-              onClick={() => setEditing(false)}
+              onClick={resetForm}
               className="px-4 py-2.5 border border-ink bg-transparent text-ink cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase"
             >
               Cancel
             </button>
             <button
-              onClick={() => setEditing(false)}
-              className="px-4 py-2.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase"
+              onClick={saveProfile}
+              disabled={saving || !name.trim()}
+              className="px-4 py-2.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
             >
-              Save changes →
+              {saving ? "Saving..." : "Save changes →"}
             </button>
           </div>
         )}

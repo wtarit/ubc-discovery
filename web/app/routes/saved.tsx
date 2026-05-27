@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { VibeTag } from "~/components/vibe-tag";
+import { useAuth } from "~/lib/auth";
 
 export function meta() {
   return [{ title: "Saved — UBC Discovery" }];
@@ -262,10 +263,11 @@ function RateSheet({
 }
 
 export default function Saved() {
-  // TODO: Replace with real auth state
-  const isMember = false;
+  const { loading, profile } = useAuth();
 
-  if (!isMember) return <VisitorSaved />;
+  if (loading) return null;
+
+  if (!profile) return <VisitorSaved />;
 
   return <MemberSaved />;
 }
@@ -273,6 +275,7 @@ export default function Saved() {
 function MemberSaved() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [rateSheetOpen, setRateSheetOpen] = useState(false);
+  const tabCounts = { upcoming: 0, past: 0 };
 
   return (
     <div>
@@ -289,13 +292,11 @@ function MemberSaved() {
           </div>
         </div>
 
-        <RateNudgeBanner count={3} mobile />
-
         <div className="flex border-b border-ink">
           {(
             [
-              { id: "upcoming" as const, label: "Coming up", count: 4 },
-              { id: "past" as const, label: "Past", count: 3 },
+              { id: "upcoming" as const, label: "Coming up", count: tabCounts.upcoming },
+              { id: "past" as const, label: "Past", count: tabCounts.past },
             ] as const
           ).map((t, i) => {
             const on = t.id === tab;
@@ -334,57 +335,13 @@ function MemberSaved() {
               </p>
             </div>
           ) : (
-            <div>
-              <div className="flex justify-between items-baseline py-3 font-mono text-[10px] text-muted tracking-wide uppercase border-b border-rule-soft">
-                <span>To rate</span>
-                <span>3 pending</span>
-              </div>
-              {[
-                {
-                  title: "Improv 101 · Drop-in Workshop",
-                  host: "UBC Improv",
-                  date: "SEP 08",
-                },
-                {
-                  title: "Map Magic · A Film Studies Screening",
-                  host: "UBC Film Society",
-                  date: "SEP 04",
-                },
-                {
-                  title: "Dollar Beer Trivia at the Pit",
-                  host: "AMS Pit Pub",
-                  date: "AUG 27",
-                },
-              ].map((e) => (
-                <div
-                  key={e.title}
-                  className="grid grid-cols-[54px_1fr_auto] gap-3.5 items-center py-3.5 border-b border-rule-soft"
-                >
-                  <div>
-                    <div className="font-mono text-[10px] text-muted tracking-wide uppercase">
-                      {e.date.split(" ")[0]}
-                    </div>
-                    <div className="font-display font-extrabold text-[28px] text-ink leading-none tabular-nums mt-0.5">
-                      {e.date.split(" ")[1]}
-                    </div>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-muted tracking-wide uppercase">
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                      Past event · {e.host}
-                    </div>
-                    <h3 className="mt-1 font-display font-bold text-lg text-ink tracking-tight leading-tight truncate">
-                      {e.title}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setRateSheetOpen(true)}
-                    className="px-3 py-1.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[10.5px] font-bold tracking-wide uppercase"
-                  >
-                    ♡ Rate →
-                  </button>
-                </div>
-              ))}
+            <div className="text-center py-10">
+              <h3 className="font-display font-extrabold text-[28px] text-ink tracking-tight leading-none">
+                No past saved events yet.
+              </h3>
+              <p className="mt-2.5 text-sm text-ink-soft leading-relaxed">
+                Events you saved and attended will show up here once saved-event tracking is available.
+              </p>
             </div>
           )}
         </div>
@@ -408,8 +365,8 @@ function MemberSaved() {
         <div className="px-8 border-b-2 border-ink flex items-stretch">
           {(
             [
-              { id: "upcoming" as const, label: "Coming up", count: 4 },
-              { id: "past" as const, label: "Past events", count: 3 },
+              { id: "upcoming" as const, label: "Coming up", count: tabCounts.upcoming },
+              { id: "past" as const, label: "Past events", count: tabCounts.past },
             ] as const
           ).map((t) => {
             const on = t.id === tab;
@@ -437,8 +394,6 @@ function MemberSaved() {
         </div>
 
         <div className="px-8 py-6 pb-14">
-          {tab === "past" && <RateNudgeBanner count={3} />}
-
           {tab === "upcoming" ? (
             <div className="py-16 text-left">
               <h3 className="font-display font-extrabold text-4xl text-ink tracking-tight leading-none">
@@ -456,61 +411,13 @@ function MemberSaved() {
               </Link>
             </div>
           ) : (
-            <div>
-              <div className="flex justify-between items-baseline py-3.5 pb-2 font-mono text-[10px] text-muted tracking-wider uppercase border-b border-ink">
-                <span>To rate</span>
-                <span>3 pending</span>
-              </div>
-              {[
-                {
-                  title: "Improv 101 · Drop-in Workshop",
-                  host: "UBC Improv",
-                  date: "SEP 08",
-                  location: "Buchanan B215",
-                },
-                {
-                  title: "Map Magic · A Film Studies Screening",
-                  host: "UBC Film Society",
-                  date: "SEP 04",
-                  location: "Hennings 200",
-                },
-                {
-                  title: "Dollar Beer Trivia at the Pit",
-                  host: "AMS Pit Pub",
-                  date: "AUG 27",
-                  location: "The Pit Pub",
-                },
-              ].map((e) => (
-                <div
-                  key={e.title}
-                  className="grid grid-cols-[54px_1fr_auto] gap-3.5 items-center py-3.5 border-b border-rule-soft"
-                >
-                  <div>
-                    <div className="font-mono text-[10px] text-muted tracking-wide uppercase">
-                      {e.date.split(" ")[0]}
-                    </div>
-                    <div className="font-display font-extrabold text-[28px] text-ink leading-none tabular-nums mt-0.5">
-                      {e.date.split(" ")[1]}
-                    </div>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-muted tracking-wide uppercase">
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                      Past event · {e.host}
-                    </div>
-                    <h3 className="mt-1 font-display font-bold text-lg text-ink tracking-tight leading-tight truncate">
-                      {e.title}
-                    </h3>
-                    <div className="text-[12.5px] text-muted">{e.location}</div>
-                  </div>
-                  <button
-                    onClick={() => setRateSheetOpen(true)}
-                    className="px-3 py-1.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[10.5px] font-bold tracking-wide uppercase"
-                  >
-                    ♡ Rate →
-                  </button>
-                </div>
-              ))}
+            <div className="py-16 text-left">
+              <h3 className="font-display font-extrabold text-4xl text-ink tracking-tight leading-none">
+                No past saved events yet.
+              </h3>
+              <p className="mt-3 text-[15px] text-muted max-w-[520px]">
+                Events you saved and attended will show up here once saved-event tracking is available.
+              </p>
             </div>
           )}
         </div>

@@ -1,9 +1,17 @@
-import { useNavigate, useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
 } from "~/components/onboarding-shell";
+import { ApiError } from "~/lib/api";
+import { useAuth } from "~/lib/auth";
+import {
+  clearOnboardingDraft,
+  readOnboardingDraft,
+  type OnboardingDraft,
+} from "~/lib/onboarding";
 
 export function meta() {
   return [{ title: "You're in! — UBC Discovery" }];
@@ -39,11 +47,61 @@ function StepList() {
 
 export default function OnboardingDone() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as { name?: string } | null;
-  const name = state?.name ?? "there";
+  const { completeOnboarding, loading, profile, refreshProfile, token } = useAuth();
+  const [draft] = useState<OnboardingDraft>(() => readOnboardingDraft());
+  const [saving, setSaving] = useState(true);
+  const [error, setError] = useState("");
+  const name = profile?.preferred_name ?? draft.preferred_name ?? "there";
+
+  useEffect(() => {
+    if (loading) return;
+    if (profile) {
+      clearOnboardingDraft();
+      setSaving(false);
+      return;
+    }
+    if (!token) {
+      navigate("/sign-in", { replace: true });
+      return;
+    }
+    if (!draft.preferred_name) {
+      navigate("/welcome/name", { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    async function save() {
+      setSaving(true);
+      setError("");
+      try {
+        await completeOnboarding({
+          preferred_name: draft.preferred_name!,
+          major: draft.major,
+          year_standing: draft.year_standing,
+          faculty: draft.faculty,
+          interests: draft.interests,
+        });
+        clearOnboardingDraft();
+      } catch (e: any) {
+        if (e instanceof ApiError && e.status === 409) {
+          await refreshProfile();
+          clearOnboardingDraft();
+        } else if (!cancelled) {
+          setError(e.message);
+        }
+      } finally {
+        if (!cancelled) setSaving(false);
+      }
+    }
+
+    save();
+    return () => {
+      cancelled = true;
+    };
+  }, [completeOnboarding, draft, loading, navigate, profile, refreshProfile, token]);
 
   function handleContinue() {
+    if (saving || error) return;
     navigate("/");
   }
 
@@ -62,8 +120,11 @@ export default function OnboardingDone() {
             <span className="text-accent">{name}.</span>
           </h1>
           <p className="mt-3.5 text-[14.5px] text-ink-soft leading-relaxed">
-            Your <em>For you</em> feed is ranked for what you picked. We&rsquo;ll
-            keep tuning it as you save events and rate ones you went to.
+            {saving
+              ? "Finishing your profile setup..."
+              : error
+                ? error
+                : "Your For you feed is ranked for what you picked. We'll keep tuning it as you save events and rate ones you went to."}
           </p>
 
           <div className="mt-5 p-4 border border-ink bg-surface">
@@ -76,9 +137,9 @@ export default function OnboardingDone() {
           </div>
         </div>
         <OnboardingFooter
-          canContinue
+          canContinue={!saving && !error}
           onContinue={handleContinue}
-          ctaLabel="Take me to Discover"
+          ctaLabel={saving ? "Finishing setup" : error ? "Setup needs attention" : "Take me to Discover"}
         />
       </div>
 
@@ -96,14 +157,15 @@ export default function OnboardingDone() {
         }
         subtitle={
           <>
-            Your <em>For you</em> feed is ranked for what you picked. We&rsquo;ll
-            keep tuning it as you save events and rate ones you went to.
+            {saving
+              ? "Finishing your profile setup..."
+              : error
+                ? error
+                : "Your For you feed is ranked for what you picked. We'll keep tuning it as you save events and rate ones you went to."}
           </>
         }
-        sideTitle="Welcome to UBC Discovery."
-        sideBody="From here on, every save and rating quietly improves your For you feed. No public profile, no points, no streaks — just a sharper read on what's worth your time."
-        canContinue
-        ctaLabel="Take me to Discover"
+        canContinue={!saving && !error}
+        ctaLabel={saving ? "Finishing setup" : error ? "Setup needs attention" : "Take me to Discover"}
         onContinue={handleContinue}
       >
         <StepList />
