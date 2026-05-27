@@ -150,9 +150,9 @@ export const api = {
       ),
   },
   saved: {
-    list: (token: string) =>
+    list: (token: string, skip = 0, limit = 100) =>
       apiFetch<{ saved_events: SavedEventResponse[]; total: number }>(
-        "/saved-events",
+        `/saved-events?skip=${skip}&limit=${limit}`,
         {},
         token
       ),

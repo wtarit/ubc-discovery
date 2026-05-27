@@ -2,6 +2,7 @@ import { useLoaderData, useNavigate } from "react-router";
 import type { Route } from "./+types/event-detail";
 import { api, type ApiEvent } from "~/lib/api";
 import { fmtDay, fmtRange, fmtTime, fmtMonth, fmtDate02 } from "~/lib/date";
+import { SaveEventButton } from "~/components/SaveEventButton";
 import { SourceBadge } from "~/components/SourceBadge";
 import { VibeTag } from "~/components/VibeTag";
 
@@ -92,9 +93,7 @@ export default function EventDetail() {
 
         {/* Bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-bg border-t-2 border-ink px-[18px] py-3 pb-7 flex gap-2 md:hidden z-50">
-          <button className="px-3.5 py-3 border border-ink bg-transparent text-ink font-mono text-[11px] font-bold tracking-wider uppercase cursor-pointer">
-            ♡ SAVE
-          </button>
+          <SaveEventButton eventId={event.id} variant="bar" />
           {event.source_url ? (
             <a
               href={event.source_url.startsWith("http") ? event.source_url : `https://${event.source_url}`}
@@ -215,9 +214,7 @@ export default function EventDetail() {
               </div>
             </div>
             <div className="p-6">
-              <button className="w-full py-3.5 border border-ink bg-ink text-bg font-mono text-[11px] font-bold tracking-wider uppercase cursor-pointer">
-                ♡ SAVE TO SHORTLIST
-              </button>
+              <SaveEventButton eventId={event.id} variant="wide" />
             </div>
           </aside>
         </div>
