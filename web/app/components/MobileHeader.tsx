@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { AccountMenu } from "~/components/account-menu";
+import { AccountMenu } from "~/components/AccountMenu";
 
 export function MobileHeader({
   memberName,

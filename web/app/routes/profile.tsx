@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { VIBES, FACULTIES, YEARS } from "~/lib/constants";
-import { VibeTag } from "~/components/vibe-tag";
+import { VibeTag } from "~/components/VibeTag";
 import { type UserResponse } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { yearLabelToStanding, yearStandingToLabel } from "~/lib/onboarding";

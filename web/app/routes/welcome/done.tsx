@@ -4,7 +4,7 @@ import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
-} from "~/components/onboarding-shell";
+} from "~/components/OnboardingShell";
 import { ApiError } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import {

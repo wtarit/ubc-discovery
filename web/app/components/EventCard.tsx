@@ -1,8 +1,8 @@
 import { Link } from "react-router";
 import type { ApiEvent } from "~/lib/api";
 import { fmtMonth, fmtDate02, fmtTime } from "~/lib/date";
-import { SourceBadge } from "./source-badge";
-import { VibeTag } from "./vibe-tag";
+import { SourceBadge } from "./SourceBadge";
+import { VibeTag } from "./VibeTag";
 
 export function EventCardMedium({ event }: { event: ApiEvent }) {
   const d = event.event_date ? new Date(event.event_date) : null;

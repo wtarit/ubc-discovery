@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router";
-import { AccountMenu } from "~/components/account-menu";
+import { AccountMenu } from "~/components/AccountMenu";
 
 const NAV_ITEMS = [
   { id: "discover", label: "Discover", to: "/" },
