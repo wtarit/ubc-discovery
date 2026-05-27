@@ -340,8 +340,6 @@ function MemberProfile({ user }: { user: UserResponse }) {
         </Section>
 
         <Section label="Activity">
-          <KV k="Saved events" v="Soon" />
-          <KV k="Connections" v={String(user.connections_count)} />
           <KV k="Member since" v={memberSince} />
         </Section>
 
@@ -555,8 +553,6 @@ function MemberProfile({ user }: { user: UserResponse }) {
             </Section>
 
             <Section label="Activity">
-              <KV k="Saved events" v="Soon" />
-              <KV k="Connections" v={String(user.connections_count)} />
               <KV k="Member since" v={memberSince} />
             </Section>
 
