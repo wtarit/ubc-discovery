@@ -3,8 +3,8 @@ import { useLoaderData } from "react-router";
 import type { Route } from "./+types/discover";
 import { api, type ApiEvent } from "~/lib/api";
 import { VIBES, SOURCES, type VibeId, type SourceId } from "~/lib/constants";
-import { VibeTag } from "~/components/vibe-tag";
-import { EventCardMedium, EventCardCompact, EventCardRich } from "~/components/event-card";
+import { VibeTag } from "~/components/VibeTag";
+import { EventCardMedium, EventCardCompact, EventCardRich } from "~/components/EventCard";
 
 export function meta() {
   return [

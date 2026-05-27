@@ -2,8 +2,8 @@ import { useLoaderData, useNavigate } from "react-router";
 import type { Route } from "./+types/event-detail";
 import { api, type ApiEvent } from "~/lib/api";
 import { fmtDay, fmtRange, fmtTime, fmtMonth, fmtDate02 } from "~/lib/date";
-import { SourceBadge } from "~/components/source-badge";
-import { VibeTag } from "~/components/vibe-tag";
+import { SourceBadge } from "~/components/SourceBadge";
+import { VibeTag } from "~/components/VibeTag";
 
 export function meta({ data }: Route.MetaArgs) {
   const event = data as ApiEvent | undefined;

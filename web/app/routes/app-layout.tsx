@@ -1,7 +1,7 @@
 import { Outlet } from "react-router";
-import { MobileHeader } from "~/components/mobile-header";
-import { TopNav } from "~/components/top-nav";
-import { BottomTabs } from "~/components/bottom-tabs";
+import { MobileHeader } from "~/components/MobileHeader";
+import { TopNav } from "~/components/TopNav";
+import { BottomTabs } from "~/components/BottomTabs";
 import { useAuth } from "~/lib/auth";
 
 export default function AppLayout() {

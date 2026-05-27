@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { VibeTag } from "~/components/vibe-tag";
+import { VibeTag } from "~/components/VibeTag";
 import { useAuth } from "~/lib/auth";
 
 export function meta() {

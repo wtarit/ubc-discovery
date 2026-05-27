@@ -5,7 +5,7 @@ import {
   OnboardingTop,
   OnboardingFooter,
   OnboardingDesktopShell,
-} from "~/components/onboarding-shell";
+} from "~/components/OnboardingShell";
 import { useAuth } from "~/lib/auth";
 import {
   mergeOnboardingDraft,
