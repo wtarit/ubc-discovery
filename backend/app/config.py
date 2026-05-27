@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:8081"
 
     cors_allowed_origins: list[str] = [
-        "http://localhost:8081",  # Expo web dev server
+        "http://localhost:5173",  # React Router web dev server
     ]
 
     model_config = {"env_file": ".env", "extra": "ignore"}
