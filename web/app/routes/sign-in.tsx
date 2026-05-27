@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { api } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 
@@ -14,17 +14,21 @@ function FirebaseConfigWarning({ message }: { message: string }) {
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     signInWithOtpToken,
     signInWithGoogle,
     firebaseReady,
     firebaseConfigError,
   } = useAuth();
+  const redirectParam = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const redirectTo =
+    redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
 
   function requireFirebaseReady() {
     if (!firebaseConfigError) return true;
@@ -58,7 +62,7 @@ export default function SignIn() {
       if (res.is_new_user || !profile) {
         navigate("/welcome/name");
       } else {
-        navigate("/");
+        navigate(redirectTo);
       }
     } catch (e: any) {
       setError(e.message);
@@ -73,7 +77,7 @@ export default function SignIn() {
     setError("");
     try {
       const profile = await signInWithGoogle();
-      navigate(profile ? "/" : "/welcome/name");
+      navigate(profile ? redirectTo : "/welcome/name");
     } catch (e: any) {
       setError(e.message);
     } finally {

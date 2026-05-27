@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { EventCardMedium } from "~/components/EventCard";
 import { VibeTag } from "~/components/VibeTag";
+import type { ApiEvent } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
+import {
+  useSavedEventDetails,
+  useSavedEventIds,
+} from "~/lib/saved-events-query";
 
 export function meta() {
   return [{ title: "Saved — UBC Discovery" }];
@@ -272,10 +278,97 @@ export default function Saved() {
   return <MemberSaved />;
 }
 
+function EmptySavedState({ tab, mobile }: { tab: "upcoming" | "past"; mobile?: boolean }) {
+  if (tab === "upcoming") {
+    return (
+      <div className={`${mobile ? "text-center py-10" : "py-16 text-left"}`}>
+        <h3
+          className={`font-display font-extrabold text-ink tracking-tight leading-none ${
+            mobile ? "text-[28px]" : "text-4xl"
+          }`}
+        >
+          Your shortlist is empty.
+        </h3>
+        <p
+          className={`mt-2.5 text-ink-soft leading-relaxed ${
+            mobile ? "text-sm" : "text-[15px] text-muted max-w-[480px]"
+          }`}
+        >
+          Tap the ♡ on any event on Discover to keep it here. Saving also tunes
+          your <em>For you</em> feed.
+        </p>
+        {!mobile && (
+          <Link
+            to="/"
+            className="mt-4 inline-block px-4 py-2.5 border border-ink bg-ink text-bg font-mono text-[11px] font-bold tracking-wide uppercase no-underline"
+          >
+            Go to Discover →
+          </Link>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${mobile ? "text-center py-10" : "py-16 text-left"}`}>
+      <h3
+        className={`font-display font-extrabold text-ink tracking-tight leading-none ${
+          mobile ? "text-[28px]" : "text-4xl"
+        }`}
+      >
+        No past saved events yet.
+      </h3>
+      <p
+        className={`mt-2.5 text-ink-soft leading-relaxed ${
+          mobile ? "text-sm" : "text-[15px] text-muted max-w-[520px]"
+        }`}
+      >
+        Events you saved will move here after their date passes.
+      </p>
+    </div>
+  );
+}
+
+function SavedEventList({
+  events,
+  tab,
+}: {
+  events: ApiEvent[];
+  tab: "upcoming" | "past";
+}) {
+  if (events.length === 0) return <EmptySavedState tab={tab} />;
+
+  return (
+    <div>
+      {events.map((event) => (
+        <EventCardMedium key={event.id} event={event} />
+      ))}
+    </div>
+  );
+}
+
 function MemberSaved() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [rateSheetOpen, setRateSheetOpen] = useState(false);
-  const tabCounts = { upcoming: 0, past: 0 };
+  const { data: savedEventIds, isLoading: loadingSavedIds } = useSavedEventIds();
+  const savedEventDetails = useSavedEventDetails();
+  const events = savedEventDetails.data;
+  const error = savedEventDetails.error;
+  const loadingEvents = savedEventDetails.isLoading;
+
+  const visibleEvents =
+    loadingSavedIds && savedEventIds.size === 0
+      ? events
+      : events.filter((event) => savedEventIds.has(event.id));
+  const now = new Date();
+  const upcomingEvents = visibleEvents.filter(
+    (event) => !event.event_date || new Date(event.event_date) >= now
+  );
+  const pastEvents = visibleEvents.filter(
+    (event) => event.event_date && new Date(event.event_date) < now
+  );
+  const activeEvents = tab === "upcoming" ? upcomingEvents : pastEvents;
+  const tabCounts = { upcoming: upcomingEvents.length, past: pastEvents.length };
 
   return (
     <div>
@@ -325,24 +418,22 @@ function MemberSaved() {
         </div>
 
         <div className="px-[18px] py-4">
-          {tab === "upcoming" ? (
-            <div className="text-center py-10">
-              <h3 className="font-display font-extrabold text-[28px] text-ink tracking-tight leading-none">
-                Your shortlist is empty.
-              </h3>
-              <p className="mt-2.5 text-sm text-ink-soft leading-relaxed">
-                Tap the ♡ on any event on the Discover page to keep it here.
-              </p>
+          {loadingEvents ? (
+            <div className="py-10 text-center font-mono text-[11px] text-muted tracking-wide uppercase">
+              Loading saved events...
+            </div>
+          ) : error ? (
+            <div className="py-10 text-center text-sm text-[#D63A2E]">
+              {error instanceof Error ? error.message : "Could not load saved events."}
+            </div>
+          ) : activeEvents.length > 0 ? (
+            <div>
+              {activeEvents.map((event) => (
+                <EventCardMedium key={event.id} event={event} />
+              ))}
             </div>
           ) : (
-            <div className="text-center py-10">
-              <h3 className="font-display font-extrabold text-[28px] text-ink tracking-tight leading-none">
-                No past saved events yet.
-              </h3>
-              <p className="mt-2.5 text-sm text-ink-soft leading-relaxed">
-                Events you saved and attended will show up here once saved-event tracking is available.
-              </p>
-            </div>
+            <EmptySavedState tab={tab} mobile />
           )}
         </div>
       </div>
@@ -394,31 +485,16 @@ function MemberSaved() {
         </div>
 
         <div className="px-8 py-6 pb-14">
-          {tab === "upcoming" ? (
-            <div className="py-16 text-left">
-              <h3 className="font-display font-extrabold text-4xl text-ink tracking-tight leading-none">
-                Your shortlist is empty.
-              </h3>
-              <p className="mt-3 text-[15px] text-muted max-w-[480px]">
-                Tap the ♡ on any event on Discover to keep it here. Saving also
-                tunes your <em>For you</em> feed.
-              </p>
-              <Link
-                to="/"
-                className="mt-4 inline-block px-4 py-2.5 border border-ink bg-ink text-bg font-mono text-[11px] font-bold tracking-wide uppercase no-underline"
-              >
-                Go to Discover →
-              </Link>
+          {loadingEvents ? (
+            <div className="py-16 font-mono text-[11px] text-muted tracking-wide uppercase">
+              Loading saved events...
+            </div>
+          ) : error ? (
+            <div className="py-16 text-[15px] text-[#D63A2E]">
+              {error instanceof Error ? error.message : "Could not load saved events."}
             </div>
           ) : (
-            <div className="py-16 text-left">
-              <h3 className="font-display font-extrabold text-4xl text-ink tracking-tight leading-none">
-                No past saved events yet.
-              </h3>
-              <p className="mt-3 text-[15px] text-muted max-w-[520px]">
-                Events you saved and attended will show up here once saved-event tracking is available.
-              </p>
-            </div>
+            <SavedEventList events={activeEvents} tab={tab} />
           )}
         </div>
       </div>
