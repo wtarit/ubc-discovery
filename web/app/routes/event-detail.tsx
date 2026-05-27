@@ -93,7 +93,7 @@ export default function EventDetail() {
 
         {/* Bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-bg border-t-2 border-ink px-[18px] py-3 pb-7 flex gap-2 md:hidden z-50">
-          <SaveEventButton eventId={event.id} variant="bar" />
+          <SaveEventButton eventId={event.id} event={event} variant="bar" />
           {event.source_url ? (
             <a
               href={event.source_url.startsWith("http") ? event.source_url : `https://${event.source_url}`}
@@ -214,7 +214,7 @@ export default function EventDetail() {
               </div>
             </div>
             <div className="p-6">
-              <SaveEventButton eventId={event.id} variant="wide" />
+              <SaveEventButton eventId={event.id} event={event} variant="wide" />
             </div>
           </aside>
         </div>

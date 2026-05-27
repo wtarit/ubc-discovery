@@ -55,6 +55,7 @@ export function EventCardMedium({ event }: { event: ApiEvent }) {
       </Link>
       <SaveEventButton
         eventId={event.id}
+        event={event}
         className="absolute right-2 top-6 shadow-[0_1px_0_var(--color-ink)]"
       />
     </div>
@@ -88,6 +89,7 @@ export function EventCardCompact({ event }: { event: ApiEvent }) {
       </Link>
       <SaveEventButton
         eventId={event.id}
+        event={event}
         className="absolute right-0 top-1/2 -translate-y-1/2"
       />
     </div>
@@ -128,7 +130,11 @@ export function EventCardRich({ event }: { event: ApiEvent }) {
           </div>
         </article>
       </Link>
-      <SaveEventButton eventId={event.id} className="absolute right-2 top-9" />
+      <SaveEventButton
+        eventId={event.id}
+        event={event}
+        className="absolute right-2 top-9"
+      />
     </div>
   );
 }

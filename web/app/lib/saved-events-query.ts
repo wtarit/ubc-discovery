@@ -1,53 +1,58 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, api } from "~/lib/api";
+import {
+  ApiError,
+  api,
+  type ApiEvent,
+  type SavedEventWithEventResponse,
+} from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 
-type SavedEventIds = Set<string>;
+type SaveMutationInput = {
+  eventId: string;
+  event?: ApiEvent;
+};
 
 const emptySavedEventIds = new Set<string>();
+const emptySavedEvents: SavedEventWithEventResponse[] = [];
 
 function savedEventsQueryKey(userId: string | null | undefined) {
   return ["saved-events", userId ?? "anonymous"] as const;
 }
 
-function savedEventDetailsQueryKey(eventIds: string[]) {
-  return ["saved-event-details", ...eventIds] as const;
-}
-
-export function useSavedEventIds() {
+export function useSavedEventsList() {
   const { token, profile } = useAuth();
 
   const query = useQuery({
     queryKey: savedEventsQueryKey(profile?.id),
     queryFn: async () => {
-      if (!token || !profile) return emptySavedEventIds;
+      if (!token || !profile) return emptySavedEvents;
       const data = await api.saved.list(token);
-      return new Set(data.saved_events.map((saved) => saved.event_id));
+      return data.saved_events;
     },
     enabled: Boolean(token && profile),
   });
 
   return {
     ...query,
-    data: query.data ?? emptySavedEventIds,
+    data: query.data ?? emptySavedEvents,
+  };
+}
+
+export function useSavedEventIds() {
+  const savedEventsQuery = useSavedEventsList();
+
+  return {
+    ...savedEventsQuery,
+    data: new Set(savedEventsQuery.data.map((saved) => saved.event_id)),
   };
 }
 
 export function useSavedEventDetails() {
-  const savedIdsQuery = useSavedEventIds();
-  const eventIds = [...savedIdsQuery.data];
-
-  const detailsQuery = useQuery({
-    queryKey: savedEventDetailsQueryKey(eventIds),
-    queryFn: () => Promise.all(eventIds.map((eventId) => api.events.get(eventId))),
-    enabled: !savedIdsQuery.isLoading && eventIds.length > 0,
-  });
+  const savedEventsQuery = useSavedEventsList();
 
   return {
-    ...detailsQuery,
-    data: detailsQuery.data ?? [],
-    isLoading: savedIdsQuery.isLoading || detailsQuery.isLoading,
-    error: savedIdsQuery.error ?? detailsQuery.error,
+    ...savedEventsQuery,
+    data: savedEventsQuery.data.map((saved) => saved.event),
   };
 }
 
@@ -57,17 +62,28 @@ export function useSavedEventMutations() {
   const queryKey = savedEventsQueryKey(profile?.id);
 
   const save = useMutation({
-    mutationFn: async (eventId: string) => {
+    mutationFn: async ({ eventId }: SaveMutationInput) => {
       if (!token || !profile) throw new Error("Sign in before saving events.");
       await api.saved.save(token, eventId);
     },
-    onMutate: async (eventId) => {
+    onMutate: async ({ eventId, event }) => {
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<SavedEventIds>(queryKey);
-      queryClient.setQueryData<SavedEventIds>(queryKey, (current) => {
-        const next = new Set(current ?? []);
-        next.add(eventId);
-        return next;
+      const previous =
+        queryClient.getQueryData<SavedEventWithEventResponse[]>(queryKey);
+      queryClient.setQueryData<SavedEventWithEventResponse[]>(queryKey, (current) => {
+        if (!event || current?.some((saved) => saved.event_id === eventId)) {
+          return current ?? [];
+        }
+        return [
+          {
+            id: `optimistic-${eventId}`,
+            user_id: profile?.id ?? "",
+            event_id: eventId,
+            created_at: new Date().toISOString(),
+            event,
+          },
+          ...(current ?? []),
+        ];
       });
       return { previous };
     },
@@ -93,11 +109,10 @@ export function useSavedEventMutations() {
     },
     onMutate: async (eventId) => {
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<SavedEventIds>(queryKey);
-      queryClient.setQueryData<SavedEventIds>(queryKey, (current) => {
-        const next = new Set(current ?? []);
-        next.delete(eventId);
-        return next;
+      const previous =
+        queryClient.getQueryData<SavedEventWithEventResponse[]>(queryKey);
+      queryClient.setQueryData<SavedEventWithEventResponse[]>(queryKey, (current) => {
+        return (current ?? []).filter((saved) => saved.event_id !== eventId);
       });
       return { previous };
     },

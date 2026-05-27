@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import type { ApiEvent } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import {
   useSavedEventIds,
@@ -8,6 +9,7 @@ import {
 
 type SaveEventButtonProps = {
   eventId: string;
+  event?: ApiEvent;
   variant?: "icon" | "bar" | "wide";
   className?: string;
 };
@@ -20,6 +22,7 @@ const variantClasses = {
 
 export function SaveEventButton({
   eventId,
+  event,
   variant = "icon",
   className = "",
 }: SaveEventButtonProps) {
@@ -31,9 +34,9 @@ export function SaveEventButton({
   const [failed, setFailed] = useState(false);
   const saved = savedEventIds.has(eventId);
 
-  async function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
+  async function handleClick(clickEvent: React.MouseEvent<HTMLButtonElement>) {
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
 
     if (!token || !profile) {
       const redirect = encodeURIComponent(location.pathname + location.search);
@@ -46,7 +49,7 @@ export function SaveEventButton({
       if (saved) {
         await unsave.mutateAsync(eventId);
       } else {
-        await save.mutateAsync(eventId);
+        await save.mutateAsync({ eventId, event });
       }
     } catch {
       setFailed(true);
