@@ -34,8 +34,8 @@ Swagger docs: http://localhost:8000/docs
 ### Frontend (Web)
 ```bash
 cd web
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Runs the web frontend at http://localhost:5173.
@@ -98,6 +98,8 @@ mobile/
 ### Frontend (Web)
 - `web/` is the default frontend target for new feature work and UI fixes.
 - React Router 7 routes live in `web/app/routes/`; shared web UI lives in `web/app/components/`.
+- Use PascalCase for shared component filenames and exported component identifiers in `web/app/components/` (for example, `EventCard.tsx` exports `EventCard`). Keep route module filenames in `web/app/routes/` lowercase/kebab-case.
+- Use pnpm for web dependencies and scripts (`pnpm install`, `pnpm run dev`, `pnpm run typecheck`).
 - Tailwind CSS is available through the React Router/Vite setup.
 - API helpers live in `web/app/lib/api.ts`.
 
