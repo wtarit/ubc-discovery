@@ -1,52 +1,69 @@
+# UBC Discovery
 
-# UBC-Newcomers
-I came to UBC as a transfer student and had a tough time fitting in. Feeling overwhelmed of being in a place I had never been, knew no one and had no idea what to do. To solve this we are building the first spontaneous connection app at UBC. Created to help the transfer, international and first year students all meet each other and build connections to this beautiful community.
+UBC Discovery is a student-built campus discovery product for the UBC community. It helps people find events, explore places, and connect around campus life without making sign-up the first step.
 
-UBC - Newcomers is an app for new UBC students who are coming on campus for the first time and do not know anyone, but want to meet new people and explore the campus. The users are transfer, international and first year students who may not know anyone. The impact is to help new students have an easier time meeting new people and feel part of the UBC community.
-## App Demo
+This project is a continuation of **UBC-Newcomers**. The original idea focused on helping transfer, international, and first-year students feel less lost when arriving at UBC. That newcomer problem is still the starting wedge, but the product has expanded into a broader public discovery experience for Campus Explorers across the UBC community.
 
-### Exploration & Mapping
-The core experience centers around an interactive map. Users can discover real-time events, landmarks, and connected peers across the campus.
+UBC Discovery is independent and is not an official UBC app.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/f5a7960c-d761-4cd1-b698-a73ed45ace5e" width="30%" alt="Login and Map View" />
-  <img src="https://github.com/user-attachments/assets/9b24fece-f452-4cb4-ace9-f152b7a81df7" width="30%" alt="Unlock Zone" />
-  <img src="https://github.com/user-attachments/assets/7f04d437-3586-4d62-8bea-70495e7813d8" width="30%" alt="Exploration Stats" />
-</p>
+## Core Concepts
 
-*   **Dynamic Zones:** Each landmark is surrounded by a geofence. Entering a zone triggers an "Unlock" prompt.
-*   **Gamified Progress:** Unlocking new areas updates your personal exploration stats, encouraging you to discover every corner of the campus.
+### Event Listings
 
----
+Event Listings are public, shareable pointers to campus or club events. They usually include an organizer, source link, location text, date, vibe, and optional map coordinate. Location text is the source of truth when precise coordinates are unavailable.
 
-### Event Discovery & Relevancy
-Stay updated without checking multiple platforms. We aggregate data directly from the sources students actually use.
+Sources use clear labels:
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/e5a6c74c-c34a-4a7c-82bb-66e8eecdd784" width="35%" alt="Events Feed" />
-</p>
+- **UBC Official** for UBC, faculty, department, or official university events.
+- **AMS Club** for AMS-recognized club and student society events.
+- **Campus Community** for relevant community-sourced or manually reviewed campus happenings.
 
-*   **Smart Scraping:** Automated pulling of upcoming events from club Instagram pages and faculty newsletters.
-*   **Personalized Feed:** Events are ranked with a **Relevancy Rating** based on your unique profile interests.
+### Personalized Discovery
 
----
+Members can select fixed Interests during onboarding and edit them later. Interests power the Personalized Event Feed alongside Event Listing vibes, saved events, ratings, timing, and academic context.
 
-### Smart Connections
-Finding your community on a large campus is simplified through AI-driven matching.
+Interests describe what a Member wants to explore. Vibes describe the feel or intent of an Event Listing.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/945ba3d2-debf-40cb-ad0b-a83d2fdb1110" width="35%" alt="Connections" />
-</p>
+## App Areas
 
-*   **Real-time Interaction:** Once a connection request is accepted, users can share locations to facilitate quick meet-ups.
-*   **AI Matchmaking:** We utilize **Claude Sonnet 4.6** to analyze profile metrics—including interests, hobbies, faculty, and year level—to determine similarity scores and suggest potential connections.
+- **Discover**: primary event discovery surface for public browsing and personalized feeds.
+- **Event Details**: shareable Event Listing pages that open directly on web.
+- **Saved**: member-only saved Event Listings.
+- **Profile**: member profile, interests, UBC verification, and settings.
 
-### AWS Services
+## Tech Stack
 
-ECS - Backend
-Cognito - login/registration
-Bedrock - Person compatibility matching
-S3 - Image Storage
+- **Backend**: FastAPI, async SQLAlchemy, asyncpg, PostgreSQL
+- **Web frontend**: React Router 7, React 19, Tailwind CSS, Vite
+- **AI**: AWS Bedrock with Claude Sonnet 4.6 for matching and ranking support
+- **AWS**: S3, ECS/Fargate, RDS
 
-### Architecture
-<img width="841" height="531" alt="UBC-Newcomer drawio" src="https://github.com/user-attachments/assets/99e0e431-ff41-43e2-90ca-d6468ebc8a3b" />
+## Development
+
+### Backend
+
+```bash
+cd backend
+uv sync
+cp .env.example .env
+uv run fastapi dev main.py
+```
+
+Swagger docs run at `http://localhost:8000/docs`.
+
+### Web
+
+```bash
+cd web
+pnpm install
+pnpm dev
+```
+
+The web app runs at `http://localhost:5173`.
+
+## Testing
+
+```bash
+cd backend
+uv run pytest tests/ -v
+```
