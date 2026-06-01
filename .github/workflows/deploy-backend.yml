@@ -1,54 +1,69 @@
 name: Deploy Backend
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Build Backend Docker image"]
     branches: [main]
-    paths:
-      - 'backend/**'
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "GHCR image tag to deploy"
+        required: false
+        default: latest
 
 env:
   AWS_REGION: us-west-2
-  ECR_REPOSITORY: ubc-newcomers-backend
-  ECS_CLUSTER: ubc-newcomers-cluster
-  ECS_SERVICE: ubc-newcomers-backend
+  ECS_SERVICE: ubc-discovery-backend-2b51
+  CONTAINER_PORT: "8000"
+  HEALTH_CHECK_PATH: /
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-backend
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    name: Deploy backend to ECS
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    env:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+      ECS_INFRASTRUCTURE_ROLE_ARN: ${{ secrets.ECS_INFRASTRUCTURE_ROLE_ARN }}
+      ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Set deployment image
+        id: image
+        env:
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          MANUAL_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          IMAGE_TAG="${MANUAL_IMAGE_TAG:-sha-${WORKFLOW_RUN_SHA:-$GITHUB_SHA}}"
+          IMAGE_NAME_LOWER="${IMAGE_NAME,,}"
+          echo "uri=${REGISTRY}/${IMAGE_NAME_LOWER}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest backend/
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
-            --force-new-deployment
-
-      - name: Wait for deployment stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE
+      - name: Deploy ECS Express service
+        id: deploy
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ env.ECS_SERVICE }}
+          image: ${{ steps.image.outputs.uri }}
+          execution-role-arn: ${{ env.ECS_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ env.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          container-port: ${{ env.CONTAINER_PORT }}
+          health-check-path: ${{ env.HEALTH_CHECK_PATH }}
+          task-role-arn: ${{ env.ECS_TASK_ROLE_ARN }}
