@@ -13,7 +13,7 @@ on:
         default: latest
 
 env:
-  AWS_REGION: us-west-2
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
   ECS_SERVICE: ubc-discovery-backend-2b51
   CONTAINER_PORT: "8000"
   HEALTH_CHECK_PATH: /
@@ -38,6 +38,7 @@ jobs:
       ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
       ECS_INFRASTRUCTURE_ROLE_ARN: ${{ secrets.ECS_INFRASTRUCTURE_ROLE_ARN }}
       ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
+      BACKEND_SECRETS_ARN: ${{ secrets.BACKEND_SECRETS_ARN }}
 
     steps:
       - name: Set deployment image
@@ -67,3 +68,18 @@ jobs:
           container-port: ${{ env.CONTAINER_PORT }}
           health-check-path: ${{ env.HEALTH_CHECK_PATH }}
           task-role-arn: ${{ env.ECS_TASK_ROLE_ARN }}
+          environment-variables: |
+            [
+              {"name": "AWS_REGION", "value": ${{ toJSON(env.AWS_REGION) }}},
+              {"name": "S3_BUCKET_NAME", "value": ${{ toJSON(vars.S3_BUCKET_NAME) }}},
+              {"name": "S3_ENDPOINT_URL", "value": ${{ toJSON(vars.S3_ENDPOINT_URL) }}},
+              {"name": "FIREBASE_PROJECT_ID", "value": ${{ toJSON(vars.FIREBASE_PROJECT_ID) }}},
+              {"name": "BEDROCK_MODEL_ID", "value": ${{ toJSON(vars.BEDROCK_MODEL_ID) }}},
+              {"name": "CORS_ALLOWED_ORIGINS", "value": ${{ toJSON(vars.CORS_ALLOWED_ORIGINS) }}}
+            ]
+          secrets: |
+            [
+              {"name": "DATABASE_URL", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:DATABASE_URL::"},
+              {"name": "FIREBASE_CREDENTIALS_JSON", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:FIREBASE_CREDENTIALS_JSON::"},
+              {"name": "ADMIN_API_KEY", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:ADMIN_API_KEY::"}
+            ]
