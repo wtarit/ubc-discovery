@@ -27,8 +27,6 @@ class Settings(BaseSettings):
 
     admin_api_key: str = ""
 
-    frontend_url: str = "http://localhost:8081"
-
     cors_allowed_origins: list[str] = [
         "http://localhost:5173",  # React Router web dev server
     ]
