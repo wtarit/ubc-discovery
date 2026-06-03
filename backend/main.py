@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, users, events, connections, matching, zones, og, saved_events
+from app.routers import auth, users, events, connections, matching, zones, saved_events
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ app.include_router(connections.router)
 app.include_router(matching.router)
 app.include_router(saved_events.router)
 app.include_router(zones.router)
-app.include_router(og.router)
 
 
 @app.get("/", tags=["Health"])
