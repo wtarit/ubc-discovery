@@ -10,6 +10,15 @@ import {
   type User,
 } from "firebase/auth";
 
+const AUTH_TEST_MODE = import.meta.env.VITE_AUTH_TEST_MODE === "true";
+const TEST_USER_KEY = "ubc-discovery-test-firebase-user";
+const TEST_GOOGLE_USER_KEY = "ubc-discovery-test-google-user";
+
+type TestFirebaseUser = {
+  uid: string;
+  email: string;
+};
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -21,6 +30,7 @@ export const FIREBASE_CONFIG_MISSING_MESSAGE =
   "Firebase web config is missing. Add VITE_FIREBASE_* values to web/.env.";
 
 export function isFirebaseConfigured() {
+  if (AUTH_TEST_MODE) return true;
   return Boolean(
     firebaseConfig.apiKey &&
       firebaseConfig.authDomain &&
@@ -31,6 +41,32 @@ export function isFirebaseConfigured() {
 
 export function getFirebaseConfigError() {
   return isFirebaseConfigured() ? null : FIREBASE_CONFIG_MISSING_MESSAGE;
+}
+
+function readTestUser(key = TEST_USER_KEY): TestFirebaseUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.sessionStorage.getItem(key) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+function asFirebaseUser(user: TestFirebaseUser): User {
+  return {
+    uid: user.uid,
+    email: user.email,
+    getIdToken: async () => `mock-token:${user.uid}:${user.email}`,
+  } as User;
+}
+
+function writeTestUser(user: TestFirebaseUser | null) {
+  if (user) {
+    window.sessionStorage.setItem(TEST_USER_KEY, JSON.stringify(user));
+  } else {
+    window.sessionStorage.removeItem(TEST_USER_KEY);
+  }
+  window.dispatchEvent(new CustomEvent("ubc-test-auth-changed"));
 }
 
 function getFirebaseAuth(): Auth {
@@ -47,6 +83,12 @@ function getFirebaseAuth(): Auth {
 }
 
 export function watchFirebaseAuth(callback: (user: User | null) => void) {
+  if (AUTH_TEST_MODE) {
+    const notify = () => callback(readTestUser() ? asFirebaseUser(readTestUser()!) : null);
+    queueMicrotask(notify);
+    window.addEventListener("ubc-test-auth-changed", notify);
+    return () => window.removeEventListener("ubc-test-auth-changed", notify);
+  }
   if (typeof window === "undefined" || !isFirebaseConfigured()) {
     return () => {};
   }
@@ -54,11 +96,25 @@ export function watchFirebaseAuth(callback: (user: User | null) => void) {
 }
 
 export async function signInWithCustomToken(customToken: string) {
+  if (AUTH_TEST_MODE) {
+    const [, uid = "otp-user", email = "member@example.com"] = customToken.split(":");
+    const user = { uid, email };
+    writeTestUser(user);
+    return asFirebaseUser(user);
+  }
   const result = await firebaseSignInWithCustomToken(getFirebaseAuth(), customToken);
   return result.user;
 }
 
 export async function signInWithGoogle() {
+  if (AUTH_TEST_MODE) {
+    const user = readTestUser(TEST_GOOGLE_USER_KEY) ?? {
+      uid: "google-user",
+      email: "member@example.com",
+    };
+    writeTestUser(user);
+    return asFirebaseUser(user);
+  }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   const result = await signInWithPopup(getFirebaseAuth(), provider);
@@ -66,6 +122,10 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
+  if (AUTH_TEST_MODE) {
+    writeTestUser(null);
+    return;
+  }
   if (!isFirebaseConfigured()) return;
   await firebaseSignOut(getFirebaseAuth());
 }
