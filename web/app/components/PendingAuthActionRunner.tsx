@@ -15,7 +15,6 @@ import {
 } from "~/lib/auth-flow";
 
 type AuthActionContext = {
-  token: string;
   profile: UserResponse;
   queryClient: QueryClient;
 };
@@ -44,8 +43,8 @@ function readEventId(payload: unknown) {
 // Add future authentication-gated feature handlers to this registry.
 const authActionHandlers: Record<string, AuthActionHandler> = {
   "save-event": {
-    async run(payload, { token }) {
-      await api.saved.save(token, readEventId(payload));
+    async run(payload) {
+      await api.saved.save(readEventId(payload));
     },
     async afterSuccess({ profile, queryClient }) {
       await queryClient.invalidateQueries({
@@ -76,7 +75,7 @@ function findFailedAction(actionId: string | null) {
 }
 
 export function PendingAuthActionRunner() {
-  const { token, profile } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const running = useRef(false);
@@ -87,10 +86,10 @@ export function PendingAuthActionRunner() {
   );
 
   const runPendingActions = useCallback(async () => {
-    if (!token || !profile || running.current) return;
+    if (!profile || running.current) return;
 
     running.current = true;
-    const context = { token, profile, queryClient };
+    const context = { profile, queryClient };
     try {
       while (true) {
         const action = readAuthFlow()?.actions.find(
@@ -130,7 +129,7 @@ export function PendingAuthActionRunner() {
     } finally {
       running.current = false;
     }
-  }, [navigate, profile, queryClient, token]);
+  }, [navigate, profile, queryClient]);
 
   useEffect(() => {
     void runPendingActions();

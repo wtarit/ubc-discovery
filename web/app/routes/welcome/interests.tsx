@@ -15,7 +15,7 @@ export function meta() {
 
 export default function OnboardingInterests() {
   const navigate = useNavigate();
-  const { loading, profile, token, uid } = useAuth();
+  const { loading, profile, uid } = useAuth();
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export default function OnboardingInterests() {
   useEffect(() => {
     if (loading) return;
     if (profile) navigate("/", { replace: true });
-    if (!token) navigate("/sign-in", { replace: true });
+    if (!uid) navigate("/sign-in", { replace: true });
     if (!readOnboardingDraft(uid).preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, token, uid]);
+  }, [loading, navigate, profile, uid]);
 
   function toggle(id: string) {
     setSelected((s) =>

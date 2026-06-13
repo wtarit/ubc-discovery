@@ -1,3 +1,5 @@
+import { getFirebaseIdToken } from "~/lib/firebase";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -100,6 +102,14 @@ async function apiFetch<T>(
   return res.json();
 }
 
+async function authenticatedApiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+) {
+  const token = await getFirebaseIdToken();
+  return apiFetch<T>(path, options, token);
+}
+
 export const api = {
   events: {
     list: (skip = 0, limit = 50) =>
@@ -123,9 +133,8 @@ export const api = {
       }),
   },
   users: {
-    me: (token: string) => apiFetch<UserResponse>("/users/me", {}, token),
+    me: () => authenticatedApiFetch<UserResponse>("/users/me"),
     onboarding: (
-      token: string,
       data: {
         preferred_name: string;
         major?: string;
@@ -134,13 +143,11 @@ export const api = {
         interests?: string[];
       }
     ) =>
-      apiFetch<UserResponse>(
+      authenticatedApiFetch<UserResponse>(
         "/users/onboarding",
-        { method: "POST", body: JSON.stringify(data) },
-        token
+        { method: "POST", body: JSON.stringify(data) }
       ),
     update: (
-      token: string,
       data: {
         preferred_name?: string;
         major?: string;
@@ -149,58 +156,55 @@ export const api = {
         interests?: string[];
       }
     ) =>
-      apiFetch<UserResponse>(
+      authenticatedApiFetch<UserResponse>(
         "/users/me",
-        { method: "PUT", body: JSON.stringify(data) },
-        token
+        { method: "PUT", body: JSON.stringify(data) }
       ),
-    presignedUpload: (token: string, contentType = "image/jpeg") =>
-      apiFetch<{ upload_url: string; file_key: string }>(
+    presignedUpload: (contentType = "image/jpeg") =>
+      authenticatedApiFetch<{ upload_url: string; file_key: string }>(
         `/users/me/presigned-upload?content_type=${encodeURIComponent(contentType)}`,
-        {},
-        token
+        {}
       ),
   },
   saved: {
-    list: (token: string, skip = 0, limit = 100) =>
-      apiFetch<{ saved_events: SavedEventWithEventResponse[]; total: number }>(
+    list: (skip = 0, limit = 100) =>
+      authenticatedApiFetch<{
+        saved_events: SavedEventWithEventResponse[];
+        total: number;
+      }>(
         `/saved-events?skip=${skip}&limit=${limit}`,
-        {},
-        token
+        {}
       ),
-    save: (token: string, eventId: string) =>
-      apiFetch<SavedEventResponse>(
+    save: (eventId: string) =>
+      authenticatedApiFetch<SavedEventResponse>(
         `/saved-events/${eventId}`,
-        { method: "POST" },
-        token
+        { method: "POST" }
       ),
-    unsave: (token: string, eventId: string) =>
-      apiFetch<void>(`/saved-events/${eventId}`, { method: "DELETE" }, token),
-    status: (token: string, eventId: string) =>
-      apiFetch<{ saved: boolean }>(
+    unsave: (eventId: string) =>
+      authenticatedApiFetch<void>(`/saved-events/${eventId}`, {
+        method: "DELETE",
+      }),
+    status: (eventId: string) =>
+      authenticatedApiFetch<{ saved: boolean }>(
         `/saved-events/${eventId}/status`,
-        {},
-        token
+        {}
       ),
   },
   ratings: {
-    list: (token: string) =>
-      apiFetch<{ ratings: EventRatingResponse[]; total: number }>(
+    list: () =>
+      authenticatedApiFetch<{ ratings: EventRatingResponse[]; total: number }>(
         "/ratings",
-        {},
-        token
+        {}
       ),
     rate: (
-      token: string,
       eventId: string,
       data: { stars: number; strong_vibes?: string[]; note?: string }
     ) =>
-      apiFetch<EventRatingResponse>(
+      authenticatedApiFetch<EventRatingResponse>(
         `/ratings/${eventId}`,
-        { method: "POST", body: JSON.stringify(data) },
-        token
+        { method: "POST", body: JSON.stringify(data) }
       ),
-    get: (token: string, eventId: string) =>
-      apiFetch<EventRatingResponse>(`/ratings/${eventId}`, {}, token),
+    get: (eventId: string) =>
+      authenticatedApiFetch<EventRatingResponse>(`/ratings/${eventId}`),
   },
 };

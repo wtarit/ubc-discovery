@@ -92,7 +92,7 @@ function PillGrid({
 
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
-  const { loading, profile, token, uid } = useAuth();
+  const { loading, profile, uid } = useAuth();
   const draft = readOnboardingDraft(uid);
   const [faculty, setFaculty] = useState(draft.faculty ?? "");
   const [major, setMajor] = useState(draft.major ?? "");
@@ -101,9 +101,9 @@ export default function OnboardingAcademic() {
   useEffect(() => {
     if (loading) return;
     if (profile) navigate("/", { replace: true });
-    if (!token) navigate("/sign-in", { replace: true });
+    if (!uid) navigate("/sign-in", { replace: true });
     if (!readOnboardingDraft(uid).preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, token, uid]);
+  }, [loading, navigate, profile, uid]);
 
   function handleContinue() {
     mergeOnboardingDraft(uid, {

@@ -23,7 +23,7 @@ export default function SignIn() {
   const [searchParams] = useSearchParams();
   const {
     loading: authLoading,
-    token,
+    uid,
     profile,
     signInWithOtpToken,
     signInWithGoogle,
@@ -69,7 +69,7 @@ export default function SignIn() {
 
   useEffect(() => {
     if (authLoading || initialAuthChecked) return;
-    if (token) {
+    if (uid) {
       navigate(profile ? consumeAuthReturnTo() : "/welcome/name", {
         replace: true,
       });
@@ -82,7 +82,7 @@ export default function SignIn() {
     navigate,
     profile,
     redirectParam,
-    token,
+    uid,
   ]);
 
   function finishAuthentication(hasProfile: boolean) {

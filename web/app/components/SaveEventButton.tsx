@@ -28,7 +28,7 @@ export function SaveEventButton({
   className = "",
 }: SaveEventButtonProps) {
   const navigate = useNavigate();
-  const { token, profile } = useAuth();
+  const { profile } = useAuth();
   const { data: savedEventIds } = useSavedEventIds();
   const { save, unsave, pending } = useSavedEventMutations();
   const [failed, setFailed] = useState(false);
@@ -38,7 +38,7 @@ export function SaveEventButton({
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
-    if (!token || !profile) {
+    if (!profile) {
       const returnTo = `/events/${encodeURIComponent(eventId)}`;
       startAuthFlow({
         returnTo,

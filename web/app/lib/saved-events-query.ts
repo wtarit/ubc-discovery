@@ -20,16 +20,16 @@ function savedEventsQueryKey(userId: string | null | undefined) {
 }
 
 export function useSavedEventsList() {
-  const { token, profile } = useAuth();
+  const { profile } = useAuth();
 
   const query = useQuery({
     queryKey: savedEventsQueryKey(profile?.id),
     queryFn: async () => {
-      if (!token || !profile) return emptySavedEvents;
-      const data = await api.saved.list(token);
+      if (!profile) return emptySavedEvents;
+      const data = await api.saved.list();
       return data.saved_events;
     },
-    enabled: Boolean(token && profile),
+    enabled: Boolean(profile),
   });
 
   return {
@@ -57,14 +57,14 @@ export function useSavedEventDetails() {
 }
 
 export function useSavedEventMutations() {
-  const { token, profile } = useAuth();
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
   const queryKey = savedEventsQueryKey(profile?.id);
 
   const save = useMutation({
     mutationFn: async ({ eventId }: SaveMutationInput) => {
-      if (!token || !profile) throw new Error("Sign in before saving events.");
-      await api.saved.save(token, eventId);
+      if (!profile) throw new Error("Sign in before saving events.");
+      await api.saved.save(eventId);
     },
     onMutate: async ({ eventId, event }) => {
       await queryClient.cancelQueries({ queryKey });
@@ -99,9 +99,9 @@ export function useSavedEventMutations() {
 
   const unsave = useMutation({
     mutationFn: async (eventId: string) => {
-      if (!token || !profile) throw new Error("Sign in before updating saved events.");
+      if (!profile) throw new Error("Sign in before updating saved events.");
       try {
-        await api.saved.unsave(token, eventId);
+        await api.saved.unsave(eventId);
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) return;
         throw error;

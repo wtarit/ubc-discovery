@@ -14,7 +14,7 @@ export function meta() {
 
 export default function OnboardingName() {
   const navigate = useNavigate();
-  const { loading, profile, token, uid } = useAuth();
+  const { loading, profile, uid } = useAuth();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -24,8 +24,8 @@ export default function OnboardingName() {
   useEffect(() => {
     if (loading) return;
     if (profile) navigate("/", { replace: true });
-    if (!token) navigate("/sign-in", { replace: true });
-  }, [loading, navigate, profile, token]);
+    if (!uid) navigate("/sign-in", { replace: true });
+  }, [loading, navigate, profile, uid]);
 
   const canContinue = name.trim().length > 0;
 

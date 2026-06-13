@@ -48,7 +48,7 @@ function StepList() {
 
 export default function OnboardingDone() {
   const navigate = useNavigate();
-  const { completeOnboarding, loading, profile, refreshProfile, token, uid } = useAuth();
+  const { completeOnboarding, loading, profile, refreshProfile, uid } = useAuth();
   const [draft, setDraft] = useState<OnboardingDraft>({});
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [saving, setSaving] = useState(true);
@@ -69,7 +69,7 @@ export default function OnboardingDone() {
       setSaving(false);
       return;
     }
-    if (!token) {
+    if (!uid) {
       navigate("/sign-in", { replace: true });
       return;
     }
@@ -107,7 +107,7 @@ export default function OnboardingDone() {
     return () => {
       cancelled = true;
     };
-  }, [completeOnboarding, draft, draftLoaded, loading, navigate, profile, refreshProfile, token, uid]);
+  }, [completeOnboarding, draft, draftLoaded, loading, navigate, profile, refreshProfile, uid]);
 
   function handleContinue() {
     if (saving || error) return;

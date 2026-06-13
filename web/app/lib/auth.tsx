@@ -31,7 +31,6 @@ type UpdateProfilePayload = Partial<OnboardingPayload>;
 type AuthContextValue = {
   loading: boolean;
   uid: string | null;
-  token: string | null;
   profile: UserResponse | null;
   firebaseReady: boolean;
   firebaseConfigError: string | null;
@@ -46,9 +45,9 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function loadProfile(token: string) {
+async function loadProfile() {
   try {
-    return await api.users.me(token);
+    return await api.users.me();
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -58,21 +57,20 @@ async function loadProfile(token: string) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserResponse | null>(null);
   const authRequestRef = useRef(0);
   const firebaseConfigError = getFirebaseConfigError();
   const firebaseReady = !firebaseConfigError;
 
   const refreshProfile = useCallback(async () => {
-    if (!token) return null;
+    if (!uid) return null;
     const requestId = authRequestRef.current;
-    const nextProfile = await loadProfile(token);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
       setProfile(nextProfile);
     }
     return nextProfile;
-  }, [token]);
+  }, [uid]);
 
   useEffect(() => {
     if (!firebaseReady) {
@@ -86,18 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!firebaseUser) {
         setUid(null);
-        setToken(null);
         setProfile(null);
         setLoading(false);
         return;
       }
 
       try {
-        const idToken = await firebaseUser.getIdToken();
-        const nextProfile = await loadProfile(idToken);
+        const nextProfile = await loadProfile();
         if (authRequestRef.current !== requestId) return;
         setUid(firebaseUser.uid);
-        setToken(idToken);
         setProfile(nextProfile);
       } finally {
         if (authRequestRef.current === requestId) {
@@ -113,11 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const requestId = authRequestRef.current + 1;
     authRequestRef.current = requestId;
     const user = await firebaseSignInWithCustomToken(customToken);
-    const idToken = await user.getIdToken();
-    const nextProfile = await loadProfile(idToken);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
       setUid(user.uid);
-      setToken(idToken);
       setProfile(nextProfile);
     }
     return nextProfile;
@@ -127,11 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const requestId = authRequestRef.current + 1;
     authRequestRef.current = requestId;
     const user = await firebaseSignInWithGoogle();
-    const idToken = await user.getIdToken();
-    const nextProfile = await loadProfile(idToken);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
       setUid(user.uid);
-      setToken(idToken);
       setProfile(nextProfile);
     }
     return nextProfile;
@@ -143,35 +134,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut();
     if (authRequestRef.current === requestId) {
       setUid(null);
-      setToken(null);
       setProfile(null);
     }
   }, []);
 
   const completeOnboarding = useCallback(
     async (data: OnboardingPayload) => {
-      if (!token) throw new Error("Sign in before completing onboarding.");
-      const nextProfile = await api.users.onboarding(token, data);
+      if (!uid) throw new Error("Sign in before completing onboarding.");
+      const nextProfile = await api.users.onboarding(data);
       setProfile(nextProfile);
       return nextProfile;
     },
-    [token]
+    [uid]
   );
 
   const updateProfile = useCallback(
     async (data: UpdateProfilePayload) => {
-      if (!token) throw new Error("Sign in before updating your profile.");
-      const nextProfile = await api.users.update(token, data);
+      if (!uid) throw new Error("Sign in before updating your profile.");
+      const nextProfile = await api.users.update(data);
       setProfile(nextProfile);
       return nextProfile;
     },
-    [token]
+    [uid]
   );
 
   const uploadProfilePhoto = useCallback(
     async (file: File) => {
-      if (!token) throw new Error("Sign in before updating your profile photo.");
-      const { upload_url } = await api.users.presignedUpload(token, file.type || "image/jpeg");
+      if (!uid) throw new Error("Sign in before updating your profile photo.");
+      const { upload_url } = await api.users.presignedUpload(
+        file.type || "image/jpeg"
+      );
       const upload = await fetch(upload_url, {
         method: "PUT",
         headers: { "Content-Type": file.type || "image/jpeg" },
@@ -180,14 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!upload.ok) throw new Error("Profile photo upload failed.");
       return refreshProfile();
     },
-    [refreshProfile, token]
+    [refreshProfile, uid]
   );
 
   const value = useMemo(
     () => ({
       loading,
       uid,
-      token,
       profile,
       firebaseReady,
       firebaseConfigError,
@@ -209,7 +200,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithGoogle,
       signInWithOtpToken,
       signOut,
-      token,
       uid,
       updateProfile,
       uploadProfilePhoto,
