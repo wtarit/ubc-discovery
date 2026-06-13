@@ -165,9 +165,12 @@ test("keeps a new member destination through onboarding refreshes", async ({ pag
   await page.reload();
   await expect
     .poll(() =>
-      page.evaluate(() =>
-        window.sessionStorage.getItem("ubc-discovery-auth-return-path")
-      )
+      page.evaluate(() => {
+        const value = window.sessionStorage.getItem(
+          "ubc-discovery-auth-flow"
+        );
+        return value ? JSON.parse(value).returnTo : null;
+      })
     )
     .toBe("/saved?tab=past");
 });

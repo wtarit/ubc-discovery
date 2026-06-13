@@ -5,8 +5,8 @@ import { api } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { authErrorMessage } from "~/lib/auth-errors";
 import {
-  consumeReturnPath,
-  rememberReturnPath,
+  consumeAuthReturnTo,
+  rememberAuthReturnTo,
 } from "~/lib/auth-flow";
 import { pendingGoogleLinkEmail } from "~/lib/firebase";
 
@@ -64,13 +64,15 @@ export default function SignIn() {
   }, [step]);
 
   useEffect(() => {
-    rememberReturnPath(redirectParam);
+    rememberAuthReturnTo(redirectParam);
   }, [redirectParam]);
 
   useEffect(() => {
     if (authLoading || initialAuthChecked) return;
     if (token) {
-      navigate(profile ? consumeReturnPath() : "/welcome/name", { replace: true });
+      navigate(profile ? consumeAuthReturnTo() : "/welcome/name", {
+        replace: true,
+      });
       return;
     }
     setInitialAuthChecked(true);
@@ -84,8 +86,8 @@ export default function SignIn() {
   ]);
 
   function finishAuthentication(hasProfile: boolean) {
-    rememberReturnPath(redirectParam);
-    navigate(hasProfile ? consumeReturnPath() : "/welcome/name");
+    rememberAuthReturnTo(redirectParam);
+    navigate(hasProfile ? consumeAuthReturnTo() : "/welcome/name");
   }
 
   function requireFirebaseReady() {

@@ -6,7 +6,7 @@ import {
   useSavedEventIds,
   useSavedEventMutations,
 } from "~/lib/saved-events-query";
-import { storePendingSave } from "~/lib/auth-flow";
+import { startAuthFlow } from "~/lib/auth-flow";
 
 type SaveEventButtonProps = {
   eventId: string;
@@ -39,9 +39,12 @@ export function SaveEventButton({
     clickEvent.stopPropagation();
 
     if (!token || !profile) {
-      storePendingSave(eventId);
-      const redirect = encodeURIComponent(`/events/${eventId}`);
-      navigate(`/sign-in?redirect=${redirect}`);
+      const returnTo = `/events/${encodeURIComponent(eventId)}`;
+      startAuthFlow({
+        returnTo,
+        actions: [{ type: "save-event", payload: { eventId } }],
+      });
+      navigate(`/sign-in?redirect=${encodeURIComponent(returnTo)}`);
       return;
     }
 

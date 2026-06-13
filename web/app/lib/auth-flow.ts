@@ -1,13 +1,84 @@
-const RETURN_PATH_KEY = "ubc-discovery-auth-return-path";
-const PENDING_SAVE_KEY = "ubc-discovery-pending-save";
+const AUTH_FLOW_KEY = "ubc-discovery-auth-flow";
+const AUTH_FLOW_VERSION = 1;
+const AUTH_FLOW_TTL_MS = 24 * 60 * 60 * 1000;
 
-export type PendingSaveAction = {
-  eventId: string;
-  returnPath: string;
-  status: "pending" | "failed";
+export type PostAuthActionStatus = "pending" | "failed";
+
+export type PostAuthAction = {
+  id: string;
+  type: string;
+  payload: unknown;
+  status: PostAuthActionStatus;
+  attempts: number;
 };
 
-export function validateReturnPath(candidate: string | null | undefined) {
+export type AuthFlow = {
+  version: typeof AUTH_FLOW_VERSION;
+  returnTo: string;
+  actions: PostAuthAction[];
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type NewPostAuthAction = {
+  type: string;
+  payload: unknown;
+};
+
+export type StartAuthFlowInput = {
+  returnTo: string;
+  actions?: NewPostAuthAction[];
+};
+
+export type AuthActionCompletion = {
+  returnTo: string;
+  hasRemainingActions: boolean;
+};
+
+function getSessionStorage() {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function removeStorageItem(key: string) {
+  try {
+    getSessionStorage()?.removeItem(key);
+  } catch {
+    // Authentication still works when browser storage is unavailable.
+  }
+}
+
+function createActionId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPostAuthAction(value: unknown): value is PostAuthAction {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    typeof value.type === "string" &&
+    value.type.length > 0 &&
+    "payload" in value &&
+    (value.status === "pending" || value.status === "failed") &&
+    typeof value.attempts === "number" &&
+    Number.isInteger(value.attempts) &&
+    value.attempts >= 0
+  );
+}
+
+export function validateAuthReturnTo(candidate: string | null | undefined) {
   if (!candidate || typeof window === "undefined") return null;
   if (!candidate.startsWith("/") || candidate.startsWith("//")) return null;
   try {
@@ -19,76 +90,158 @@ export function validateReturnPath(candidate: string | null | undefined) {
   }
 }
 
-export function rememberReturnPath(candidate: string | null | undefined) {
-  const path = validateReturnPath(candidate);
-  if (path) window.sessionStorage.setItem(RETURN_PATH_KEY, path);
-  return path;
-}
-
-export function peekReturnPath() {
-  if (typeof window === "undefined") return "/";
-  return validateReturnPath(window.sessionStorage.getItem(RETURN_PATH_KEY)) ?? "/";
-}
-
-export function consumeReturnPath() {
-  const path = peekReturnPath();
-  if (typeof window !== "undefined") {
-    window.sessionStorage.removeItem(RETURN_PATH_KEY);
-  }
-  return path;
-}
-
-export function storePendingSave(eventId: string) {
-  if (typeof window === "undefined") return;
-  const action: PendingSaveAction = {
-    eventId,
-    returnPath: `/events/${encodeURIComponent(eventId)}`,
-    status: "pending",
-  };
-  window.sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(action));
-  rememberReturnPath(action.returnPath);
-}
-
-export function readPendingSave(): PendingSaveAction | null {
-  if (typeof window === "undefined") return null;
+function parseAuthFlow(value: string | null): AuthFlow | null {
+  if (!value) return null;
   try {
-    const action = JSON.parse(
-      window.sessionStorage.getItem(PENDING_SAVE_KEY) ?? "null"
-    ) as PendingSaveAction | null;
+    const flow: unknown = JSON.parse(value);
     if (
-      !action ||
-      typeof action.eventId !== "string" ||
-      !validateReturnPath(action.returnPath) ||
-      !["pending", "failed"].includes(action.status)
+      !isRecord(flow) ||
+      flow.version !== AUTH_FLOW_VERSION ||
+      !validateAuthReturnTo(
+        typeof flow.returnTo === "string" ? flow.returnTo : null
+      ) ||
+      !Array.isArray(flow.actions) ||
+      !flow.actions.every(isPostAuthAction) ||
+      typeof flow.createdAt !== "number" ||
+      typeof flow.updatedAt !== "number"
     ) {
       return null;
     }
-    return action;
+    return flow as AuthFlow;
   } catch {
     return null;
   }
 }
 
-export function markPendingSaveFailed() {
-  const action = readPendingSave();
-  if (!action) return;
-  window.sessionStorage.setItem(
-    PENDING_SAVE_KEY,
-    JSON.stringify({ ...action, status: "failed" })
-  );
-}
-
-export function retryPendingSave() {
-  const action = readPendingSave();
-  if (!action) return;
-  window.sessionStorage.setItem(
-    PENDING_SAVE_KEY,
-    JSON.stringify({ ...action, status: "pending" })
-  );
-}
-
-export function clearPendingSave() {
-  if (typeof window !== "undefined") {
-    window.sessionStorage.removeItem(PENDING_SAVE_KEY);
+function writeAuthFlow(flow: AuthFlow) {
+  const storage = getSessionStorage();
+  if (!storage) return false;
+  try {
+    storage.setItem(AUTH_FLOW_KEY, JSON.stringify(flow));
+    return true;
+  } catch {
+    return false;
   }
+}
+
+export function readAuthFlow(): AuthFlow | null {
+  const storage = getSessionStorage();
+  if (!storage) return null;
+
+  let storedValue: string | null = null;
+  try {
+    storedValue = storage.getItem(AUTH_FLOW_KEY);
+  } catch {
+    return null;
+  }
+
+  if (!storedValue) return null;
+
+  const flow = parseAuthFlow(storedValue);
+  if (!flow || Date.now() - flow.updatedAt > AUTH_FLOW_TTL_MS) {
+    removeStorageItem(AUTH_FLOW_KEY);
+    return null;
+  }
+  return flow;
+}
+
+export function startAuthFlow({ returnTo, actions = [] }: StartAuthFlowInput) {
+  const safeReturnTo = validateAuthReturnTo(returnTo) ?? "/";
+  const now = Date.now();
+  const flow: AuthFlow = {
+    version: AUTH_FLOW_VERSION,
+    returnTo: safeReturnTo,
+    actions: actions.map((action) => ({
+      id: createActionId(),
+      type: action.type,
+      payload: action.payload ?? null,
+      status: "pending",
+      attempts: 0,
+    })),
+    createdAt: now,
+    updatedAt: now,
+  };
+  writeAuthFlow(flow);
+  return flow;
+}
+
+export function rememberAuthReturnTo(candidate: string | null | undefined) {
+  const returnTo = validateAuthReturnTo(candidate);
+  if (!returnTo) return null;
+
+  const current = readAuthFlow();
+  if (!current) {
+    startAuthFlow({ returnTo });
+    return returnTo;
+  }
+  writeAuthFlow({ ...current, returnTo, updatedAt: Date.now() });
+  return returnTo;
+}
+
+export function peekAuthReturnTo() {
+  return readAuthFlow()?.returnTo ?? "/";
+}
+
+export function consumeAuthReturnTo() {
+  const flow = readAuthFlow();
+  if (!flow) return "/";
+  if (flow.actions.length === 0) clearAuthFlow();
+  return flow.returnTo;
+}
+
+function updateAuthAction(
+  actionId: string,
+  update: (action: PostAuthAction) => PostAuthAction
+) {
+  const flow = readAuthFlow();
+  if (!flow || !flow.actions.some((action) => action.id === actionId)) {
+    return null;
+  }
+  const next: AuthFlow = {
+    ...flow,
+    actions: flow.actions.map((action) =>
+      action.id === actionId ? update(action) : action
+    ),
+    updatedAt: Date.now(),
+  };
+  writeAuthFlow(next);
+  return next;
+}
+
+export function markAuthActionFailed(actionId: string) {
+  return updateAuthAction(actionId, (action) => ({
+    ...action,
+    status: "failed",
+    attempts: action.attempts + 1,
+  }));
+}
+
+export function retryAuthAction(actionId: string) {
+  return updateAuthAction(actionId, (action) => ({
+    ...action,
+    status: "pending",
+  }));
+}
+
+export function completeAuthAction(
+  actionId: string
+): AuthActionCompletion | null {
+  const flow = readAuthFlow();
+  if (!flow) return null;
+  const actions = flow.actions.filter((action) => action.id !== actionId);
+  if (actions.length === flow.actions.length) return null;
+
+  if (actions.length === 0) {
+    clearAuthFlow();
+  } else {
+    writeAuthFlow({ ...flow, actions, updatedAt: Date.now() });
+  }
+  return {
+    returnTo: flow.returnTo,
+    hasRemainingActions: actions.length > 0,
+  };
+}
+
+export function clearAuthFlow() {
+  removeStorageItem(AUTH_FLOW_KEY);
 }

@@ -14,6 +14,26 @@ test("resumes a Save after an existing member signs in", async ({ page }) => {
   await page.goto("/");
   await page.locator('button[aria-label="Save event"]:visible').click();
   await expect(page).toHaveURL(/\/sign-in/);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const value = window.sessionStorage.getItem(
+          "ubc-discovery-auth-flow"
+        );
+        return value ? JSON.parse(value) : null;
+      })
+    )
+    .toMatchObject({
+      version: 1,
+      returnTo: "/events/event-1",
+      actions: [
+        {
+          type: "save-event",
+          payload: { eventId: "event-1" },
+          status: "pending",
+        },
+      ],
+    });
 
   await page.getByRole("button", { name: /continue with google/i }).click();
   await expect(page).toHaveURL("/events/event-1");
@@ -21,7 +41,7 @@ test("resumes a Save after an existing member signs in", async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(() =>
-        window.sessionStorage.getItem("ubc-discovery-pending-save")
+        window.sessionStorage.getItem("ubc-discovery-auth-flow")
       )
     )
     .toBeNull();
@@ -35,13 +55,24 @@ test("does not loop a failed pending Save and allows retry", async ({ page }) =>
     onSave: () => saves++,
   });
   await page.addInitScript(() => {
-    if (!window.sessionStorage.getItem("ubc-discovery-pending-save")) {
+    if (!window.sessionStorage.getItem("ubc-discovery-auth-flow")) {
+      const now = Date.now();
       window.sessionStorage.setItem(
-        "ubc-discovery-pending-save",
+        "ubc-discovery-auth-flow",
         JSON.stringify({
-          eventId: "event-1",
-          returnPath: "/events/event-1",
-          status: "pending",
+          version: 1,
+          returnTo: "/events/event-1",
+          actions: [
+            {
+              id: "pending-save-event-1",
+              type: "save-event",
+              payload: { eventId: "event-1" },
+              status: "pending",
+              attempts: 0,
+            },
+          ],
+          createdAt: now,
+          updatedAt: now,
         })
       );
     }
@@ -59,6 +90,14 @@ test("does not loop a failed pending Save and allows retry", async ({ page }) =>
   expect(saves).toBe(1);
   await page.getByRole("button", { name: /retry save/i }).click();
   await expect.poll(() => saves).toBe(2);
+  await page.getByRole("button", { name: /dismiss/i }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.sessionStorage.getItem("ubc-discovery-auth-flow")
+      )
+    )
+    .toBeNull();
 });
 
 test("resumes a Save after a new member completes onboarding", async ({ page }) => {
