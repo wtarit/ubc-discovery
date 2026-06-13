@@ -43,3 +43,42 @@ test("expires codes and keeps resend on cooldown", async ({ page }) => {
   });
   await expect(page.locator("button:visible", { hasText: /^verify/i })).toBeDisabled();
 });
+
+test("normalizes email and submits both forms with Enter", async ({ page }) => {
+  let sentEmail = "";
+  let verifiedCode = "";
+  await mockApi(page);
+  page.on("request", (request) => {
+    if (request.url().endsWith("/auth/otp/send")) {
+      sentEmail = request.postDataJSON().email;
+    }
+    if (request.url().endsWith("/auth/otp/verify")) {
+      verifiedCode = request.postDataJSON().code;
+    }
+  });
+  await page.goto("/sign-in");
+
+  const email = page.locator("[data-auth-email]:visible");
+  await email.fill("  Person@Example.COM ");
+  await email.press("Enter");
+  await expect(page.locator("[data-auth-code]:visible")).toBeFocused();
+  expect(sentEmail).toBe("person@example.com");
+
+  const code = page.locator("[data-auth-code]:visible");
+  await code.fill("12ab3456");
+  await expect(code).toHaveValue("123456");
+  await code.press("Enter");
+  expect(verifiedCode).toBe("123456");
+});
+
+test("uses OTP autocomplete and numeric keyboard attributes", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/sign-in");
+  await page.locator("[data-auth-email]:visible").fill("person@example.com");
+  await page.locator("[data-auth-email]:visible").press("Enter");
+
+  const code = page.locator("[data-auth-code]:visible");
+  await expect(code).toHaveAttribute("autocomplete", "one-time-code");
+  await expect(code).toHaveAttribute("inputmode", "numeric");
+  await expect(code).toHaveAttribute("pattern", "[0-9]{6}");
+});

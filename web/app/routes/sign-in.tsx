@@ -37,10 +37,22 @@ export default function SignIn() {
   const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
   const codeExpired = step === "code" && secondsRemaining === 0;
 
+  function focusVisible(selector: string) {
+    window.requestAnimationFrame(() => {
+      const input = Array.from(document.querySelectorAll<HTMLInputElement>(selector))
+        .find((element) => element.offsetParent !== null);
+      input?.focus();
+    });
+  }
+
   useEffect(() => {
     if (step !== "code") return;
     const timer = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(timer);
+  }, [step]);
+
+  useEffect(() => {
+    focusVisible(step === "code" ? "[data-auth-code]" : "[data-auth-email]");
   }, [step]);
 
   function requireFirebaseReady() {
@@ -49,13 +61,16 @@ export default function SignIn() {
     return false;
   }
 
-  async function handleSendOtp() {
-    if (!email.trim()) return;
+  async function handleSendOtp(event?: React.FormEvent) {
+    event?.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
     if (!requireFirebaseReady()) return;
+    setEmail(normalizedEmail);
     setLoading(true);
     setError("");
     try {
-      const response = await api.auth.sendOtp(email);
+      const response = await api.auth.sendOtp(normalizedEmail);
       const sentAt = Date.now();
       setNow(sentAt);
       setExpiresAt(sentAt + response.expires_in_seconds * 1000);
@@ -88,8 +103,13 @@ export default function SignIn() {
     }
   }
 
-  async function handleVerifyOtp() {
-    if (!code.trim()) return;
+  async function handleVerifyOtp(event?: React.FormEvent) {
+    event?.preventDefault();
+    if (!/^\d{6}$/.test(code)) {
+      setError("Enter the six-digit code from your email.");
+      focusVisible("[data-auth-code]");
+      return;
+    }
     if (!requireFirebaseReady()) return;
     setLoading(true);
     setError("");
@@ -106,6 +126,14 @@ export default function SignIn() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleChangeEmail() {
+    setStep("email");
+    setCode("");
+    setError("");
+    setReplacementNotice(false);
+    focusVisible("[data-auth-email]");
   }
 
   async function handleGoogleSignIn() {
@@ -168,39 +196,51 @@ export default function SignIn() {
                 <div className="font-mono text-[10px] text-muted tracking-wider uppercase my-1.5 text-center">
                   — OR —
                 </div>
-                <label className="font-mono text-[10px] text-muted tracking-wide uppercase">
-                  EMAIL
-                </label>
-                <input
-                  type="email"
-                  placeholder="you@anywhere.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="px-3.5 py-3 border border-ink bg-surface font-mono text-[13px] text-ink outline-none"
-                />
-                <button
-                  onClick={handleSendOtp}
-                  disabled={loading}
-                  className="py-3.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
-                >
-                  {loading ? "SENDING..." : "SEND SIGN-IN CODE →"}
-                </button>
+                <form className="contents" onSubmit={handleSendOtp} noValidate={false}>
+                  <label htmlFor="mobile-auth-email" className="font-mono text-[10px] text-muted tracking-wide uppercase">
+                    EMAIL
+                  </label>
+                  <input
+                    id="mobile-auth-email"
+                    data-auth-email
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    required
+                    placeholder="you@anywhere.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="px-3.5 py-3 border border-ink bg-surface font-mono text-[13px] text-ink outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="py-3.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
+                  >
+                    {loading ? "SENDING..." : "SEND SIGN-IN CODE →"}
+                  </button>
+                </form>
               </>
             ) : (
-              <>
+              <form className="contents" onSubmit={handleVerifyOtp}>
                 <p className="text-sm text-ink-soft">
                   Enter the code sent to <strong className="text-ink">{email}</strong>.
                 </p>
-                <label className="font-mono text-[10px] text-muted tracking-wide uppercase">
+                <label htmlFor="mobile-auth-code" className="font-mono text-[10px] text-muted tracking-wide uppercase">
                   VERIFICATION CODE
                 </label>
                 <input
+                  id="mobile-auth-code"
+                  data-auth-code
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]{6}"
+                  required
                   placeholder="123456"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   className="px-3.5 py-3 border border-ink bg-surface font-mono text-[13px] text-ink outline-none tracking-[0.5em] text-center"
-                  maxLength={6}
                 />
                 <p className="font-mono text-[11px] text-muted">
                   {codeExpired
@@ -213,8 +253,8 @@ export default function SignIn() {
                   </p>
                 )}
                 <button
-                  onClick={handleVerifyOtp}
-                  disabled={loading || codeExpired}
+                  type="submit"
+                  disabled={loading || codeExpired || code.length !== 6}
                   className="py-3.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
                 >
                   {loading ? "VERIFYING..." : "VERIFY →"}
@@ -228,12 +268,13 @@ export default function SignIn() {
                   {resendSeconds > 0 ? `Resend code in ${resendSeconds}s` : "Resend code"}
                 </button>
                 <button
-                  onClick={() => setStep("email")}
+                  type="button"
+                  onClick={handleChangeEmail}
                   className="font-mono text-[11px] text-muted tracking-wide uppercase bg-transparent border-none cursor-pointer"
                 >
                   ← Change email
                 </button>
-              </>
+              </form>
             )}
 
             {error && (
@@ -306,46 +347,58 @@ export default function SignIn() {
                     or
                     <span className="flex-1 h-px bg-rule-soft" />
                   </div>
-                  <div>
-                    <label className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-ink bg-surface font-body text-sm text-ink outline-none"
-                    />
-                  </div>
-                  <div className="text-xs text-muted">
-                    We&rsquo;ll send you a sign-in code.
-                  </div>
-                  <div className="flex justify-end mt-3 pt-5 border-t border-rule-soft">
-                    <button
-                      onClick={handleSendOtp}
-                      disabled={loading}
-                      className="px-6 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
-                    >
-                      {loading ? "Sending..." : "Continue with email →"}
-                    </button>
-                  </div>
+                  <form className="contents" onSubmit={handleSendOtp}>
+                    <div>
+                      <label htmlFor="desktop-auth-email" className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
+                        Email
+                      </label>
+                      <input
+                        id="desktop-auth-email"
+                        data-auth-email
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-ink bg-surface font-body text-sm text-ink outline-none"
+                      />
+                    </div>
+                    <div className="text-xs text-muted">
+                      We&rsquo;ll send you a sign-in code.
+                    </div>
+                    <div className="flex justify-end mt-3 pt-5 border-t border-rule-soft">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
+                      >
+                        {loading ? "Sending..." : "Continue with email →"}
+                      </button>
+                    </div>
+                  </form>
                 </>
               ) : (
-                <>
+                <form className="contents" onSubmit={handleVerifyOtp}>
                   <p className="text-sm text-ink-soft">
                     Enter the code sent to <strong className="text-ink">{email}</strong>.
                   </p>
                   <div>
-                    <label className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
+                    <label htmlFor="desktop-auth-code" className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
                       Verification code
                     </label>
                     <input
+                      id="desktop-auth-code"
+                      data-auth-code
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
+                      required
                       placeholder="123456"
                       value={code}
-                      onChange={(e) => setCode(e.target.value)}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       className="w-full px-3 py-2.5 border border-ink bg-surface font-mono text-lg text-ink outline-none tracking-[0.5em] text-center"
-                      maxLength={6}
                     />
                   </div>
                   <p className="font-mono text-[11px] text-muted">
@@ -360,7 +413,8 @@ export default function SignIn() {
                   )}
                   <div className="flex justify-between items-center mt-3 pt-5 border-t border-rule-soft">
                     <button
-                      onClick={() => setStep("email")}
+                      type="button"
+                      onClick={handleChangeEmail}
                       className="font-mono text-[11px] text-muted font-bold tracking-wide uppercase bg-transparent border-none cursor-pointer"
                     >
                       ← Change email
@@ -375,15 +429,15 @@ export default function SignIn() {
                         {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}
                       </button>
                       <button
-                        onClick={handleVerifyOtp}
-                        disabled={loading || codeExpired}
+                        type="submit"
+                        disabled={loading || codeExpired || code.length !== 6}
                         className="px-6 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
                       >
                         {loading ? "Verifying..." : "Verify →"}
                       </button>
                     </div>
                   </div>
-                </>
+                </form>
               )}
 
               {error && (
