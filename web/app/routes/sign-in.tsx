@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { api } from "~/lib/api";
@@ -27,8 +27,21 @@ export default function SignIn() {
   const [step, setStep] = useState<"email" | "code">("email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [expiresAt, setExpiresAt] = useState(0);
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const [replacementNotice, setReplacementNotice] = useState(false);
   const redirectTo =
     redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
+  const secondsRemaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
+  const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
+  const codeExpired = step === "code" && secondsRemaining === 0;
+
+  useEffect(() => {
+    if (step !== "code") return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [step]);
 
   function requireFirebaseReady() {
     if (!firebaseConfigError) return true;
@@ -42,8 +55,32 @@ export default function SignIn() {
     setLoading(true);
     setError("");
     try {
-      await api.auth.sendOtp(email);
+      const response = await api.auth.sendOtp(email);
+      const sentAt = Date.now();
+      setNow(sentAt);
+      setExpiresAt(sentAt + response.expires_in_seconds * 1000);
+      setResendAvailableAt(sentAt + 30_000);
+      setReplacementNotice(false);
       setStep("code");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    if (loading || resendSeconds > 0) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await api.auth.sendOtp(email);
+      const sentAt = Date.now();
+      setNow(sentAt);
+      setExpiresAt(sentAt + response.expires_in_seconds * 1000);
+      setResendAvailableAt(sentAt + 30_000);
+      setCode("");
+      setReplacementNotice(true);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -165,12 +202,30 @@ export default function SignIn() {
                   className="px-3.5 py-3 border border-ink bg-surface font-mono text-[13px] text-ink outline-none tracking-[0.5em] text-center"
                   maxLength={6}
                 />
+                <p className="font-mono text-[11px] text-muted">
+                  {codeExpired
+                    ? "This code has expired. Request a new one."
+                    : `Code expires in ${Math.floor(secondsRemaining / 60)}:${String(secondsRemaining % 60).padStart(2, "0")}.`}
+                </p>
+                {replacementNotice && (
+                  <p className="text-xs text-ink-soft">
+                    A new code was sent. Earlier codes no longer work.
+                  </p>
+                )}
                 <button
                   onClick={handleVerifyOtp}
-                  disabled={loading}
+                  disabled={loading || codeExpired}
                   className="py-3.5 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
                 >
                   {loading ? "VERIFYING..." : "VERIFY →"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading || resendSeconds > 0}
+                  className="font-mono text-[11px] text-accent font-bold tracking-wide uppercase bg-transparent border-none cursor-pointer disabled:text-muted disabled:cursor-not-allowed"
+                >
+                  {resendSeconds > 0 ? `Resend code in ${resendSeconds}s` : "Resend code"}
                 </button>
                 <button
                   onClick={() => setStep("email")}
@@ -293,6 +348,16 @@ export default function SignIn() {
                       maxLength={6}
                     />
                   </div>
+                  <p className="font-mono text-[11px] text-muted">
+                    {codeExpired
+                      ? "This code has expired. Request a new one."
+                      : `Code expires in ${Math.floor(secondsRemaining / 60)}:${String(secondsRemaining % 60).padStart(2, "0")}.`}
+                  </p>
+                  {replacementNotice && (
+                    <p className="text-xs text-ink-soft">
+                      A new code was sent. Earlier codes no longer work.
+                    </p>
+                  )}
                   <div className="flex justify-between items-center mt-3 pt-5 border-t border-rule-soft">
                     <button
                       onClick={() => setStep("email")}
@@ -300,13 +365,23 @@ export default function SignIn() {
                     >
                       ← Change email
                     </button>
-                    <button
-                      onClick={handleVerifyOtp}
-                      disabled={loading}
-                      className="px-6 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
-                    >
-                      {loading ? "Verifying..." : "Verify →"}
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={loading || resendSeconds > 0}
+                        className="font-mono text-[11px] text-accent font-bold tracking-wide uppercase bg-transparent border-none cursor-pointer disabled:text-muted disabled:cursor-not-allowed"
+                      >
+                        {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}
+                      </button>
+                      <button
+                        onClick={handleVerifyOtp}
+                        disabled={loading || codeExpired}
+                        className="px-6 py-3 border border-accent bg-accent text-white cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase disabled:opacity-50"
+                      >
+                        {loading ? "Verifying..." : "Verify →"}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}

@@ -34,7 +34,7 @@ export const existingProfile: MockProfile = {
 
 export async function mockApi(
   page: Page,
-  options: { profile?: MockProfile | null } = {}
+  options: { profile?: MockProfile | null; otpExpirySeconds?: number } = {}
 ) {
   const profile = options.profile === undefined ? null : options.profile;
 
@@ -52,7 +52,10 @@ export async function mockApi(
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ message: "sent", expires_in_seconds: 600 }),
+        body: JSON.stringify({
+          message: "sent",
+          expires_in_seconds: options.otpExpirySeconds ?? 600,
+        }),
       });
       return;
     }

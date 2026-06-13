@@ -30,3 +30,16 @@ test("focuses the verification state after sending a code", async ({ page }) => 
   await expect(page.locator("button:visible", { hasText: /change email/i })).toBeVisible();
   await expect(page.locator('input[placeholder="123456"]:visible')).toBeVisible();
 });
+
+test("expires codes and keeps resend on cooldown", async ({ page }) => {
+  await mockApi(page, { otpExpirySeconds: 1 });
+  await page.goto("/sign-in");
+  await page.locator('input[type="email"]:visible').fill("person@example.com");
+  await page.getByRole("button", { name: /send sign-in code|continue with email/i }).click();
+
+  await expect(page.locator("button:visible", { hasText: /resend.*30s/i })).toBeDisabled();
+  await expect(page.getByText(/code has expired/i).filter({ visible: true })).toBeVisible({
+    timeout: 3_000,
+  });
+  await expect(page.locator("button:visible", { hasText: /^verify/i })).toBeDisabled();
+});
