@@ -6,8 +6,17 @@ import {
   OnboardingFooter,
   OnboardingDesktopShell,
 } from "~/components/OnboardingShell";
+import { ApiError } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
-import { mergeOnboardingDraft, readOnboardingDraft } from "~/lib/onboarding";
+import {
+  clearOnboardingDraft,
+  mergeOnboardingDraft,
+  readOnboardingDraft,
+} from "~/lib/onboarding";
+import {
+  clearAuthFlowNotice,
+  setAuthFlowNotice,
+} from "~/lib/auth-flow";
 
 export function meta() {
   return [{ title: "What are you into? — UBC Discovery" }];
@@ -15,12 +24,14 @@ export function meta() {
 
 export default function OnboardingInterests() {
   const navigate = useNavigate();
-  const { state } = useAuth();
+  const { completeOnboarding, refreshProfile, state } = useAuth();
   const uid =
     state.status === "onboarding" || state.status === "member"
       ? state.uid
       : null;
   const [selected, setSelected] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (uid) setSelected(readOnboardingDraft(uid).interests ?? []);
@@ -40,14 +51,55 @@ export default function OnboardingInterests() {
 
   const enough = selected.length >= 3;
 
-  function handleContinue() {
-    mergeOnboardingDraft(uid, { interests: selected });
-    navigate("/welcome/done");
+  async function handleContinue() {
+    if (!enough || saving) return;
+
+    const draft = mergeOnboardingDraft(uid, { interests: selected });
+    if (!draft.preferred_name) {
+      navigate("/welcome/name", { replace: true });
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setAuthFlowNotice({
+      type: "onboarding-complete",
+      preferredName: draft.preferred_name,
+    });
+
+    try {
+      try {
+        await completeOnboarding({
+          preferred_name: draft.preferred_name,
+          major: draft.major,
+          year_standing: draft.year_standing,
+          faculty: draft.faculty,
+          interests: draft.interests,
+        });
+      } catch (requestError) {
+        if (!(requestError instanceof ApiError) || requestError.status !== 409) {
+          throw requestError;
+        }
+        const profile = await refreshProfile();
+        if (!profile) throw requestError;
+      }
+      clearOnboardingDraft(uid);
+    } catch (requestError) {
+      clearAuthFlowNotice();
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Profile setup failed. Try again."
+      );
+      setSaving(false);
+    }
   }
 
-  const ctaLabel = enough
-    ? `Continue · ${selected.length} picked`
-    : `Pick ${3 - selected.length} more`;
+  const ctaLabel = saving
+    ? "Finishing setup..."
+    : enough
+      ? `Finish setup · ${selected.length} picked`
+      : `Pick ${3 - selected.length} more`;
 
   function InterestGrid() {
     return (
@@ -93,7 +145,7 @@ export default function OnboardingInterests() {
       <div className="md:hidden pb-32">
         <OnboardingTop
           step={3}
-          total={4}
+          total={3}
           onBack={() => navigate("/welcome/academic")}
         />
         <div className="px-[22px] pt-6 pb-4">
@@ -113,9 +165,14 @@ export default function OnboardingInterests() {
           <div className="mt-5">
             <InterestGrid />
           </div>
+          {error ? (
+            <p className="mt-4 text-sm text-[#D63A2E]" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
         <OnboardingFooter
-          canContinue={enough}
+          canContinue={enough && !saving}
           onContinue={handleContinue}
           ctaLabel={ctaLabel}
         />
@@ -124,7 +181,7 @@ export default function OnboardingInterests() {
       {/* Desktop */}
       <OnboardingDesktopShell
         step={3}
-        total={4}
+        total={3}
         kicker="Pick at least 3"
         title="What are you into?"
         subtitle={
@@ -133,12 +190,17 @@ export default function OnboardingInterests() {
             actually like.
           </>
         }
-        canContinue={enough}
+        canContinue={enough && !saving}
         ctaLabel={ctaLabel}
         onContinue={handleContinue}
         onBack={() => navigate("/welcome/academic")}
       >
         <InterestGrid />
+        {error ? (
+          <p className="mt-4 text-sm text-[#D63A2E]" role="alert">
+            {error}
+          </p>
+        ) : null}
       </OnboardingDesktopShell>
     </div>
   );

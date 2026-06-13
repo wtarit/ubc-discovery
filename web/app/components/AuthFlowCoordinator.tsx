@@ -3,11 +3,12 @@ import {
   type QueryClient,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { api, type UserResponse } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import {
   completeAuthAction,
+  completeAuthFlow,
   markAuthActionFailed,
   readAuthFlow,
   retryAuthAction,
@@ -74,8 +75,9 @@ function findFailedAction(actionId: string | null) {
   );
 }
 
-export function PendingAuthActionRunner() {
+export function AuthFlowCoordinator() {
   const { state } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const running = useRef(false);
@@ -85,6 +87,22 @@ export function PendingAuthActionRunner() {
       null
   );
 
+  const navigateToCompletion = useCallback(
+    (returnTo: string, notice?: { preferredName: string }) => {
+      navigate(returnTo, {
+        replace: true,
+        state: notice
+          ? {
+              onboardingComplete: {
+                preferredName: notice.preferredName,
+              },
+            }
+          : undefined,
+      });
+    },
+    [navigate]
+  );
+
   const runPendingActions = useCallback(async () => {
     if (state.status !== "member" || running.current) return;
 
@@ -92,6 +110,36 @@ export function PendingAuthActionRunner() {
     const { profile } = state;
     const context = { profile, queryClient };
     try {
+      const flow = readAuthFlow();
+      if (!flow) {
+        if (
+          location.pathname === "/sign-in" ||
+          location.pathname.startsWith("/welcome/")
+        ) {
+          navigate("/", { replace: true });
+        }
+        return;
+      }
+
+      const currentPath = `${location.pathname}${location.search}${location.hash}`;
+      if (currentPath !== flow.returnTo) {
+        navigate(flow.returnTo, { replace: true });
+      }
+
+      if (!flow.actions.some((action) => action.status === "pending")) {
+        if (flow.actions.some((action) => action.status === "failed")) return;
+        const completion = completeAuthFlow();
+        if (completion) {
+          navigateToCompletion(
+            completion.returnTo,
+            completion.notice?.type === "onboarding-complete"
+              ? completion.notice
+              : undefined
+          );
+        }
+        return;
+      }
+
       while (true) {
         const action = readAuthFlow()?.actions.find(
           (candidate) => candidate.status === "pending"
@@ -123,14 +171,19 @@ export function PendingAuthActionRunner() {
         }
 
         if (completion && !completion.hasRemainingActions) {
-          navigate(completion.returnTo, { replace: true });
+          navigateToCompletion(
+            completion.returnTo,
+            completion.notice?.type === "onboarding-complete"
+              ? completion.notice
+              : undefined
+          );
           return;
         }
       }
     } finally {
       running.current = false;
     }
-  }, [navigate, queryClient, state]);
+  }, [location, navigate, navigateToCompletion, queryClient, state]);
 
   useEffect(() => {
     void runPendingActions();
@@ -146,6 +199,15 @@ export function PendingAuthActionRunner() {
     setFailedActionId(null);
     if (completion?.hasRemainingActions) {
       void runPendingActions();
+      return;
+    }
+    if (completion) {
+      navigateToCompletion(
+        completion.returnTo,
+        completion.notice?.type === "onboarding-complete"
+          ? completion.notice
+          : undefined
+      );
     }
   }
 

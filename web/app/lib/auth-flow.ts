@@ -12,10 +12,16 @@ export type PostAuthAction = {
   attempts: number;
 };
 
+export type AuthFlowNotice = {
+  type: "onboarding-complete";
+  preferredName: string;
+};
+
 export type AuthFlow = {
   version: typeof AUTH_FLOW_VERSION;
   returnTo: string;
   actions: PostAuthAction[];
+  notice?: AuthFlowNotice;
   createdAt: number;
   updatedAt: number;
 };
@@ -30,9 +36,10 @@ export type StartAuthFlowInput = {
   actions?: NewPostAuthAction[];
 };
 
-export type AuthActionCompletion = {
+export type AuthFlowCompletion = {
   returnTo: string;
   hasRemainingActions: boolean;
+  notice?: AuthFlowNotice;
 };
 
 function getSessionStorage() {
@@ -78,6 +85,15 @@ function isPostAuthAction(value: unknown): value is PostAuthAction {
   );
 }
 
+function isAuthFlowNotice(value: unknown): value is AuthFlowNotice {
+  return (
+    isRecord(value) &&
+    value.type === "onboarding-complete" &&
+    typeof value.preferredName === "string" &&
+    value.preferredName.length > 0
+  );
+}
+
 export function validateAuthReturnTo(candidate: string | null | undefined) {
   if (!candidate || typeof window === "undefined") return null;
   if (!candidate.startsWith("/") || candidate.startsWith("//")) return null;
@@ -102,6 +118,9 @@ function parseAuthFlow(value: string | null): AuthFlow | null {
       ) ||
       !Array.isArray(flow.actions) ||
       !flow.actions.every(isPostAuthAction) ||
+      ("notice" in flow &&
+        flow.notice !== undefined &&
+        !isAuthFlowNotice(flow.notice)) ||
       typeof flow.createdAt !== "number" ||
       typeof flow.updatedAt !== "number"
     ) {
@@ -178,15 +197,32 @@ export function rememberAuthReturnTo(candidate: string | null | undefined) {
   return returnTo;
 }
 
-export function peekAuthReturnTo() {
-  return readAuthFlow()?.returnTo ?? "/";
+export function setAuthFlowNotice(notice: AuthFlowNotice) {
+  const current = readAuthFlow();
+  if (!current) {
+    const flow = startAuthFlow({ returnTo: "/" });
+    writeAuthFlow({ ...flow, notice, updatedAt: Date.now() });
+    return;
+  }
+  writeAuthFlow({ ...current, notice, updatedAt: Date.now() });
 }
 
-export function consumeAuthReturnTo() {
+export function clearAuthFlowNotice() {
+  const current = readAuthFlow();
+  if (!current?.notice) return;
+  const { notice: _notice, ...flow } = current;
+  writeAuthFlow({ ...flow, updatedAt: Date.now() });
+}
+
+export function completeAuthFlow(): AuthFlowCompletion | null {
   const flow = readAuthFlow();
-  if (!flow) return "/";
-  if (flow.actions.length === 0) clearAuthFlow();
-  return flow.returnTo;
+  if (!flow) return null;
+  clearAuthFlow();
+  return {
+    returnTo: flow.returnTo,
+    hasRemainingActions: false,
+    notice: flow.notice,
+  };
 }
 
 function updateAuthAction(
@@ -225,7 +261,7 @@ export function retryAuthAction(actionId: string) {
 
 export function completeAuthAction(
   actionId: string
-): AuthActionCompletion | null {
+): AuthFlowCompletion | null {
   const flow = readAuthFlow();
   if (!flow) return null;
   const actions = flow.actions.filter((action) => action.id !== actionId);
@@ -239,6 +275,7 @@ export function completeAuthAction(
   return {
     returnTo: flow.returnTo,
     hasRemainingActions: actions.length > 0,
+    notice: flow.notice,
   };
 }
 

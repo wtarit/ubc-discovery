@@ -37,7 +37,7 @@ export default function OnboardingName() {
     <div className="min-h-screen bg-bg text-ink font-body">
       {/* Mobile */}
       <div className="md:hidden pb-28">
-        <OnboardingTop step={1} total={4} />
+        <OnboardingTop step={1} total={3} />
         <div className="px-[22px] pt-8">
           <div className="font-mono text-[10px] text-accent font-bold tracking-wide uppercase">
             A few quick things
@@ -64,7 +64,7 @@ export default function OnboardingName() {
       {/* Desktop */}
       <OnboardingDesktopShell
         step={1}
-        total={4}
+        total={3}
         kicker="A few quick things"
         title="What should we call you?"
         canContinue={canContinue}

@@ -121,8 +121,36 @@ test("resumes a Save after a new member completes onboarding", async ({ page }) 
   for (const interest of ["Social", "Career", "Academic"]) {
     await page.locator("button:visible", { hasText: interest }).click();
   }
-  await page.locator("button:visible", { hasText: /^continue/i }).click();
+  await page.locator("button:visible", { hasText: /finish setup/i }).click();
 
   await expect(page).toHaveURL("/events/event-1");
   await expect.poll(() => saves).toBe(1);
+  await expect(
+    page.getByRole("dialog", { name: /you.re in, new member/i })
+  ).toBeVisible();
+  await page.getByRole("button", { name: /start exploring/i }).click();
+  await page.reload();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("shows onboarding completion on the default destination", async ({
+  page,
+}) => {
+  await mockApi(page, { profile: null });
+  await page.goto("/sign-in");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page).toHaveURL("/welcome/name");
+
+  await page.locator("input:visible").fill("New Member");
+  await page.locator("button:visible", { hasText: /^continue/i }).click();
+  await page.locator("button:visible", { hasText: /skip/i }).click();
+  for (const interest of ["Social", "Career", "Academic"]) {
+    await page.locator("button:visible", { hasText: interest }).click();
+  }
+  await page.locator("button:visible", { hasText: /finish setup/i }).click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("dialog", { name: /you.re in, new member/i })
+  ).toBeVisible();
 });

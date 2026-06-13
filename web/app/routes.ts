@@ -21,7 +21,4 @@ export default [
     route("welcome/academic", "routes/welcome/academic.tsx"),
     route("welcome/interests", "routes/welcome/interests.tsx"),
   ]),
-  layout("routes/authenticated-layout.tsx", [
-    route("welcome/done", "routes/welcome/done.tsx"),
-  ]),
 ] satisfies RouteConfig;

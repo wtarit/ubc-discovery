@@ -127,7 +127,7 @@ export default function OnboardingAcademic() {
       <div className="md:hidden pb-32">
         <OnboardingTop
           step={2}
-          total={4}
+          total={3}
           onBack={() => navigate("/welcome/name")}
         />
         <div className="px-[22px] pt-6 pb-4">
@@ -182,7 +182,7 @@ export default function OnboardingAcademic() {
       {/* Desktop */}
       <OnboardingDesktopShell
         step={2}
-        total={4}
+        total={3}
         kicker="Optional · skippable"
         title={
           <>

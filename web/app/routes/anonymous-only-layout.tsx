@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "~/lib/auth";
-import {
-  consumeAuthReturnTo,
-  rememberAuthReturnTo,
-} from "~/lib/auth-flow";
+import { rememberAuthReturnTo } from "~/lib/auth-flow";
 
 export default function AnonymousOnlyLayout() {
   const { state } = useAuth();
@@ -17,10 +14,6 @@ export default function AnonymousOnlyLayout() {
   }, [redirectParam]);
 
   useEffect(() => {
-    if (state.status === "member") {
-      navigate(consumeAuthReturnTo(), { replace: true });
-      return;
-    }
     if (state.status === "onboarding") {
       navigate("/welcome/name", { replace: true });
     }

@@ -8,8 +8,6 @@ export default function OnboardingOnlyLayout() {
   if (state.status === "anonymous") {
     return <Navigate to="/sign-in" replace />;
   }
-  if (state.status === "member") {
-    return <Navigate to="/" replace />;
-  }
+  if (state.status === "member") return null;
   return <Outlet />;
 }

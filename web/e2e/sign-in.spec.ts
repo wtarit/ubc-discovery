@@ -213,20 +213,10 @@ test("redirects a member away from onboarding steps", async ({ page }) => {
   await expect(page).toHaveURL("/");
 });
 
-test("requires authentication for onboarding completion", async ({ page }) => {
-  await mockApi(page);
-  await page.goto("/welcome/done");
-
-  await expect(page).toHaveURL("/sign-in");
-});
-
-test("keeps a completed member on the onboarding completion page", async ({
-  page,
-}) => {
+test("removes the standalone onboarding completion route", async ({ page }) => {
   await mockApi(page, { profile: existingProfile });
   await setAuthenticatedUser(page);
   await page.goto("/welcome/done");
 
-  await expect(page).toHaveURL("/welcome/done");
-  await expect(page.getByRole("heading", { name: /you.re in/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
 });
