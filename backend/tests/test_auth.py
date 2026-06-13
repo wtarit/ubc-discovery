@@ -53,6 +53,28 @@ class TestOTPSend:
         resp = await unauthed_client.post("/auth/otp/send", json={"email": email})
         assert resp.status_code == 429
 
+    async def test_send_otp_invalidates_previous_unused_codes(
+        self,
+        unauthed_client: AsyncClient,
+        db_session: AsyncSession,
+    ):
+        previous_otp = OTPCode(
+            email="replacement@test.com",
+            code="123456",
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+        )
+        db_session.add(previous_otp)
+        await db_session.flush()
+
+        resp = await unauthed_client.post(
+            "/auth/otp/send",
+            json={"email": "replacement@test.com"},
+        )
+
+        assert resp.status_code == 200
+        await db_session.refresh(previous_otp)
+        assert previous_otp.used is True
+
 
 class TestOTPVerify:
     async def _create_otp(self, db_session: AsyncSession, email: str = "verify@test.com", code: str = "123456") -> OTPCode:

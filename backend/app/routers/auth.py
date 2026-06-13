@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func as sa_func
+from sqlalchemy import func as sa_func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -50,8 +50,9 @@ async def _create_and_send_otp(email: str, db: AsyncSession) -> int:
     await _check_rate_limit(email, db)
 
     await db.execute(
-        select(OTPCode)
+        update(OTPCode)
         .where(OTPCode.email == email.lower(), OTPCode.used == False)
+        .values(used=True)
     )
 
     code = _generate_otp()
