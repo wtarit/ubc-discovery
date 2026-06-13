@@ -34,7 +34,12 @@ export const existingProfile: MockProfile = {
 
 export async function mockApi(
   page: Page,
-  options: { profile?: MockProfile | null; otpExpirySeconds?: number } = {}
+  options: {
+    profile?: MockProfile | null;
+    otpExpirySeconds?: number;
+    sendError?: { status: number; detail: string };
+    verifyError?: { status: number; detail: string };
+  } = {}
 ) {
   const profile = options.profile === undefined ? null : options.profile;
 
@@ -49,6 +54,14 @@ export async function mockApi(
       return;
     }
     if (url.pathname === "/auth/otp/send") {
+      if (options.sendError) {
+        await route.fulfill({
+          status: options.sendError.status,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: options.sendError.detail }),
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -60,6 +73,14 @@ export async function mockApi(
       return;
     }
     if (url.pathname === "/auth/otp/verify") {
+      if (options.verifyError) {
+        await route.fulfill({
+          status: options.verifyError.status,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: options.verifyError.detail }),
+        });
+        return;
+      }
       const body = route.request().postDataJSON();
       await route.fulfill({
         status: 200,

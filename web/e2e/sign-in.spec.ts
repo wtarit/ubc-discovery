@@ -82,3 +82,45 @@ test("uses OTP autocomplete and numeric keyboard attributes", async ({ page }) =
   await expect(code).toHaveAttribute("inputmode", "numeric");
   await expect(code).toHaveAttribute("pattern", "[0-9]{6}");
 });
+
+test("presents actionable OTP and rate-limit errors", async ({ page }) => {
+  await mockApi(page, {
+    verifyError: { status: 400, detail: "Invalid code." },
+  });
+  await page.goto("/sign-in");
+  await page.locator("[data-auth-email]:visible").fill("person@example.com");
+  await page.locator("[data-auth-email]:visible").press("Enter");
+  await page.locator("[data-auth-code]:visible").fill("000000");
+  await page.locator("[data-auth-code]:visible").press("Enter");
+  await expect(page.getByText(/code is incorrect/i).filter({ visible: true })).toBeVisible();
+
+  await page.unrouteAll();
+  await mockApi(page, {
+    sendError: { status: 429, detail: "Too many requests." },
+  });
+  await page.locator("button:visible", { hasText: /change email/i }).click();
+  await page.locator("[data-auth-email]:visible").press("Enter");
+  await expect(page.getByText(/wait 15 minutes/i).filter({ visible: true })).toBeVisible();
+});
+
+test("treats Google cancellation as non-fatal and explains blocked popups", async ({ page }) => {
+  await mockApi(page);
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem(
+      "ubc-discovery-test-google-error",
+      "auth/popup-closed-by-user"
+    );
+  });
+  await page.goto("/sign-in");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page.locator("p.text-\\[12px\\]:visible")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    window.sessionStorage.setItem(
+      "ubc-discovery-test-google-error",
+      "auth/popup-blocked"
+    );
+  });
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page.getByText(/allow pop-ups/i).filter({ visible: true })).toBeVisible();
+});

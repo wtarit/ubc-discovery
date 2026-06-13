@@ -3,6 +3,7 @@ import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { api } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
+import { authErrorMessage } from "~/lib/auth-errors";
 
 export function meta() {
   return [{ title: "Sign In — UBC Discovery" }];
@@ -78,7 +79,7 @@ export default function SignIn() {
       setReplacementNotice(false);
       setStep("code");
     } catch (e: any) {
-      setError(e.message);
+      setError(authErrorMessage(e) ?? "");
     } finally {
       setLoading(false);
     }
@@ -97,7 +98,7 @@ export default function SignIn() {
       setCode("");
       setReplacementNotice(true);
     } catch (e: any) {
-      setError(e.message);
+      setError(authErrorMessage(e) ?? "");
     } finally {
       setLoading(false);
     }
@@ -122,7 +123,7 @@ export default function SignIn() {
         navigate(redirectTo);
       }
     } catch (e: any) {
-      setError(e.message);
+      setError(authErrorMessage(e) ?? "");
     } finally {
       setLoading(false);
     }
@@ -144,7 +145,7 @@ export default function SignIn() {
       const profile = await signInWithGoogle();
       navigate(profile ? redirectTo : "/welcome/name");
     } catch (e: any) {
-      setError(e.message);
+      setError(authErrorMessage(e) ?? "");
     } finally {
       setLoading(false);
     }

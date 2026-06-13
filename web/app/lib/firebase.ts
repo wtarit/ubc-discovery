@@ -13,6 +13,7 @@ import {
 const AUTH_TEST_MODE = import.meta.env.VITE_AUTH_TEST_MODE === "true";
 const TEST_USER_KEY = "ubc-discovery-test-firebase-user";
 const TEST_GOOGLE_USER_KEY = "ubc-discovery-test-google-user";
+const TEST_GOOGLE_ERROR_KEY = "ubc-discovery-test-google-error";
 
 type TestFirebaseUser = {
   uid: string;
@@ -108,6 +109,12 @@ export async function signInWithCustomToken(customToken: string) {
 
 export async function signInWithGoogle() {
   if (AUTH_TEST_MODE) {
+    const testError = window.sessionStorage.getItem(TEST_GOOGLE_ERROR_KEY);
+    if (testError) {
+      const error = new Error(testError) as Error & { code?: string };
+      error.code = testError;
+      throw error;
+    }
     const user = readTestUser(TEST_GOOGLE_USER_KEY) ?? {
       uid: "google-user",
       email: "member@example.com",
