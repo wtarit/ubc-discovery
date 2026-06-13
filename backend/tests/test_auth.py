@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.otp_code import OTPCode
+from app.models.user import User
 from app.services.email import EmailDeliveryError
 
 
@@ -101,6 +102,62 @@ class TestOTPVerify:
         resp = await unauthed_client.post("/auth/otp/verify", json={"email": "student@student.ubc.ca", "code": "111222"})
         assert resp.status_code == 200
         assert resp.json()["ubc_verified"] is True
+
+    async def test_verify_reuses_existing_firebase_uid_and_backend_member(
+        self,
+        unauthed_client: AsyncClient,
+        db_session: AsyncSession,
+        monkeypatch,
+    ):
+        user = User(
+            firebase_uid="google-first-uid",
+            email="same@example.com",
+            preferred_name="Same Member",
+            onboarding_completed=True,
+        )
+        db_session.add(user)
+        await db_session.flush()
+        await self._create_otp(db_session, "same@example.com", "222333")
+        monkeypatch.setattr(
+            "app.services.firebase_auth.get_or_create_firebase_user",
+            lambda email: "google-first-uid",
+        )
+
+        resp = await unauthed_client.post(
+            "/auth/otp/verify",
+            json={"email": "same@example.com", "code": "222333"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["is_new_user"] is False
+
+    async def test_verify_does_not_reuse_member_for_a_different_email(
+        self,
+        unauthed_client: AsyncClient,
+        db_session: AsyncSession,
+        monkeypatch,
+    ):
+        user = User(
+            firebase_uid="existing-uid",
+            email="first@example.com",
+            preferred_name="Existing Member",
+            onboarding_completed=True,
+        )
+        db_session.add(user)
+        await db_session.flush()
+        await self._create_otp(db_session, "second@example.com", "333444")
+        monkeypatch.setattr(
+            "app.services.firebase_auth.get_or_create_firebase_user",
+            lambda email: "different-uid",
+        )
+
+        resp = await unauthed_client.post(
+            "/auth/otp/verify",
+            json={"email": "second@example.com", "code": "333444"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["is_new_user"] is True
 
     async def test_verify_wrong_code(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         await self._create_otp(db_session, "wrong@test.com", "123456")

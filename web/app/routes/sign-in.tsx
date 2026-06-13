@@ -8,6 +8,7 @@ import {
   consumeReturnPath,
   rememberReturnPath,
 } from "~/lib/auth-flow";
+import { pendingGoogleLinkEmail } from "~/lib/firebase";
 
 export function meta() {
   return [{ title: "Sign In — UBC Discovery" }];
@@ -172,7 +173,25 @@ export default function SignIn() {
       const profile = await signInWithGoogle();
       finishAuthentication(Boolean(profile));
     } catch (e: any) {
-      setError(authErrorMessage(e) ?? "");
+      const linkEmail = pendingGoogleLinkEmail(e);
+      if (linkEmail) {
+        setEmail(linkEmail);
+        try {
+          const response = await api.auth.sendOtp(linkEmail);
+          const sentAt = Date.now();
+          setNow(sentAt);
+          setExpiresAt(sentAt + response.expires_in_seconds * 1000);
+          setResendAvailableAt(sentAt + 30_000);
+          setStep("code");
+          setError(
+            "Verify this email to connect Google to your existing account."
+          );
+        } catch (sendError) {
+          setError(authErrorMessage(sendError) ?? "");
+        }
+      } else {
+        setError(authErrorMessage(e) ?? "");
+      }
     } finally {
       setLoading(false);
     }

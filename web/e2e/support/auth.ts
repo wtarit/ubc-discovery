@@ -60,6 +60,7 @@ export async function mockApi(
     verifyError?: { status: number; detail: string };
     saveError?: { status: number; detail: string };
     onSave?: () => void;
+    otpUid?: string;
   } = {}
 ) {
   let profile = options.profile === undefined ? null : options.profile;
@@ -171,6 +172,11 @@ export async function mockApi(
         contentType: "application/json",
         body: JSON.stringify({
           firebase_custom_token: `mock-token:otp-user:${body.email}`,
+          ...(options.otpUid
+            ? {
+                firebase_custom_token: `mock-token:${options.otpUid}:${body.email}`,
+              }
+            : {}),
           is_new_user: !profile,
           ubc_verified: false,
         }),

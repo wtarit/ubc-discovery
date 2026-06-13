@@ -27,12 +27,13 @@ def verify_id_token(id_token: str) -> dict:
 
 
 def get_or_create_firebase_user(email: str) -> str:
+    normalized_email = email.strip().lower()
     try:
-        user = auth.get_user_by_email(email)
+        user = auth.get_user_by_email(normalized_email)
         auth.update_user(user.uid, email_verified=True)
         return user.uid
     except auth.UserNotFoundError:
-        user = auth.create_user(email=email, email_verified=True)
+        user = auth.create_user(email=normalized_email, email_verified=True)
         return user.uid
 
 

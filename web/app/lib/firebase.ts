@@ -1,12 +1,19 @@
-import { initializeApp, getApp, getApps } from "firebase/app";
+import {
+  initializeApp,
+  getApp,
+  getApps,
+  type FirebaseError,
+} from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
+  linkWithCredential,
   signInWithCustomToken as firebaseSignInWithCustomToken,
   signInWithPopup,
   signOut as firebaseSignOut,
   type Auth,
+  type AuthCredential,
   type User,
 } from "firebase/auth";
 
@@ -14,6 +21,10 @@ const AUTH_TEST_MODE = import.meta.env.VITE_AUTH_TEST_MODE === "true";
 const TEST_USER_KEY = "ubc-discovery-test-firebase-user";
 const TEST_GOOGLE_USER_KEY = "ubc-discovery-test-google-user";
 const TEST_GOOGLE_ERROR_KEY = "ubc-discovery-test-google-error";
+const TEST_GOOGLE_COLLISION_KEY = "ubc-discovery-test-google-collision-email";
+const TEST_GOOGLE_LINKED_KEY = "ubc-discovery-test-google-linked";
+let pendingGoogleLink: { credential: AuthCredential | null; email: string } | null =
+  null;
 
 type TestFirebaseUser = {
   uid: string;
@@ -100,15 +111,39 @@ export async function signInWithCustomToken(customToken: string) {
   if (AUTH_TEST_MODE) {
     const [, uid = "otp-user", email = "member@example.com"] = customToken.split(":");
     const user = { uid, email };
+    if (
+      pendingGoogleLink &&
+      pendingGoogleLink.email.toLowerCase() === email.toLowerCase()
+    ) {
+      window.sessionStorage.setItem(TEST_GOOGLE_LINKED_KEY, "true");
+      pendingGoogleLink = null;
+    }
     writeTestUser(user);
     return asFirebaseUser(user);
   }
   const result = await firebaseSignInWithCustomToken(getFirebaseAuth(), customToken);
+  if (
+    pendingGoogleLink &&
+    result.user.email?.toLowerCase() === pendingGoogleLink.email.toLowerCase()
+  ) {
+    await linkWithCredential(result.user, pendingGoogleLink.credential!);
+    pendingGoogleLink = null;
+  }
   return result.user;
 }
 
 export async function signInWithGoogle() {
   if (AUTH_TEST_MODE) {
+    const collisionEmail = window.sessionStorage.getItem(TEST_GOOGLE_COLLISION_KEY);
+    if (collisionEmail) {
+      pendingGoogleLink = { credential: null, email: collisionEmail };
+      const error = new Error(
+        "An account already exists with the same email address."
+      ) as Error & { code?: string; customData?: { email?: string } };
+      error.code = "auth/account-exists-with-different-credential";
+      error.customData = { email: collisionEmail };
+      throw error;
+    }
     const testError = window.sessionStorage.getItem(TEST_GOOGLE_ERROR_KEY);
     if (testError) {
       const error = new Error(testError) as Error & { code?: string };
@@ -124,8 +159,33 @@ export async function signInWithGoogle() {
   }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  const result = await signInWithPopup(getFirebaseAuth(), provider);
-  return result.user;
+  try {
+    const result = await signInWithPopup(getFirebaseAuth(), provider);
+    return result.user;
+  } catch (error) {
+    const firebaseError = error as FirebaseError & {
+      customData?: { email?: string };
+    };
+    if (firebaseError.code === "auth/account-exists-with-different-credential") {
+      const credential = GoogleAuthProvider.credentialFromError(firebaseError);
+      const email = firebaseError.customData?.email;
+      if (credential && email) {
+        pendingGoogleLink = { credential, email: email.toLowerCase() };
+      }
+    }
+    throw error;
+  }
+}
+
+export function pendingGoogleLinkEmail(error: unknown) {
+  const authError = error as {
+    code?: string;
+    customData?: { email?: string };
+  };
+  if (authError?.code !== "auth/account-exists-with-different-credential") {
+    return null;
+  }
+  return authError.customData?.email?.trim().toLowerCase() ?? null;
 }
 
 export async function signOut() {
