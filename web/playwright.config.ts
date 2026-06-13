@@ -11,11 +11,13 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "pnpm run dev --host 127.0.0.1 --port 4173",
+    command: "pnpm run build && pnpm run start",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     env: {
       ...process.env,
+      HOST: "127.0.0.1",
+      PORT: "4173",
       VITE_AUTH_TEST_MODE: "true",
       VITE_API_URL: "http://api.test",
     },

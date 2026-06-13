@@ -30,6 +30,7 @@ type UpdateProfilePayload = Partial<OnboardingPayload>;
 
 type AuthContextValue = {
   loading: boolean;
+  uid: string | null;
   token: string | null;
   profile: UserResponse | null;
   firebaseReady: boolean;
@@ -56,6 +57,7 @@ async function loadProfile(token: string) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [uid, setUid] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserResponse | null>(null);
   const authRequestRef = useRef(0);
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authRequestRef.current = requestId;
 
       if (!firebaseUser) {
+        setUid(null);
         setToken(null);
         setProfile(null);
         setLoading(false);
@@ -93,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const idToken = await firebaseUser.getIdToken();
         const nextProfile = await loadProfile(idToken);
         if (authRequestRef.current !== requestId) return;
+        setUid(firebaseUser.uid);
         setToken(idToken);
         setProfile(nextProfile);
       } finally {
@@ -112,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await user.getIdToken();
     const nextProfile = await loadProfile(idToken);
     if (authRequestRef.current === requestId) {
+      setUid(user.uid);
       setToken(idToken);
       setProfile(nextProfile);
     }
@@ -125,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await user.getIdToken();
     const nextProfile = await loadProfile(idToken);
     if (authRequestRef.current === requestId) {
+      setUid(user.uid);
       setToken(idToken);
       setProfile(nextProfile);
     }
@@ -136,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authRequestRef.current = requestId;
     await firebaseSignOut();
     if (authRequestRef.current === requestId) {
+      setUid(null);
       setToken(null);
       setProfile(null);
     }
@@ -179,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       loading,
+      uid,
       token,
       profile,
       firebaseReady,
@@ -202,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithOtpToken,
       signOut,
       token,
+      uid,
       updateProfile,
       uploadProfilePhoto,
     ]

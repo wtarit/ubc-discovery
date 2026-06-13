@@ -1,4 +1,5 @@
-const STORAGE_KEY = "ubc-discovery-onboarding";
+const LEGACY_STORAGE_KEY = "ubc-discovery-onboarding";
+const STORAGE_KEY_PREFIX = "ubc-discovery-onboarding:";
 
 export type OnboardingDraft = {
   preferred_name?: string;
@@ -8,29 +9,34 @@ export type OnboardingDraft = {
   interests?: string[];
 };
 
-export function readOnboardingDraft(): OnboardingDraft {
-  if (typeof window === "undefined") return {};
+function storageKey(uid: string) {
+  return `${STORAGE_KEY_PREFIX}${uid}`;
+}
+
+export function readOnboardingDraft(uid: string | null): OnboardingDraft {
+  if (typeof window === "undefined" || !uid) return {};
   try {
-    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}");
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return JSON.parse(window.localStorage.getItem(storageKey(uid)) ?? "{}");
   } catch {
     return {};
   }
 }
 
-export function writeOnboardingDraft(next: OnboardingDraft) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+export function writeOnboardingDraft(uid: string | null, next: OnboardingDraft) {
+  if (typeof window === "undefined" || !uid) return;
+  window.localStorage.setItem(storageKey(uid), JSON.stringify(next));
 }
 
-export function mergeOnboardingDraft(next: OnboardingDraft) {
-  const merged = { ...readOnboardingDraft(), ...next };
-  writeOnboardingDraft(merged);
+export function mergeOnboardingDraft(uid: string | null, next: OnboardingDraft) {
+  const merged = { ...readOnboardingDraft(uid), ...next };
+  writeOnboardingDraft(uid, merged);
   return merged;
 }
 
-export function clearOnboardingDraft() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
+export function clearOnboardingDraft(uid: string | null) {
+  if (typeof window === "undefined" || !uid) return;
+  window.localStorage.removeItem(storageKey(uid));
 }
 
 export function yearLabelToStanding(label?: string) {

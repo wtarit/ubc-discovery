@@ -92,8 +92,8 @@ function PillGrid({
 
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
-  const { loading, profile, token } = useAuth();
-  const draft = readOnboardingDraft();
+  const { loading, profile, token, uid } = useAuth();
+  const draft = readOnboardingDraft(uid);
   const [faculty, setFaculty] = useState(draft.faculty ?? "");
   const [major, setMajor] = useState(draft.major ?? "");
   const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
@@ -102,11 +102,11 @@ export default function OnboardingAcademic() {
     if (loading) return;
     if (profile) navigate("/", { replace: true });
     if (!token) navigate("/sign-in", { replace: true });
-    if (!readOnboardingDraft().preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, token]);
+    if (!readOnboardingDraft(uid).preferred_name) navigate("/welcome/name", { replace: true });
+  }, [loading, navigate, profile, token, uid]);
 
   function handleContinue() {
-    mergeOnboardingDraft({
+    mergeOnboardingDraft(uid, {
       faculty: faculty || undefined,
       major: major.trim() || undefined,
       year_standing: yearLabelToStanding(year),

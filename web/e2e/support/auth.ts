@@ -190,9 +190,11 @@ export async function setAuthenticatedUser(
   user = { uid: "existing-uid", email: "member@example.com" }
 ) {
   await page.addInitScript((value) => {
-    window.sessionStorage.setItem(
-      "ubc-discovery-test-firebase-user",
-      JSON.stringify(value)
-    );
+    if (!window.sessionStorage.getItem("ubc-discovery-test-firebase-user")) {
+      window.sessionStorage.setItem(
+        "ubc-discovery-test-firebase-user",
+        JSON.stringify(value)
+      );
+    }
   }, user);
 }

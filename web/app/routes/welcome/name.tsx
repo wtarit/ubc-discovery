@@ -14,8 +14,12 @@ export function meta() {
 
 export default function OnboardingName() {
   const navigate = useNavigate();
-  const { loading, profile, token } = useAuth();
-  const [name, setName] = useState(() => readOnboardingDraft().preferred_name ?? "");
+  const { loading, profile, token, uid } = useAuth();
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (uid) setName(readOnboardingDraft(uid).preferred_name ?? "");
+  }, [uid]);
 
   useEffect(() => {
     if (loading) return;
@@ -27,7 +31,7 @@ export default function OnboardingName() {
 
   function handleContinue() {
     if (!canContinue) return;
-    mergeOnboardingDraft({ preferred_name: name.trim() });
+    mergeOnboardingDraft(uid, { preferred_name: name.trim() });
     navigate("/welcome/academic");
   }
 
