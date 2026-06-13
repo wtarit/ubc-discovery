@@ -21,6 +21,9 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const {
+    loading: authLoading,
+    token,
+    profile,
     signInWithOtpToken,
     signInWithGoogle,
     firebaseReady,
@@ -36,6 +39,7 @@ export default function SignIn() {
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [replacementNotice, setReplacementNotice] = useState(false);
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
   const secondsRemaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
   const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
   const codeExpired = step === "code" && secondsRemaining === 0;
@@ -61,6 +65,22 @@ export default function SignIn() {
   useEffect(() => {
     rememberReturnPath(redirectParam);
   }, [redirectParam]);
+
+  useEffect(() => {
+    if (authLoading || initialAuthChecked) return;
+    if (token) {
+      navigate(profile ? consumeReturnPath() : "/welcome/name", { replace: true });
+      return;
+    }
+    setInitialAuthChecked(true);
+  }, [
+    authLoading,
+    initialAuthChecked,
+    navigate,
+    profile,
+    redirectParam,
+    token,
+  ]);
 
   function finishAuthentication(hasProfile: boolean) {
     rememberReturnPath(redirectParam);
@@ -156,6 +176,10 @@ export default function SignIn() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (authLoading || !initialAuthChecked) {
+    return <div className="min-h-screen bg-bg" aria-label="Checking sign-in status" />;
   }
 
   return (

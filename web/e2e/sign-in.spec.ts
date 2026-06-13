@@ -139,6 +139,10 @@ test("rejects external and protocol-relative redirect targets", async ({ page })
   await page.getByRole("button", { name: /continue with google/i }).click();
   await expect(page).toHaveURL("/");
 
+  await page.evaluate(() => {
+    window.sessionStorage.removeItem("ubc-discovery-test-firebase-user");
+    window.dispatchEvent(new CustomEvent("ubc-test-auth-changed"));
+  });
   await page.goto("/sign-in?redirect=%2F%2Fevil.example%2Fsteal");
   await page.getByRole("button", { name: /continue with google/i }).click();
   await expect(page).toHaveURL("/");
@@ -158,4 +162,25 @@ test("keeps a new member destination through onboarding refreshes", async ({ pag
       )
     )
     .toBe("/saved?tab=past");
+});
+
+test("redirects an authenticated member away from sign-in", async ({ page }) => {
+  await mockApi(page, { profile: existingProfile });
+  await setAuthenticatedUser(page);
+  await page.goto("/sign-in?redirect=%2Fsaved%3Ftab%3Dupcoming");
+
+  await expect(page).toHaveURL("/saved?tab=upcoming");
+  await expect(page.getByRole("button", { name: /continue with google/i })).toHaveCount(0);
+});
+
+test("sends an authenticated incomplete member to onboarding", async ({ page }) => {
+  await mockApi(page, { profile: null });
+  await setAuthenticatedUser(page, {
+    uid: "new-user",
+    email: "new@example.com",
+  });
+  await page.goto("/sign-in?redirect=%2Fsaved");
+
+  await expect(page).toHaveURL("/welcome/name");
+  await expect(page.getByRole("button", { name: /continue with google/i })).toHaveCount(0);
 });
