@@ -4,6 +4,10 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { api } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { authErrorMessage } from "~/lib/auth-errors";
+import {
+  consumeReturnPath,
+  rememberReturnPath,
+} from "~/lib/auth-flow";
 
 export function meta() {
   return [{ title: "Sign In — UBC Discovery" }];
@@ -32,8 +36,6 @@ export default function SignIn() {
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [replacementNotice, setReplacementNotice] = useState(false);
-  const redirectTo =
-    redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
   const secondsRemaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
   const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
   const codeExpired = step === "code" && secondsRemaining === 0;
@@ -55,6 +57,15 @@ export default function SignIn() {
   useEffect(() => {
     focusVisible(step === "code" ? "[data-auth-code]" : "[data-auth-email]");
   }, [step]);
+
+  useEffect(() => {
+    rememberReturnPath(redirectParam);
+  }, [redirectParam]);
+
+  function finishAuthentication(hasProfile: boolean) {
+    rememberReturnPath(redirectParam);
+    navigate(hasProfile ? consumeReturnPath() : "/welcome/name");
+  }
 
   function requireFirebaseReady() {
     if (!firebaseConfigError) return true;
@@ -117,11 +128,7 @@ export default function SignIn() {
     try {
       const res = await api.auth.verifyOtp(email, code);
       const profile = await signInWithOtpToken(res.firebase_custom_token);
-      if (res.is_new_user || !profile) {
-        navigate("/welcome/name");
-      } else {
-        navigate(redirectTo);
-      }
+      finishAuthentication(!res.is_new_user && Boolean(profile));
     } catch (e: any) {
       setError(authErrorMessage(e) ?? "");
     } finally {
@@ -143,7 +150,7 @@ export default function SignIn() {
     setError("");
     try {
       const profile = await signInWithGoogle();
-      navigate(profile ? redirectTo : "/welcome/name");
+      finishAuthentication(Boolean(profile));
     } catch (e: any) {
       setError(authErrorMessage(e) ?? "");
     } finally {

@@ -124,3 +124,38 @@ test("treats Google cancellation as non-fatal and explains blocked popups", asyn
   await page.getByRole("button", { name: /continue with google/i }).click();
   await expect(page.getByText(/allow pop-ups/i).filter({ visible: true })).toBeVisible();
 });
+
+test("preserves a same-origin destination with its query string", async ({ page }) => {
+  await mockApi(page, { profile: existingProfile });
+  await page.goto("/sign-in?redirect=%2Fevents%2Fevent-1%3Fsource%3Dsaved");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+
+  await expect(page).toHaveURL(/\/events\/event-1\?source=saved$/);
+});
+
+test("rejects external and protocol-relative redirect targets", async ({ page }) => {
+  await mockApi(page, { profile: existingProfile });
+  await page.goto("/sign-in?redirect=https%3A%2F%2Fevil.example%2Fsteal");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page).toHaveURL("/");
+
+  await page.goto("/sign-in?redirect=%2F%2Fevil.example%2Fsteal");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page).toHaveURL("/");
+});
+
+test("keeps a new member destination through onboarding refreshes", async ({ page }) => {
+  await mockApi(page, { profile: null });
+  await page.goto("/sign-in?redirect=%2Fsaved%3Ftab%3Dpast");
+  await page.getByRole("button", { name: /continue with google/i }).click();
+  await expect(page).toHaveURL("/welcome/name");
+
+  await page.reload();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.sessionStorage.getItem("ubc-discovery-auth-return-path")
+      )
+    )
+    .toBe("/saved?tab=past");
+});

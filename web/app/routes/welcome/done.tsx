@@ -12,6 +12,7 @@ import {
   readOnboardingDraft,
   type OnboardingDraft,
 } from "~/lib/onboarding";
+import { consumeReturnPath } from "~/lib/auth-flow";
 
 export function meta() {
   return [{ title: "You're in! — UBC Discovery" }];
@@ -102,7 +103,7 @@ export default function OnboardingDone() {
 
   function handleContinue() {
     if (saving || error) return;
-    navigate("/");
+    navigate(consumeReturnPath());
   }
 
   return (
