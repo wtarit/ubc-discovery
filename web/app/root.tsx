@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import { AuthProvider } from "~/lib/auth";
 import { AppQueryProvider } from "~/lib/query";
+import { PendingAuthActionRunner } from "~/components/PendingAuthActionRunner";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -47,6 +48,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppQueryProvider>
+        <PendingAuthActionRunner />
         <Outlet />
       </AppQueryProvider>
     </AuthProvider>

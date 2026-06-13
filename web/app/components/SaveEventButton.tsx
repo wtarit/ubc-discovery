@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import type { ApiEvent } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import {
   useSavedEventIds,
   useSavedEventMutations,
 } from "~/lib/saved-events-query";
+import { storePendingSave } from "~/lib/auth-flow";
 
 type SaveEventButtonProps = {
   eventId: string;
@@ -27,7 +28,6 @@ export function SaveEventButton({
   className = "",
 }: SaveEventButtonProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { token, profile } = useAuth();
   const { data: savedEventIds } = useSavedEventIds();
   const { save, unsave, pending } = useSavedEventMutations();
@@ -39,7 +39,8 @@ export function SaveEventButton({
     clickEvent.stopPropagation();
 
     if (!token || !profile) {
-      const redirect = encodeURIComponent(location.pathname + location.search);
+      storePendingSave(eventId);
+      const redirect = encodeURIComponent(`/events/${eventId}`);
       navigate(`/sign-in?redirect=${redirect}`);
       return;
     }

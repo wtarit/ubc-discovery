@@ -32,6 +32,25 @@ export const existingProfile: MockProfile = {
   created_at: "2026-01-01T00:00:00Z",
 };
 
+export const mockEvent = {
+  id: "event-1",
+  title: "Campus Welcome",
+  description: "Meet the UBC community.",
+  source: "ubc",
+  source_label: "ubc_events",
+  source_url: null,
+  external_cta_label: null,
+  club_name: null,
+  event_picture_url: null,
+  vibes: ["social"],
+  latitude: null,
+  longitude: null,
+  location_name: "Main Mall",
+  event_date: "2026-09-01T18:00:00Z",
+  event_end_date: "2026-09-01T20:00:00Z",
+  created_at: "2026-01-01T00:00:00Z",
+};
+
 export async function mockApi(
   page: Page,
   options: {
@@ -39,9 +58,11 @@ export async function mockApi(
     otpExpirySeconds?: number;
     sendError?: { status: number; detail: string };
     verifyError?: { status: number; detail: string };
+    saveError?: { status: number; detail: string };
+    onSave?: () => void;
   } = {}
 ) {
-  const profile = options.profile === undefined ? null : options.profile;
+  let profile = options.profile === undefined ? null : options.profile;
 
   await page.route("http://api.test/**", async (route) => {
     const url = new URL(route.request().url());
@@ -51,6 +72,69 @@ export async function mockApi(
         contentType: "application/json",
         body: JSON.stringify(profile ?? { detail: "User profile not found." }),
       });
+      return;
+    }
+    if (
+      url.pathname === "/users/onboarding" &&
+      route.request().method() === "POST"
+    ) {
+      const body = route.request().postDataJSON();
+      profile = {
+        ...existingProfile,
+        id: "new-member-1",
+        email: "member@example.com",
+        preferred_name: body.preferred_name,
+        major: body.major ?? null,
+        year_standing: body.year_standing ?? null,
+        faculty: body.faculty ?? null,
+        interests: body.interests ?? [],
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(profile),
+      });
+      return;
+    }
+    if (url.pathname === "/events/event-1") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockEvent),
+      });
+      return;
+    }
+    if (url.pathname === "/saved-events" && route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ saved_events: [], total: 0 }),
+      });
+      return;
+    }
+    if (
+      url.pathname === "/saved-events/event-1" &&
+      route.request().method() === "POST"
+    ) {
+      options.onSave?.();
+      if (options.saveError) {
+        await route.fulfill({
+          status: options.saveError.status,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: options.saveError.detail }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "save-1",
+            user_id: profile?.id ?? "member-1",
+            event_id: "event-1",
+            created_at: "2026-01-01T00:00:00Z",
+          }),
+        });
+      }
       return;
     }
     if (url.pathname === "/auth/otp/send") {
