@@ -1,17 +1,92 @@
-import aiosmtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import asyncio
+import logging
+from dataclasses import dataclass
+from functools import lru_cache
+from typing import Protocol
+
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
-async def send_otp_email(to_email: str, otp_code: str) -> bool:
-    msg = MIMEMultipart("alternative")
-    msg["From"] = settings.smtp_sender_email
-    msg["To"] = to_email
-    msg["Subject"] = f"Your UBC Newcomers verification code: {otp_code}"
 
-    text = f"Your verification code is: {otp_code}\n\nThis code expires in {settings.otp_expiry_minutes} minutes."
+@dataclass(frozen=True)
+class OutboundEmail:
+    to: tuple[str, ...]
+    subject: str
+    text: str
+    html: str
+
+
+class EmailDeliveryError(Exception):
+    """Raised when an email provider cannot accept a message."""
+
+
+class EmailSender(Protocol):
+    async def send(self, message: OutboundEmail) -> str: ...
+
+
+class SesEmailSender:
+    def __init__(self, sender_email: str, region_name: str) -> None:
+        self._sender_email = sender_email
+        self._client = boto3.client("sesv2", region_name=region_name)
+
+    async def send(self, message: OutboundEmail) -> str:
+        body = {
+            "Text": {"Data": message.text, "Charset": "UTF-8"},
+            "Html": {"Data": message.html, "Charset": "UTF-8"},
+        }
+
+        try:
+            response = await asyncio.to_thread(
+                self._client.send_email,
+                FromEmailAddress=self._sender_email,
+                Destination={"ToAddresses": list(message.to)},
+                Content={
+                    "Simple": {
+                        "Subject": {"Data": message.subject, "Charset": "UTF-8"},
+                        "Body": body,
+                    }
+                },
+            )
+        except ClientError as exc:
+            error = exc.response.get("Error", {})
+            metadata = exc.response.get("ResponseMetadata", {})
+            logger.error(
+                "SES rejected email: code=%s message=%s request_id=%s status_code=%s",
+                error.get("Code"),
+                error.get("Message"),
+                metadata.get("RequestId"),
+                metadata.get("HTTPStatusCode"),
+                exc_info=True,
+            )
+            raise EmailDeliveryError("SES rejected the email") from exc
+        except BotoCoreError as exc:
+            logger.exception("SES request failed: %s", exc)
+            raise EmailDeliveryError("SES rejected the email") from exc
+
+        return response["MessageId"]
+
+
+@lru_cache
+def get_email_sender() -> EmailSender:
+    return SesEmailSender(
+        sender_email=settings.email_sender_email,
+        region_name=settings.aws_region,
+    )
+
+
+async def send_otp_email(
+    to_email: str,
+    otp_code: str,
+    sender: EmailSender | None = None,
+) -> None:
+    text = (
+        f"Your verification code is: {otp_code}\n\n"
+        f"This code expires in {settings.otp_expiry_minutes} minutes."
+    )
     html = f"""\
 <html>
 <body style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
@@ -24,19 +99,11 @@ async def send_otp_email(to_email: str, otp_code: str) -> bool:
   <p style="color: #999; font-size: 12px;">If you didn't request this code, you can safely ignore this email.</p>
 </body>
 </html>"""
+    message = OutboundEmail(
+        to=(to_email,),
+        subject=f"Your UBC Newcomers verification code: {otp_code}",
+        text=text,
+        html=html,
+    )
 
-    msg.attach(MIMEText(text, "plain"))
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        await aiosmtplib.send(
-            msg,
-            hostname=settings.smtp_host,
-            port=settings.smtp_port,
-            username=settings.smtp_username,
-            password=settings.smtp_password,
-            start_tls=True,
-        )
-        return True
-    except aiosmtplib.SMTPException:
-        return False
+    await (sender or get_email_sender()).send(message)

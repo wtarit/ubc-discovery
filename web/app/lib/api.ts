@@ -3,7 +3,8 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public code?: string
   ) {
     super(message);
     this.name = "ApiError";
@@ -86,7 +87,14 @@ async function apiFetch<T>(
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.detail ?? `API error ${res.status}`);
+    const detail = body.detail;
+    const message =
+      typeof detail === "object" && detail
+        ? detail.message
+        : detail ?? `API error ${res.status}`;
+    const code =
+      typeof detail === "object" && detail ? detail.code : body.code;
+    throw new ApiError(res.status, message, code);
   }
   if (res.status === 204) return undefined as T;
   return res.json();

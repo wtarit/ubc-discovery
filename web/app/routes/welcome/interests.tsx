@@ -15,17 +15,19 @@ export function meta() {
 
 export default function OnboardingInterests() {
   const navigate = useNavigate();
-  const { loading, profile, token } = useAuth();
-  const [selected, setSelected] = useState<string[]>(
-    () => readOnboardingDraft().interests ?? []
-  );
+  const { loading, profile, token, uid } = useAuth();
+  const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (uid) setSelected(readOnboardingDraft(uid).interests ?? []);
+  }, [uid]);
 
   useEffect(() => {
     if (loading) return;
     if (profile) navigate("/", { replace: true });
     if (!token) navigate("/sign-in", { replace: true });
-    if (!readOnboardingDraft().preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, token]);
+    if (!readOnboardingDraft(uid).preferred_name) navigate("/welcome/name", { replace: true });
+  }, [loading, navigate, profile, token, uid]);
 
   function toggle(id: string) {
     setSelected((s) =>
@@ -36,7 +38,7 @@ export default function OnboardingInterests() {
   const enough = selected.length >= 3;
 
   function handleContinue() {
-    mergeOnboardingDraft({ interests: selected });
+    mergeOnboardingDraft(uid, { interests: selected });
     navigate("/welcome/done");
   }
 

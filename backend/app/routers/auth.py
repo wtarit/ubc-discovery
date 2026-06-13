@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func as sa_func
+from sqlalchemy import func as sa_func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -25,6 +25,13 @@ from app.services import firebase_auth
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
+def _auth_error(status_code: int, code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail={"code": code, "message": message},
+    )
+
+
 def _is_ubc_email(addr: str) -> bool:
     domain = addr.lower().split("@")[-1]
     return domain == "ubc.ca" or domain.endswith(".ubc.ca")
@@ -43,15 +50,20 @@ async def _check_rate_limit(email: str, db: AsyncSession) -> None:
     )
     count = result.scalar_one()
     if count >= settings.otp_rate_limit_per_15min:
-        raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
+        raise _auth_error(
+            429,
+            "OTP_RATE_LIMITED",
+            "Too many requests. Try again later.",
+        )
 
 
 async def _create_and_send_otp(email: str, db: AsyncSession) -> int:
     await _check_rate_limit(email, db)
 
     await db.execute(
-        select(OTPCode)
+        update(OTPCode)
         .where(OTPCode.email == email.lower(), OTPCode.used == False)
+        .values(used=True)
     )
 
     code = _generate_otp()
@@ -63,9 +75,14 @@ async def _create_and_send_otp(email: str, db: AsyncSession) -> int:
     db.add(otp)
     await db.commit()
 
-    sent = await email_service.send_otp_email(email, code)
-    if not sent:
-        raise HTTPException(status_code=500, detail="Failed to send verification email.")
+    try:
+        await email_service.send_otp_email(email, code)
+    except email_service.EmailDeliveryError:
+        raise _auth_error(
+            500,
+            "OTP_DELIVERY_FAILED",
+            "Failed to send verification email.",
+        )
 
     return settings.otp_expiry_minutes * 60
 
@@ -85,17 +102,25 @@ async def _verify_otp_code(email: str, code: str, db: AsyncSession) -> OTPCode:
     otp = result.scalar_one_or_none()
 
     if not otp:
-        raise HTTPException(status_code=400, detail="No valid code found. Request a new one.")
+        raise _auth_error(
+            400,
+            "OTP_EXPIRED",
+            "No valid code found. Request a new one.",
+        )
 
     if otp.attempts >= settings.otp_max_attempts:
         otp.used = True
         await db.commit()
-        raise HTTPException(status_code=400, detail="Too many attempts. Request a new code.")
+        raise _auth_error(
+            400,
+            "OTP_TOO_MANY_ATTEMPTS",
+            "Too many attempts. Request a new code.",
+        )
 
     if otp.code != code:
         otp.attempts += 1
         await db.commit()
-        raise HTTPException(status_code=400, detail="Invalid code.")
+        raise _auth_error(400, "OTP_INVALID", "Invalid code.")
 
     otp.used = True
     await db.commit()

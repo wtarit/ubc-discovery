@@ -12,6 +12,7 @@ import {
   readOnboardingDraft,
   type OnboardingDraft,
 } from "~/lib/onboarding";
+import { consumeAuthReturnTo } from "~/lib/auth-flow";
 
 export function meta() {
   return [{ title: "You're in! — UBC Discovery" }];
@@ -47,16 +48,24 @@ function StepList() {
 
 export default function OnboardingDone() {
   const navigate = useNavigate();
-  const { completeOnboarding, loading, profile, refreshProfile, token } = useAuth();
-  const [draft] = useState<OnboardingDraft>(() => readOnboardingDraft());
+  const { completeOnboarding, loading, profile, refreshProfile, token, uid } = useAuth();
+  const [draft, setDraft] = useState<OnboardingDraft>({});
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [saving, setSaving] = useState(true);
   const [error, setError] = useState("");
   const name = profile?.preferred_name ?? draft.preferred_name ?? "there";
 
   useEffect(() => {
-    if (loading) return;
+    if (uid) {
+      setDraft(readOnboardingDraft(uid));
+      setDraftLoaded(true);
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    if (loading || !draftLoaded) return;
     if (profile) {
-      clearOnboardingDraft();
+      clearOnboardingDraft(uid);
       setSaving(false);
       return;
     }
@@ -81,11 +90,11 @@ export default function OnboardingDone() {
           faculty: draft.faculty,
           interests: draft.interests,
         });
-        clearOnboardingDraft();
+        clearOnboardingDraft(uid);
       } catch (e: any) {
         if (e instanceof ApiError && e.status === 409) {
           await refreshProfile();
-          clearOnboardingDraft();
+          clearOnboardingDraft(uid);
         } else if (!cancelled) {
           setError(e.message);
         }
@@ -98,11 +107,11 @@ export default function OnboardingDone() {
     return () => {
       cancelled = true;
     };
-  }, [completeOnboarding, draft, loading, navigate, profile, refreshProfile, token]);
+  }, [completeOnboarding, draft, draftLoaded, loading, navigate, profile, refreshProfile, token, uid]);
 
   function handleContinue() {
     if (saving || error) return;
-    navigate("/");
+    navigate(consumeAuthReturnTo());
   }
 
   return (
