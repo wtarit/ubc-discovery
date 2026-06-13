@@ -63,8 +63,9 @@ async def _create_and_send_otp(email: str, db: AsyncSession) -> int:
     db.add(otp)
     await db.commit()
 
-    sent = await email_service.send_otp_email(email, code)
-    if not sent:
+    try:
+        await email_service.send_otp_email(email, code)
+    except email_service.EmailDeliveryError:
         raise HTTPException(status_code=500, detail="Failed to send verification email.")
 
     return settings.otp_expiry_minutes * 60

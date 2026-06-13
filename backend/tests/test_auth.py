@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient
@@ -6,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.otp_code import OTPCode
+from app.services.email import EmailDeliveryError
 
 
 class TestOTPSend:
@@ -18,6 +20,24 @@ class TestOTPSend:
     async def test_send_otp_invalid_email(self, unauthed_client: AsyncClient):
         resp = await unauthed_client.post("/auth/otp/send", json={"email": "not-an-email"})
         assert resp.status_code == 422
+
+    async def test_send_otp_delivery_failure(
+        self,
+        unauthed_client: AsyncClient,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(
+            "app.services.email.send_otp_email",
+            AsyncMock(side_effect=EmailDeliveryError("failed")),
+        )
+
+        resp = await unauthed_client.post(
+            "/auth/otp/send",
+            json={"email": "user@gmail.com"},
+        )
+
+        assert resp.status_code == 500
+        assert resp.json()["detail"] == "Failed to send verification email."
 
     async def test_send_otp_rate_limit(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         email = "ratelimit@test.com"

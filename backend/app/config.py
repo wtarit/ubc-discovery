@@ -16,11 +16,7 @@ class Settings(BaseSettings):
 
     bedrock_model_id: str = "anthropic.claude-sonnet-4-6"
 
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_username: str = ""
-    smtp_password: str = ""
-    smtp_sender_email: str = ""
+    email_sender_email: str = ""
     otp_expiry_minutes: int = 10
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3

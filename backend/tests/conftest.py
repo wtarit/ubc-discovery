@@ -153,7 +153,7 @@ def _mock_external_services():
 
         mock_get_or_create.return_value = "test-uid-111"
         mock_custom_token.return_value = "mock-custom-token"
-        mock_email.return_value = True
+        mock_email.return_value = None
 
         s3_client = MagicMock()
         mock_s3.return_value = s3_client
