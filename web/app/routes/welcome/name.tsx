@@ -6,7 +6,7 @@ import {
   OnboardingDesktopShell,
 } from "~/components/OnboardingShell";
 import { useAuth } from "~/lib/auth";
-import { mergeOnboardingDraft, readOnboardingDraft } from "~/lib/onboarding";
+import { onboardingDraftStore } from "~/lib/onboarding-draft";
 
 export function meta() {
   return [{ title: "What should we call you? — UBC Discovery" }];
@@ -15,21 +15,26 @@ export function meta() {
 export default function OnboardingName() {
   const navigate = useNavigate();
   const { state } = useAuth();
-  const uid =
-    state.status === "onboarding" || state.status === "member"
-      ? state.uid
-      : null;
+  const uid = state.status === "onboarding" ? state.uid : null;
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (uid) setName(readOnboardingDraft(uid).preferred_name ?? "");
+    if (!uid) return;
+
+    let active = true;
+    void onboardingDraftStore.read(uid).then((draft) => {
+      if (active) setName(draft.preferred_name ?? "");
+    });
+    return () => {
+      active = false;
+    };
   }, [uid]);
 
   const canContinue = name.trim().length > 0;
 
-  function handleContinue() {
-    if (!canContinue) return;
-    mergeOnboardingDraft(uid, { preferred_name: name.trim() });
+  async function handleContinue() {
+    if (!canContinue || !uid) return;
+    await onboardingDraftStore.update(uid, { preferred_name: name.trim() });
     navigate("/welcome/academic");
   }
 

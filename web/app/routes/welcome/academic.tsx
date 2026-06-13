@@ -8,11 +8,10 @@ import {
 } from "~/components/OnboardingShell";
 import { useAuth } from "~/lib/auth";
 import {
-  mergeOnboardingDraft,
-  readOnboardingDraft,
   yearLabelToStanding,
   yearStandingToLabel,
 } from "~/lib/onboarding";
+import { onboardingDraftStore } from "~/lib/onboarding-draft";
 
 export function meta() {
   return [{ title: "Academic context — UBC Discovery" }];
@@ -93,23 +92,35 @@ function PillGrid({
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
   const { state } = useAuth();
-  const uid =
-    state.status === "onboarding" || state.status === "member"
-      ? state.uid
-      : null;
-  const draft = readOnboardingDraft(uid);
-  const [faculty, setFaculty] = useState(draft.faculty ?? "");
-  const [major, setMajor] = useState(draft.major ?? "");
-  const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
+  const uid = state.status === "onboarding" ? state.uid : null;
+  const [faculty, setFaculty] = useState("");
+  const [major, setMajor] = useState("");
+  const [year, setYear] = useState("");
 
   useEffect(() => {
-    if (!readOnboardingDraft(uid).preferred_name) {
-      navigate("/welcome/name", { replace: true });
-    }
+    if (!uid) return;
+
+    let active = true;
+    void onboardingDraftStore.read(uid).then((draft) => {
+      if (!active) return;
+      if (!draft.preferred_name) {
+        navigate("/welcome/name", { replace: true });
+        return;
+      }
+
+      setFaculty(draft.faculty ?? "");
+      setMajor(draft.major ?? "");
+      setYear(yearStandingToLabel(draft.year_standing));
+    });
+    return () => {
+      active = false;
+    };
   }, [navigate, uid]);
 
-  function handleContinue() {
-    mergeOnboardingDraft(uid, {
+  async function handleContinue() {
+    if (!uid) return;
+
+    await onboardingDraftStore.update(uid, {
       faculty: faculty || undefined,
       major: major.trim() || undefined,
       year_standing: yearLabelToStanding(year),

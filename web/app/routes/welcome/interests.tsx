@@ -8,11 +8,7 @@ import {
 } from "~/components/OnboardingShell";
 import { ApiError } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
-import {
-  clearOnboardingDraft,
-  mergeOnboardingDraft,
-  readOnboardingDraft,
-} from "~/lib/onboarding";
+import { onboardingDraftStore } from "~/lib/onboarding-draft";
 import {
   clearAuthFlowNotice,
   setAuthFlowNotice,
@@ -25,22 +21,27 @@ export function meta() {
 export default function OnboardingInterests() {
   const navigate = useNavigate();
   const { completeOnboarding, refreshProfile, state } = useAuth();
-  const uid =
-    state.status === "onboarding" || state.status === "member"
-      ? state.uid
-      : null;
+  const uid = state.status === "onboarding" ? state.uid : null;
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (uid) setSelected(readOnboardingDraft(uid).interests ?? []);
-  }, [uid]);
+    if (!uid) return;
 
-  useEffect(() => {
-    if (!readOnboardingDraft(uid).preferred_name) {
-      navigate("/welcome/name", { replace: true });
-    }
+    let active = true;
+    void onboardingDraftStore.read(uid).then((draft) => {
+      if (!active) return;
+      if (!draft.preferred_name) {
+        navigate("/welcome/name", { replace: true });
+        return;
+      }
+
+      setSelected(draft.interests ?? []);
+    });
+    return () => {
+      active = false;
+    };
   }, [navigate, uid]);
 
   function toggle(id: string) {
@@ -52,9 +53,11 @@ export default function OnboardingInterests() {
   const enough = selected.length >= 3;
 
   async function handleContinue() {
-    if (!enough || saving) return;
+    if (!enough || saving || !uid) return;
 
-    const draft = mergeOnboardingDraft(uid, { interests: selected });
+    const draft = await onboardingDraftStore.update(uid, {
+      interests: selected,
+    });
     if (!draft.preferred_name) {
       navigate("/welcome/name", { replace: true });
       return;
@@ -83,7 +86,7 @@ export default function OnboardingInterests() {
         const profile = await refreshProfile();
         if (!profile) throw requestError;
       }
-      clearOnboardingDraft(uid);
+      await onboardingDraftStore.clear(uid);
     } catch (requestError) {
       clearAuthFlowNotice();
       setError(
