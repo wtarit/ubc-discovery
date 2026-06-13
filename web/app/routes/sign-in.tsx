@@ -118,20 +118,19 @@ export default function SignIn() {
           </p>
 
           <div className="mt-6 flex flex-col gap-2.5">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={loading || !firebaseReady}
-              className="py-3.5 border border-ink bg-bg text-ink cursor-pointer flex items-center justify-center gap-2.5 font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
-            >
-              <FcGoogle aria-hidden="true" size={14} />
-              CONTINUE WITH GOOGLE
-            </button>
-            <div className="font-mono text-[10px] text-muted tracking-wider uppercase my-1.5 text-center">
-              — OR —
-            </div>
-
             {step === "email" ? (
               <>
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={loading || !firebaseReady}
+                  className="py-3.5 border border-ink bg-bg text-ink cursor-pointer flex items-center justify-center gap-2.5 font-mono text-[11px] font-bold tracking-wider uppercase disabled:opacity-50"
+                >
+                  <FcGoogle aria-hidden="true" size={14} />
+                  CONTINUE WITH GOOGLE
+                </button>
+                <div className="font-mono text-[10px] text-muted tracking-wider uppercase my-1.5 text-center">
+                  — OR —
+                </div>
                 <label className="font-mono text-[10px] text-muted tracking-wide uppercase">
                   EMAIL
                 </label>
@@ -152,6 +151,9 @@ export default function SignIn() {
               </>
             ) : (
               <>
+                <p className="text-sm text-ink-soft">
+                  Enter the code sent to <strong className="text-ink">{email}</strong>.
+                </p>
                 <label className="font-mono text-[10px] text-muted tracking-wide uppercase">
                   VERIFICATION CODE
                 </label>
@@ -174,7 +176,7 @@ export default function SignIn() {
                   onClick={() => setStep("email")}
                   className="font-mono text-[11px] text-muted tracking-wide uppercase bg-transparent border-none cursor-pointer"
                 >
-                  ← Use a different email
+                  ← Change email
                 </button>
               </>
             )}
@@ -233,23 +235,22 @@ export default function SignIn() {
             </h1>
 
             <div className="mt-7 flex flex-col gap-3.5">
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={loading || !firebaseReady}
-                className="py-3.5 border border-ink bg-bg text-ink cursor-pointer flex items-center justify-center gap-2.5 font-mono text-xs font-bold tracking-wide uppercase disabled:opacity-50"
-              >
-                <FcGoogle aria-hidden="true" size={14} />
-                Continue with Google
-              </button>
-
-              <div className="font-mono text-[10px] text-muted tracking-wider uppercase my-1 text-center flex items-center gap-2.5">
-                <span className="flex-1 h-px bg-rule-soft" />
-                or
-                <span className="flex-1 h-px bg-rule-soft" />
-              </div>
-
               {step === "email" ? (
                 <>
+                  <button
+                    onClick={handleGoogleSignIn}
+                    disabled={loading || !firebaseReady}
+                    className="py-3.5 border border-ink bg-bg text-ink cursor-pointer flex items-center justify-center gap-2.5 font-mono text-xs font-bold tracking-wide uppercase disabled:opacity-50"
+                  >
+                    <FcGoogle aria-hidden="true" size={14} />
+                    Continue with Google
+                  </button>
+
+                  <div className="font-mono text-[10px] text-muted tracking-wider uppercase my-1 text-center flex items-center gap-2.5">
+                    <span className="flex-1 h-px bg-rule-soft" />
+                    or
+                    <span className="flex-1 h-px bg-rule-soft" />
+                  </div>
                   <div>
                     <label className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
                       Email
@@ -276,9 +277,12 @@ export default function SignIn() {
                 </>
               ) : (
                 <>
+                  <p className="text-sm text-ink-soft">
+                    Enter the code sent to <strong className="text-ink">{email}</strong>.
+                  </p>
                   <div>
                     <label className="font-mono text-[10px] text-muted tracking-wider uppercase mb-1.5 block">
-                      Verification code sent to {email}
+                      Verification code
                     </label>
                     <input
                       type="text"
@@ -294,7 +298,7 @@ export default function SignIn() {
                       onClick={() => setStep("email")}
                       className="font-mono text-[11px] text-muted font-bold tracking-wide uppercase bg-transparent border-none cursor-pointer"
                     >
-                      ← Back
+                      ← Change email
                     </button>
                     <button
                       onClick={handleVerifyOtp}

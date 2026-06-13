@@ -17,3 +17,16 @@ test("restores an existing Firebase session", async ({ page }) => {
 
   await expect(page.getByText("Taylor", { exact: true })).toHaveCount(2);
 });
+
+test("focuses the verification state after sending a code", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/sign-in");
+
+  await page.locator('input[type="email"]:visible').fill("person@example.com");
+  await page.getByRole("button", { name: /send sign-in code|continue with email/i }).click();
+
+  await expect(page.locator("p:visible", { hasText: "code sent to" })).toBeVisible();
+  await expect(page.locator("button:visible", { hasText: /continue with google/i })).toHaveCount(0);
+  await expect(page.locator("button:visible", { hasText: /change email/i })).toBeVisible();
+  await expect(page.locator('input[placeholder="123456"]:visible')).toBeVisible();
+});
