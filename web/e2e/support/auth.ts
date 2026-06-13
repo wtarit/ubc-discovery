@@ -56,8 +56,8 @@ export async function mockApi(
   options: {
     profile?: MockProfile | null;
     otpExpirySeconds?: number;
-    sendError?: { status: number; detail: string };
-    verifyError?: { status: number; detail: string };
+    sendError?: { status: number; detail: string; code?: string };
+    verifyError?: { status: number; detail: string; code?: string };
     saveError?: { status: number; detail: string };
     onSave?: () => void;
     otpUid?: string;
@@ -143,7 +143,14 @@ export async function mockApi(
         await route.fulfill({
           status: options.sendError.status,
           contentType: "application/json",
-          body: JSON.stringify({ detail: options.sendError.detail }),
+          body: JSON.stringify({
+            detail: options.sendError.code
+              ? {
+                  code: options.sendError.code,
+                  message: options.sendError.detail,
+                }
+              : options.sendError.detail,
+          }),
         });
         return;
       }
@@ -162,7 +169,14 @@ export async function mockApi(
         await route.fulfill({
           status: options.verifyError.status,
           contentType: "application/json",
-          body: JSON.stringify({ detail: options.verifyError.detail }),
+          body: JSON.stringify({
+            detail: options.verifyError.code
+              ? {
+                  code: options.verifyError.code,
+                  message: options.verifyError.detail,
+                }
+              : options.verifyError.detail,
+          }),
         });
         return;
       }

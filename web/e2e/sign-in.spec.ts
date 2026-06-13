@@ -85,7 +85,11 @@ test("uses OTP autocomplete and numeric keyboard attributes", async ({ page }) =
 
 test("presents actionable OTP and rate-limit errors", async ({ page }) => {
   await mockApi(page, {
-    verifyError: { status: 400, detail: "Invalid code." },
+    verifyError: {
+      status: 400,
+      detail: "Wording can change.",
+      code: "OTP_INVALID",
+    },
   });
   await page.goto("/sign-in");
   await page.locator("[data-auth-email]:visible").fill("person@example.com");
@@ -96,7 +100,11 @@ test("presents actionable OTP and rate-limit errors", async ({ page }) => {
 
   await page.unrouteAll();
   await mockApi(page, {
-    sendError: { status: 429, detail: "Too many requests." },
+    sendError: {
+      status: 429,
+      detail: "Wording can change.",
+      code: "OTP_RATE_LIMITED",
+    },
   });
   await page.locator("button:visible", { hasText: /change email/i }).click();
   await page.locator("[data-auth-email]:visible").press("Enter");

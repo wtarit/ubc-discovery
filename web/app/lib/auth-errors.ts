@@ -1,47 +1,43 @@
 import { ApiError } from "~/lib/api";
+import { FIREBASE_CONFIG_MISSING_MESSAGE } from "~/lib/firebase";
 
 type AuthError = Error & { code?: string };
 
 export function authErrorMessage(error: unknown): string | null {
   const authError = error as AuthError;
-  const code = authError?.code ?? "";
-  const message = authError?.message ?? "";
-  const normalized = `${code} ${message}`.toLowerCase();
 
-  if (
-    normalized.includes("popup-closed-by-user") ||
-    normalized.includes("cancelled-popup-request") ||
-    normalized.includes("popup cancelled")
-  ) {
-    return null;
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case "OTP_INVALID":
+        return "That code is incorrect. Check the email and try again.";
+      case "OTP_EXPIRED":
+        return "That code has expired. Request a new code to continue.";
+      case "OTP_TOO_MANY_ATTEMPTS":
+        return "Too many incorrect attempts. Request a new code to continue.";
+      case "OTP_RATE_LIMITED":
+        return "Too many codes were requested. Wait 15 minutes before trying again.";
+      case "OTP_DELIVERY_FAILED":
+        return "The sign-in email could not be sent. Try again shortly.";
+      default:
+        return error.status >= 500
+          ? "The sign-in service is temporarily unavailable. Try again shortly."
+          : "Sign-in could not be completed. Try again.";
+    }
   }
-  if (normalized.includes("popup-blocked")) {
-    return "Your browser blocked the Google sign-in window. Allow pop-ups and try again.";
+
+  switch (authError?.code) {
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return null;
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google sign-in window. Allow pop-ups and try again.";
   }
-  if (normalized.includes("invalid code")) {
-    return "That code is incorrect. Check the email and try again.";
-  }
-  if (normalized.includes("no valid code") || normalized.includes("expired")) {
-    return "That code has expired. Request a new code to continue.";
-  }
-  if (normalized.includes("too many attempts")) {
-    return "Too many incorrect attempts. Request a new code to continue.";
-  }
-  if (error instanceof ApiError && error.status === 429) {
-    return "Too many codes were requested. Wait 15 minutes before trying again.";
-  }
-  if (
-    error instanceof TypeError ||
-    normalized.includes("failed to fetch") ||
-    normalized.includes("network")
-  ) {
+
+  if (error instanceof TypeError) {
     return "We could not reach the sign-in service. Check your connection and try again.";
   }
-  if (normalized.includes("firebase web config is missing")) {
+  if (authError?.message === FIREBASE_CONFIG_MISSING_MESSAGE) {
     return "Sign-in is not configured for this deployment. Contact the site administrator.";
-  }
-  if (error instanceof ApiError && error.status >= 500) {
-    return "The sign-in service is temporarily unavailable. Try again shortly.";
   }
   return "Sign-in could not be completed. Try again.";
 }

@@ -38,7 +38,7 @@ class TestOTPSend:
         )
 
         assert resp.status_code == 500
-        assert resp.json()["detail"] == "Failed to send verification email."
+        assert resp.json()["detail"]["code"] == "OTP_DELIVERY_FAILED"
 
     async def test_send_otp_rate_limit(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         email = "ratelimit@test.com"
@@ -53,6 +53,7 @@ class TestOTPSend:
 
         resp = await unauthed_client.post("/auth/otp/send", json={"email": email})
         assert resp.status_code == 429
+        assert resp.json()["detail"]["code"] == "OTP_RATE_LIMITED"
 
     async def test_send_otp_invalidates_previous_unused_codes(
         self,
@@ -163,7 +164,7 @@ class TestOTPVerify:
         await self._create_otp(db_session, "wrong@test.com", "123456")
         resp = await unauthed_client.post("/auth/otp/verify", json={"email": "wrong@test.com", "code": "000000"})
         assert resp.status_code == 400
-        assert "Invalid code" in resp.json()["detail"]
+        assert resp.json()["detail"]["code"] == "OTP_INVALID"
 
     async def test_verify_expired_code(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         otp = OTPCode(
@@ -176,7 +177,7 @@ class TestOTPVerify:
 
         resp = await unauthed_client.post("/auth/otp/verify", json={"email": "expired@test.com", "code": "123456"})
         assert resp.status_code == 400
-        assert "No valid code" in resp.json()["detail"]
+        assert resp.json()["detail"]["code"] == "OTP_EXPIRED"
 
     async def test_verify_max_attempts(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         otp = OTPCode(
@@ -190,7 +191,7 @@ class TestOTPVerify:
 
         resp = await unauthed_client.post("/auth/otp/verify", json={"email": "maxattempts@test.com", "code": "123456"})
         assert resp.status_code == 400
-        assert "Too many attempts" in resp.json()["detail"]
+        assert resp.json()["detail"]["code"] == "OTP_TOO_MANY_ATTEMPTS"
 
     async def test_verify_already_used(self, unauthed_client: AsyncClient, db_session: AsyncSession):
         otp = OTPCode(
@@ -204,4 +205,4 @@ class TestOTPVerify:
 
         resp = await unauthed_client.post("/auth/otp/verify", json={"email": "used@test.com", "code": "123456"})
         assert resp.status_code == 400
-        assert "No valid code" in resp.json()["detail"]
+        assert resp.json()["detail"]["code"] == "OTP_EXPIRED"
