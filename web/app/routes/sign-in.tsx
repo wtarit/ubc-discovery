@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import { api } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { authErrorMessage } from "~/lib/auth-errors";
-import {
-  consumeAuthReturnTo,
-  rememberAuthReturnTo,
-} from "~/lib/auth-flow";
 import { pendingGoogleLinkEmail } from "~/lib/firebase";
 
 export function meta() {
@@ -19,16 +15,12 @@ function FirebaseConfigWarning({ message }: { message: string }) {
 }
 
 export default function SignIn() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const {
-    state,
     signInWithOtpToken,
     signInWithGoogle,
     firebaseReady,
     firebaseConfigError,
   } = useAuth();
-  const redirectParam = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
@@ -38,7 +30,6 @@ export default function SignIn() {
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [replacementNotice, setReplacementNotice] = useState(false);
-  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
   const secondsRemaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
   const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
   const codeExpired = step === "code" && secondsRemaining === 0;
@@ -60,32 +51,6 @@ export default function SignIn() {
   useEffect(() => {
     focusVisible(step === "code" ? "[data-auth-code]" : "[data-auth-email]");
   }, [step]);
-
-  useEffect(() => {
-    rememberAuthReturnTo(redirectParam);
-  }, [redirectParam]);
-
-  useEffect(() => {
-    if (state.status === "loading" || initialAuthChecked) return;
-    if (state.status === "member" || state.status === "onboarding") {
-      navigate(
-        state.status === "member" ? consumeAuthReturnTo() : "/welcome/name",
-        { replace: true }
-      );
-      return;
-    }
-    setInitialAuthChecked(true);
-  }, [
-    initialAuthChecked,
-    navigate,
-    redirectParam,
-    state.status,
-  ]);
-
-  function finishAuthentication(hasProfile: boolean) {
-    rememberAuthReturnTo(redirectParam);
-    navigate(hasProfile ? consumeAuthReturnTo() : "/welcome/name");
-  }
 
   function requireFirebaseReady() {
     if (!firebaseConfigError) return true;
@@ -147,8 +112,7 @@ export default function SignIn() {
     setError("");
     try {
       const res = await api.auth.verifyOtp(email, code);
-      const profile = await signInWithOtpToken(res.firebase_custom_token);
-      finishAuthentication(!res.is_new_user && Boolean(profile));
+      await signInWithOtpToken(res.firebase_custom_token);
     } catch (e: any) {
       setError(authErrorMessage(e) ?? "");
     } finally {
@@ -169,8 +133,7 @@ export default function SignIn() {
     setLoading(true);
     setError("");
     try {
-      const profile = await signInWithGoogle();
-      finishAuthentication(Boolean(profile));
+      await signInWithGoogle();
     } catch (e: any) {
       const linkEmail = pendingGoogleLinkEmail(e);
       if (linkEmail) {
@@ -194,10 +157,6 @@ export default function SignIn() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (state.status === "loading" || !initialAuthChecked) {
-    return <div className="min-h-screen bg-bg" aria-label="Checking sign-in status" />;
   }
 
   return (

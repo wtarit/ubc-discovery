@@ -25,17 +25,6 @@ export default function OnboardingName() {
     if (uid) setName(readOnboardingDraft(uid).preferred_name ?? "");
   }, [uid]);
 
-  useEffect(() => {
-    if (state.status === "loading") return;
-    if (state.status === "member") {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (state.status === "anonymous") {
-      navigate("/sign-in", { replace: true });
-    }
-  }, [navigate, state.status]);
-
   const canContinue = name.trim().length > 0;
 
   function handleContinue() {

@@ -27,19 +27,10 @@ export default function OnboardingInterests() {
   }, [uid]);
 
   useEffect(() => {
-    if (state.status === "loading") return;
-    if (state.status === "member") {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (state.status === "anonymous") {
-      navigate("/sign-in", { replace: true });
-      return;
-    }
     if (!readOnboardingDraft(uid).preferred_name) {
       navigate("/welcome/name", { replace: true });
     }
-  }, [navigate, state.status, uid]);
+  }, [navigate, uid]);
 
   function toggle(id: string) {
     setSelected((s) =>

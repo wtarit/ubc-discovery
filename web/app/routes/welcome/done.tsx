@@ -68,11 +68,6 @@ export default function OnboardingDone() {
   }, [uid]);
 
   useEffect(() => {
-    if (state.status === "loading") return;
-    if (state.status === "anonymous") {
-      navigate("/sign-in", { replace: true });
-      return;
-    }
     if (!draftLoaded) return;
     if (profile) {
       clearOnboardingDraft(uid);
@@ -120,7 +115,6 @@ export default function OnboardingDone() {
     navigate,
     profile,
     refreshProfile,
-    state.status,
     uid,
   ]);
 

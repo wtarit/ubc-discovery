@@ -4,6 +4,7 @@ import { VIBES, FACULTIES, YEARS } from "~/lib/constants";
 import { VibeTag } from "~/components/VibeTag";
 import { type UserResponse } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
+import { MemberBoundary } from "~/components/MemberBoundary";
 import { yearLabelToStanding, yearStandingToLabel } from "~/lib/onboarding";
 
 export function meta() {
@@ -100,12 +101,11 @@ function VisitorProfile() {
 }
 
 export default function Profile() {
-  const { state } = useAuth();
-
-  if (state.status === "loading") return null;
-  if (state.status !== "member") return <VisitorProfile />;
-
-  return <MemberProfile user={state.profile} />;
+  return (
+    <MemberBoundary fallback={<VisitorProfile />}>
+      {(profile) => <MemberProfile user={profile} />}
+    </MemberBoundary>
+  );
 }
 
 function formatMemberSince(value: string) {

@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { EventCardMedium } from "~/components/EventCard";
 import { VibeTag } from "~/components/VibeTag";
 import type { ApiEvent } from "~/lib/api";
-import { useAuth } from "~/lib/auth";
+import { MemberBoundary } from "~/components/MemberBoundary";
 import {
   useSavedEventDetails,
   useSavedEventIds,
@@ -269,13 +269,11 @@ function RateSheet({
 }
 
 export default function Saved() {
-  const { state } = useAuth();
-
-  if (state.status === "loading") return null;
-
-  if (state.status !== "member") return <VisitorSaved />;
-
-  return <MemberSaved />;
+  return (
+    <MemberBoundary fallback={<VisitorSaved />}>
+      {() => <MemberSaved />}
+    </MemberBoundary>
+  );
 }
 
 function EmptySavedState({ tab, mobile }: { tab: "upcoming" | "past"; mobile?: boolean }) {

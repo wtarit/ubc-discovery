@@ -103,19 +103,10 @@ export default function OnboardingAcademic() {
   const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
 
   useEffect(() => {
-    if (state.status === "loading") return;
-    if (state.status === "member") {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (state.status === "anonymous") {
-      navigate("/sign-in", { replace: true });
-      return;
-    }
     if (!readOnboardingDraft(uid).preferred_name) {
       navigate("/welcome/name", { replace: true });
     }
-  }, [navigate, state.status, uid]);
+  }, [navigate, uid]);
 
   function handleContinue() {
     mergeOnboardingDraft(uid, {

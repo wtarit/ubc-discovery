@@ -13,9 +13,15 @@ export default [
     route("profile", "routes/profile.tsx"),
   ]),
   route("organizers", "routes/organizers.tsx"),
-  route("sign-in", "routes/sign-in.tsx"),
-  route("welcome/name", "routes/welcome/name.tsx"),
-  route("welcome/academic", "routes/welcome/academic.tsx"),
-  route("welcome/interests", "routes/welcome/interests.tsx"),
-  route("welcome/done", "routes/welcome/done.tsx"),
+  layout("routes/anonymous-only-layout.tsx", [
+    route("sign-in", "routes/sign-in.tsx"),
+  ]),
+  layout("routes/onboarding-only-layout.tsx", [
+    route("welcome/name", "routes/welcome/name.tsx"),
+    route("welcome/academic", "routes/welcome/academic.tsx"),
+    route("welcome/interests", "routes/welcome/interests.tsx"),
+  ]),
+  layout("routes/authenticated-layout.tsx", [
+    route("welcome/done", "routes/welcome/done.tsx"),
+  ]),
 ] satisfies RouteConfig;

@@ -195,3 +195,38 @@ test("sends an authenticated incomplete member to onboarding", async ({ page }) 
   await expect(page).toHaveURL("/welcome/name");
   await expect(page.getByRole("button", { name: /continue with google/i })).toHaveCount(0);
 });
+
+test("redirects an anonymous visitor away from onboarding routes", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto("/welcome/name");
+
+  await expect(page).toHaveURL("/sign-in");
+});
+
+test("redirects a member away from onboarding steps", async ({ page }) => {
+  await mockApi(page, { profile: existingProfile });
+  await setAuthenticatedUser(page);
+  await page.goto("/welcome/name");
+
+  await expect(page).toHaveURL("/");
+});
+
+test("requires authentication for onboarding completion", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/welcome/done");
+
+  await expect(page).toHaveURL("/sign-in");
+});
+
+test("keeps a completed member on the onboarding completion page", async ({
+  page,
+}) => {
+  await mockApi(page, { profile: existingProfile });
+  await setAuthenticatedUser(page);
+  await page.goto("/welcome/done");
+
+  await expect(page).toHaveURL("/welcome/done");
+  await expect(page.getByRole("heading", { name: /you.re in/i })).toBeVisible();
+});
