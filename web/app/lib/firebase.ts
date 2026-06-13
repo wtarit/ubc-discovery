@@ -107,6 +107,18 @@ export function watchFirebaseAuth(callback: (user: User | null) => void) {
   return onAuthStateChanged(getFirebaseAuth(), callback);
 }
 
+export async function getFirebaseIdToken() {
+  if (AUTH_TEST_MODE) {
+    const user = readTestUser();
+    if (!user) throw new Error("Sign in before making this request.");
+    return asFirebaseUser(user).getIdToken();
+  }
+
+  const user = getFirebaseAuth().currentUser;
+  if (!user) throw new Error("Sign in before making this request.");
+  return user.getIdToken();
+}
+
 export async function signInWithCustomToken(customToken: string) {
   if (AUTH_TEST_MODE) {
     const [, uid = "otp-user", email = "member@example.com"] = customToken.split(":");

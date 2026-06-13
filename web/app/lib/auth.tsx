@@ -28,11 +28,14 @@ type OnboardingPayload = {
 
 type UpdateProfilePayload = Partial<OnboardingPayload>;
 
+export type AuthState =
+  | { status: "loading" }
+  | { status: "anonymous" }
+  | { status: "onboarding"; uid: string }
+  | { status: "member"; uid: string; profile: UserResponse };
+
 type AuthContextValue = {
-  loading: boolean;
-  uid: string | null;
-  token: string | null;
-  profile: UserResponse | null;
+  state: AuthState;
   firebaseReady: boolean;
   firebaseConfigError: string | null;
   signInWithOtpToken: (customToken: string) => Promise<UserResponse | null>;
@@ -46,37 +49,44 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function loadProfile(token: string) {
+async function loadProfile() {
   try {
-    return await api.users.me(token);
+    return await api.users.me();
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
 }
 
+function authenticatedState(
+  uid: string,
+  profile: UserResponse | null
+): AuthState {
+  return profile
+    ? { status: "member", uid, profile }
+    : { status: "onboarding", uid };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(true);
-  const [uid, setUid] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserResponse | null>(null);
+  const [state, setState] = useState<AuthState>({ status: "loading" });
   const authRequestRef = useRef(0);
   const firebaseConfigError = getFirebaseConfigError();
   const firebaseReady = !firebaseConfigError;
 
   const refreshProfile = useCallback(async () => {
-    if (!token) return null;
+    if (state.status !== "onboarding" && state.status !== "member") return null;
+    const uid = state.uid;
     const requestId = authRequestRef.current;
-    const nextProfile = await loadProfile(token);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
-      setProfile(nextProfile);
+      setState(authenticatedState(uid, nextProfile));
     }
     return nextProfile;
-  }, [token]);
+  }, [state]);
 
   useEffect(() => {
     if (!firebaseReady) {
-      setLoading(false);
+      setState({ status: "anonymous" });
       return;
     }
 
@@ -85,24 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authRequestRef.current = requestId;
 
       if (!firebaseUser) {
-        setUid(null);
-        setToken(null);
-        setProfile(null);
-        setLoading(false);
+        setState({ status: "anonymous" });
         return;
       }
 
       try {
-        const idToken = await firebaseUser.getIdToken();
-        const nextProfile = await loadProfile(idToken);
+        const nextProfile = await loadProfile();
         if (authRequestRef.current !== requestId) return;
-        setUid(firebaseUser.uid);
-        setToken(idToken);
-        setProfile(nextProfile);
-      } finally {
+        setState(authenticatedState(firebaseUser.uid, nextProfile));
+      } catch (error) {
         if (authRequestRef.current === requestId) {
-          setLoading(false);
+          setState({ status: "anonymous" });
         }
+        throw error;
       }
     });
 
@@ -113,12 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const requestId = authRequestRef.current + 1;
     authRequestRef.current = requestId;
     const user = await firebaseSignInWithCustomToken(customToken);
-    const idToken = await user.getIdToken();
-    const nextProfile = await loadProfile(idToken);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
-      setUid(user.uid);
-      setToken(idToken);
-      setProfile(nextProfile);
+      setState(authenticatedState(user.uid, nextProfile));
     }
     return nextProfile;
   }, []);
@@ -127,12 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const requestId = authRequestRef.current + 1;
     authRequestRef.current = requestId;
     const user = await firebaseSignInWithGoogle();
-    const idToken = await user.getIdToken();
-    const nextProfile = await loadProfile(idToken);
+    const nextProfile = await loadProfile();
     if (authRequestRef.current === requestId) {
-      setUid(user.uid);
-      setToken(idToken);
-      setProfile(nextProfile);
+      setState(authenticatedState(user.uid, nextProfile));
     }
     return nextProfile;
   }, []);
@@ -142,36 +141,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authRequestRef.current = requestId;
     await firebaseSignOut();
     if (authRequestRef.current === requestId) {
-      setUid(null);
-      setToken(null);
-      setProfile(null);
+      setState({ status: "anonymous" });
     }
   }, []);
 
   const completeOnboarding = useCallback(
     async (data: OnboardingPayload) => {
-      if (!token) throw new Error("Sign in before completing onboarding.");
-      const nextProfile = await api.users.onboarding(token, data);
-      setProfile(nextProfile);
+      if (state.status !== "onboarding" && state.status !== "member") {
+        throw new Error("Sign in before completing onboarding.");
+      }
+      const uid = state.uid;
+      const nextProfile = await api.users.onboarding(data);
+      setState({ status: "member", uid, profile: nextProfile });
       return nextProfile;
     },
-    [token]
+    [state]
   );
 
   const updateProfile = useCallback(
     async (data: UpdateProfilePayload) => {
-      if (!token) throw new Error("Sign in before updating your profile.");
-      const nextProfile = await api.users.update(token, data);
-      setProfile(nextProfile);
+      if (state.status !== "member") {
+        throw new Error("Sign in before updating your profile.");
+      }
+      const nextProfile = await api.users.update(data);
+      setState({ ...state, profile: nextProfile });
       return nextProfile;
     },
-    [token]
+    [state]
   );
 
   const uploadProfilePhoto = useCallback(
     async (file: File) => {
-      if (!token) throw new Error("Sign in before updating your profile photo.");
-      const { upload_url } = await api.users.presignedUpload(token, file.type || "image/jpeg");
+      if (state.status !== "member") {
+        throw new Error("Sign in before updating your profile photo.");
+      }
+      const { upload_url } = await api.users.presignedUpload(
+        file.type || "image/jpeg"
+      );
       const upload = await fetch(upload_url, {
         method: "PUT",
         headers: { "Content-Type": file.type || "image/jpeg" },
@@ -180,15 +186,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!upload.ok) throw new Error("Profile photo upload failed.");
       return refreshProfile();
     },
-    [refreshProfile, token]
+    [refreshProfile, state.status]
   );
 
   const value = useMemo(
     () => ({
-      loading,
-      uid,
-      token,
-      profile,
+      state,
       firebaseReady,
       firebaseConfigError,
       signInWithOtpToken,
@@ -203,14 +206,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeOnboarding,
       firebaseConfigError,
       firebaseReady,
-      loading,
-      profile,
       refreshProfile,
       signInWithGoogle,
       signInWithOtpToken,
       signOut,
-      token,
-      uid,
+      state,
       updateProfile,
       uploadProfilePhoto,
     ]

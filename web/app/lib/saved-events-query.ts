@@ -20,16 +20,17 @@ function savedEventsQueryKey(userId: string | null | undefined) {
 }
 
 export function useSavedEventsList() {
-  const { token, profile } = useAuth();
+  const { state } = useAuth();
+  const userId = state.status === "member" ? state.profile.id : null;
 
   const query = useQuery({
-    queryKey: savedEventsQueryKey(profile?.id),
+    queryKey: savedEventsQueryKey(userId),
     queryFn: async () => {
-      if (!token || !profile) return emptySavedEvents;
-      const data = await api.saved.list(token);
+      if (state.status !== "member") return emptySavedEvents;
+      const data = await api.saved.list();
       return data.saved_events;
     },
-    enabled: Boolean(token && profile),
+    enabled: state.status === "member",
   });
 
   return {
@@ -57,14 +58,18 @@ export function useSavedEventDetails() {
 }
 
 export function useSavedEventMutations() {
-  const { token, profile } = useAuth();
+  const { state } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = savedEventsQueryKey(profile?.id);
+  const queryKey = savedEventsQueryKey(
+    state.status === "member" ? state.profile.id : null
+  );
 
   const save = useMutation({
     mutationFn: async ({ eventId }: SaveMutationInput) => {
-      if (!token || !profile) throw new Error("Sign in before saving events.");
-      await api.saved.save(token, eventId);
+      if (state.status !== "member") {
+        throw new Error("Sign in before saving events.");
+      }
+      await api.saved.save(eventId);
     },
     onMutate: async ({ eventId, event }) => {
       await queryClient.cancelQueries({ queryKey });
@@ -74,10 +79,11 @@ export function useSavedEventMutations() {
         if (!event || current?.some((saved) => saved.event_id === eventId)) {
           return current ?? [];
         }
+        const userId = state.status === "member" ? state.profile.id : "";
         return [
           {
             id: `optimistic-${eventId}`,
-            user_id: profile?.id ?? "",
+            user_id: userId,
             event_id: eventId,
             created_at: new Date().toISOString(),
             event,
@@ -99,9 +105,11 @@ export function useSavedEventMutations() {
 
   const unsave = useMutation({
     mutationFn: async (eventId: string) => {
-      if (!token || !profile) throw new Error("Sign in before updating saved events.");
+      if (state.status !== "member") {
+        throw new Error("Sign in before updating saved events.");
+      }
       try {
-        await api.saved.unsave(token, eventId);
+        await api.saved.unsave(eventId);
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) return;
         throw error;

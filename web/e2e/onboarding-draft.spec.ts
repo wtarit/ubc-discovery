@@ -9,7 +9,7 @@ test("restores an interrupted draft only for the same Firebase UID", async ({ pa
   });
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "ubc-discovery-onboarding:account-a",
+      "ubc-discovery:onboarding-draft:account-a",
       JSON.stringify({ preferred_name: "Account A Draft" })
     );
   });
@@ -27,7 +27,7 @@ test("restores an interrupted draft only for the same Firebase UID", async ({ pa
   await expect(page.locator("input:visible")).toHaveValue("");
 });
 
-test("discards the unowned legacy onboarding draft", async ({ page }) => {
+test("discards a malformed account draft", async ({ page }) => {
   await mockApi(page, { profile: null });
   await setAuthenticatedUser(page, {
     uid: "account-a",
@@ -35,8 +35,8 @@ test("discards the unowned legacy onboarding draft", async ({ page }) => {
   });
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "ubc-discovery-onboarding",
-      JSON.stringify({ preferred_name: "Legacy Draft" })
+      "ubc-discovery:onboarding-draft:account-a",
+      JSON.stringify({ preferred_name: 42 })
     );
   });
   await page.goto("/welcome/name");
@@ -44,7 +44,11 @@ test("discards the unowned legacy onboarding draft", async ({ page }) => {
   await expect(page.locator("input:visible")).toHaveValue("");
   await expect
     .poll(() =>
-      page.evaluate(() => window.localStorage.getItem("ubc-discovery-onboarding"))
+      page.evaluate(() =>
+        window.localStorage.getItem(
+          "ubc-discovery:onboarding-draft:account-a"
+        )
+      )
     )
     .toBeNull();
 });

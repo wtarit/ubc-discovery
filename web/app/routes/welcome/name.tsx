@@ -6,7 +6,7 @@ import {
   OnboardingDesktopShell,
 } from "~/components/OnboardingShell";
 import { useAuth } from "~/lib/auth";
-import { mergeOnboardingDraft, readOnboardingDraft } from "~/lib/onboarding";
+import { onboardingDraftStore } from "~/lib/onboarding-draft";
 
 export function meta() {
   return [{ title: "What should we call you? — UBC Discovery" }];
@@ -14,24 +14,27 @@ export function meta() {
 
 export default function OnboardingName() {
   const navigate = useNavigate();
-  const { loading, profile, token, uid } = useAuth();
+  const { state } = useAuth();
+  const uid = state.status === "onboarding" ? state.uid : null;
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (uid) setName(readOnboardingDraft(uid).preferred_name ?? "");
-  }, [uid]);
+    if (!uid) return;
 
-  useEffect(() => {
-    if (loading) return;
-    if (profile) navigate("/", { replace: true });
-    if (!token) navigate("/sign-in", { replace: true });
-  }, [loading, navigate, profile, token]);
+    let active = true;
+    void onboardingDraftStore.read(uid).then((draft) => {
+      if (active) setName(draft.preferred_name ?? "");
+    });
+    return () => {
+      active = false;
+    };
+  }, [uid]);
 
   const canContinue = name.trim().length > 0;
 
-  function handleContinue() {
-    if (!canContinue) return;
-    mergeOnboardingDraft(uid, { preferred_name: name.trim() });
+  async function handleContinue() {
+    if (!canContinue || !uid) return;
+    await onboardingDraftStore.update(uid, { preferred_name: name.trim() });
     navigate("/welcome/academic");
   }
 
@@ -39,7 +42,7 @@ export default function OnboardingName() {
     <div className="min-h-screen bg-bg text-ink font-body">
       {/* Mobile */}
       <div className="md:hidden pb-28">
-        <OnboardingTop step={1} total={4} />
+        <OnboardingTop step={1} total={3} />
         <div className="px-[22px] pt-8">
           <div className="font-mono text-[10px] text-accent font-bold tracking-wide uppercase">
             A few quick things
@@ -66,7 +69,7 @@ export default function OnboardingName() {
       {/* Desktop */}
       <OnboardingDesktopShell
         step={1}
-        total={4}
+        total={3}
         kicker="A few quick things"
         title="What should we call you?"
         canContinue={canContinue}
