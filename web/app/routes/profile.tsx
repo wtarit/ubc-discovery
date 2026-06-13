@@ -100,12 +100,12 @@ function VisitorProfile() {
 }
 
 export default function Profile() {
-  const { loading, profile } = useAuth();
+  const { state } = useAuth();
 
-  if (loading) return null;
-  if (!profile) return <VisitorProfile />;
+  if (state.status === "loading") return null;
+  if (state.status !== "member") return <VisitorProfile />;
 
-  return <MemberProfile user={profile} />;
+  return <MemberProfile user={state.profile} />;
 }
 
 function formatMemberSince(value: string) {

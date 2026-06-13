@@ -75,7 +75,7 @@ function findFailedAction(actionId: string | null) {
 }
 
 export function PendingAuthActionRunner() {
-  const { profile } = useAuth();
+  const { state } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const running = useRef(false);
@@ -86,9 +86,10 @@ export function PendingAuthActionRunner() {
   );
 
   const runPendingActions = useCallback(async () => {
-    if (!profile || running.current) return;
+    if (state.status !== "member" || running.current) return;
 
     running.current = true;
+    const { profile } = state;
     const context = { profile, queryClient };
     try {
       while (true) {
@@ -129,7 +130,7 @@ export function PendingAuthActionRunner() {
     } finally {
       running.current = false;
     }
-  }, [navigate, profile, queryClient]);
+  }, [navigate, queryClient, state]);
 
   useEffect(() => {
     void runPendingActions();

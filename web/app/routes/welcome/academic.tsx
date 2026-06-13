@@ -92,18 +92,30 @@ function PillGrid({
 
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
-  const { loading, profile, uid } = useAuth();
+  const { state } = useAuth();
+  const uid =
+    state.status === "onboarding" || state.status === "member"
+      ? state.uid
+      : null;
   const draft = readOnboardingDraft(uid);
   const [faculty, setFaculty] = useState(draft.faculty ?? "");
   const [major, setMajor] = useState(draft.major ?? "");
   const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
 
   useEffect(() => {
-    if (loading) return;
-    if (profile) navigate("/", { replace: true });
-    if (!uid) navigate("/sign-in", { replace: true });
-    if (!readOnboardingDraft(uid).preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, uid]);
+    if (state.status === "loading") return;
+    if (state.status === "member") {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (state.status === "anonymous") {
+      navigate("/sign-in", { replace: true });
+      return;
+    }
+    if (!readOnboardingDraft(uid).preferred_name) {
+      navigate("/welcome/name", { replace: true });
+    }
+  }, [navigate, state.status, uid]);
 
   function handleContinue() {
     mergeOnboardingDraft(uid, {

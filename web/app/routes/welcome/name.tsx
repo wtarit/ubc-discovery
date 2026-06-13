@@ -14,7 +14,11 @@ export function meta() {
 
 export default function OnboardingName() {
   const navigate = useNavigate();
-  const { loading, profile, uid } = useAuth();
+  const { state } = useAuth();
+  const uid =
+    state.status === "onboarding" || state.status === "member"
+      ? state.uid
+      : null;
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -22,10 +26,15 @@ export default function OnboardingName() {
   }, [uid]);
 
   useEffect(() => {
-    if (loading) return;
-    if (profile) navigate("/", { replace: true });
-    if (!uid) navigate("/sign-in", { replace: true });
-  }, [loading, navigate, profile, uid]);
+    if (state.status === "loading") return;
+    if (state.status === "member") {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (state.status === "anonymous") {
+      navigate("/sign-in", { replace: true });
+    }
+  }, [navigate, state.status]);
 
   const canContinue = name.trim().length > 0;
 

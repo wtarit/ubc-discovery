@@ -22,9 +22,7 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const {
-    loading: authLoading,
-    uid,
-    profile,
+    state,
     signInWithOtpToken,
     signInWithGoogle,
     firebaseReady,
@@ -68,21 +66,20 @@ export default function SignIn() {
   }, [redirectParam]);
 
   useEffect(() => {
-    if (authLoading || initialAuthChecked) return;
-    if (uid) {
-      navigate(profile ? consumeAuthReturnTo() : "/welcome/name", {
-        replace: true,
-      });
+    if (state.status === "loading" || initialAuthChecked) return;
+    if (state.status === "member" || state.status === "onboarding") {
+      navigate(
+        state.status === "member" ? consumeAuthReturnTo() : "/welcome/name",
+        { replace: true }
+      );
       return;
     }
     setInitialAuthChecked(true);
   }, [
-    authLoading,
     initialAuthChecked,
     navigate,
-    profile,
     redirectParam,
-    uid,
+    state.status,
   ]);
 
   function finishAuthentication(hasProfile: boolean) {
@@ -199,7 +196,7 @@ export default function SignIn() {
     }
   }
 
-  if (authLoading || !initialAuthChecked) {
+  if (state.status === "loading" || !initialAuthChecked) {
     return <div className="min-h-screen bg-bg" aria-label="Checking sign-in status" />;
   }
 

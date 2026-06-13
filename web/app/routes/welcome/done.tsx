@@ -48,7 +48,12 @@ function StepList() {
 
 export default function OnboardingDone() {
   const navigate = useNavigate();
-  const { completeOnboarding, loading, profile, refreshProfile, uid } = useAuth();
+  const { completeOnboarding, refreshProfile, state } = useAuth();
+  const uid =
+    state.status === "onboarding" || state.status === "member"
+      ? state.uid
+      : null;
+  const profile = state.status === "member" ? state.profile : null;
   const [draft, setDraft] = useState<OnboardingDraft>({});
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [saving, setSaving] = useState(true);
@@ -63,14 +68,15 @@ export default function OnboardingDone() {
   }, [uid]);
 
   useEffect(() => {
-    if (loading || !draftLoaded) return;
+    if (state.status === "loading") return;
+    if (state.status === "anonymous") {
+      navigate("/sign-in", { replace: true });
+      return;
+    }
+    if (!draftLoaded) return;
     if (profile) {
       clearOnboardingDraft(uid);
       setSaving(false);
-      return;
-    }
-    if (!uid) {
-      navigate("/sign-in", { replace: true });
       return;
     }
     if (!draft.preferred_name) {
@@ -107,7 +113,16 @@ export default function OnboardingDone() {
     return () => {
       cancelled = true;
     };
-  }, [completeOnboarding, draft, draftLoaded, loading, navigate, profile, refreshProfile, uid]);
+  }, [
+    completeOnboarding,
+    draft,
+    draftLoaded,
+    navigate,
+    profile,
+    refreshProfile,
+    state.status,
+    uid,
+  ]);
 
   function handleContinue() {
     if (saving || error) return;

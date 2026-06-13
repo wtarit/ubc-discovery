@@ -269,11 +269,11 @@ function RateSheet({
 }
 
 export default function Saved() {
-  const { loading, profile } = useAuth();
+  const { state } = useAuth();
 
-  if (loading) return null;
+  if (state.status === "loading") return null;
 
-  if (!profile) return <VisitorSaved />;
+  if (state.status !== "member") return <VisitorSaved />;
 
   return <MemberSaved />;
 }
