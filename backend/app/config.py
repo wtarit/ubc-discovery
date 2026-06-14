@@ -2,9 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = (
-        "postgresql+asyncpg://ubcadmin:NewcomersDB2026!@localhost:5432/ubcnewcomers"
-    )
+    database_url: str
 
     api_base_url: str = "http://localhost:8000"
 
