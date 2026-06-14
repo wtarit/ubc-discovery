@@ -161,6 +161,20 @@ ENV/
 env.bak/
 venv.bak/
 
+# OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+terraform.tfvars
+*.auto.tfvars
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Spyder project settings
 .spyderproject
 .spyproject

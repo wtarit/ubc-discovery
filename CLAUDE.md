@@ -63,7 +63,7 @@ backend/
 │   ├── models/          # SQLAlchemy ORM: User, Event, Connection, ZoneUnlock
 │   ├── schemas/         # Pydantic request/response models (auto Swagger docs)
 │   ├── routers/         # auth, users, events, connections, matching, zones
-│   └── services/        # cognito, s3, bedrock, sns, scraper
+│   └── services/        # cognito, s3, bedrock, scraper
 └── tests/               # pytest async test suite
 
 web/
