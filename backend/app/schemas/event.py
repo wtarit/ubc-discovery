@@ -41,6 +41,7 @@ class EventResponse(BaseModel):
 class CreateEventRequest(BaseModel):
     title: str
     description: str = ""
+    source: str = Field(default="manual", min_length=1, max_length=50)
     club_name: str | None = None
     event_picture_key: str | None = None
     source_label: str = "campus_community"

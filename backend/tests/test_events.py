@@ -109,6 +109,29 @@ class TestCreateEvent:
         assert data["source_label"] == "campus_community"
         assert data["vibes"] == []
 
+    async def test_create_event_preserves_ingestion_source(self, admin_client: AsyncClient):
+        resp = await admin_client.post(
+            "/events",
+            json={"title": "Scraped Event", "source": "instagram"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["source"] == "instagram"
+
+    async def test_create_event_accepts_free_form_source(self, admin_client: AsyncClient):
+        resp = await admin_client.post(
+            "/events",
+            json={"title": "Imported Event", "source": "ubc_calendar"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["source"] == "ubc_calendar"
+
+    async def test_create_event_rejects_empty_source(self, admin_client: AsyncClient):
+        resp = await admin_client.post(
+            "/events",
+            json={"title": "Missing Source", "source": ""},
+        )
+        assert resp.status_code == 422
+
     async def test_create_event_rejects_unknown_vibe(self, admin_client: AsyncClient):
         resp = await admin_client.post(
             "/events",
@@ -140,5 +163,3 @@ class TestCreateEvent:
             },
         )
         assert resp.status_code == 422
-
-
