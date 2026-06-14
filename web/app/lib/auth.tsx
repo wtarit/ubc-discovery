@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { api, ApiError, type UserResponse } from "~/lib/api";
+import { resizeImage } from "~/lib/image";
 import {
   getFirebaseConfigError,
   signInWithCustomToken as firebaseSignInWithCustomToken,
@@ -175,15 +176,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (state.status !== "member") {
         throw new Error("Sign in before updating your profile photo.");
       }
-      const { upload_url } = await api.users.presignedUpload(
-        file.type || "image/jpeg"
-      );
+      const resized = await resizeImage(file);
+      const { upload_url } = await api.users.presignedUpload("image/jpeg");
       const upload = await fetch(upload_url, {
         method: "PUT",
-        headers: { "Content-Type": file.type || "image/jpeg" },
-        body: file,
+        headers: { "Content-Type": "image/jpeg" },
+        body: resized,
       });
-      if (!upload.ok) throw new Error("Profile photo upload failed.");
+      if (!upload.ok) {
+        const text = await upload.text();
+        console.error("S3 upload failed:", upload.status, text);
+        throw new Error("Profile photo upload failed.");
+      }
       return refreshProfile();
     },
     [refreshProfile, state.status]

@@ -13,8 +13,9 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, state } = useAuth();
   const initial = memberName[0]?.toUpperCase() ?? "?";
+  const avatarUrl = state.status === "member" ? state.profile.profile_picture_url : null;
 
   useEffect(() => {
     if (!open) return;
@@ -56,13 +57,21 @@ export function AccountMenu({
             : "flex items-center gap-2 border border-transparent px-1.5 py-1 hover:border-rule-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         }
       >
-        <span
-          className={`flex items-center justify-center bg-gradient-to-br from-accent to-[#7990FF] text-white font-display font-extrabold ${
-            compact ? "h-6 w-6 text-[12px]" : "h-7 w-7 text-[13px]"
-          }`}
-        >
-          {initial}
-        </span>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={memberName}
+            className={`object-cover ${compact ? "h-6 w-6" : "h-7 w-7"}`}
+          />
+        ) : (
+          <span
+            className={`flex items-center justify-center bg-gradient-to-br from-accent to-[#7990FF] text-white font-display font-extrabold ${
+              compact ? "h-6 w-6 text-[12px]" : "h-7 w-7 text-[13px]"
+            }`}
+          >
+            {initial}
+          </span>
+        )}
         {!compact && (
           <>
             <span className="max-w-[140px] truncate font-mono text-[11px] font-semibold">

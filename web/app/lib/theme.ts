@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 export type Theme = "light" | "dark" | "system";
 
 function getSystemTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -18,10 +19,16 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "system";
-    return (localStorage.getItem("theme") as Theme) ?? "system";
-  });
+  const [theme, setThemeState] = useState<Theme>("system");
+
+  // On mount, read from localStorage and apply
+  useEffect(() => {
+    const stored = localStorage.getItem("theme") as Theme | null;
+    if (stored) {
+      setThemeState(stored);
+      applyTheme(stored);
+    }
+  }, []);
 
   useEffect(() => {
     applyTheme(theme);
@@ -31,12 +38,6 @@ export function useTheme() {
       localStorage.setItem("theme", theme);
     }
   }, [theme]);
-
-  // On first mount, apply whatever is stored (prevents flash)
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored) applyTheme(stored);
-  }, []);
 
   const resolvedTheme: "light" | "dark" =
     theme === "system" ? getSystemTheme() : theme;

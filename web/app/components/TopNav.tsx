@@ -15,7 +15,7 @@ export function TopNav({
 }) {
   const { resolvedTheme, toggleTheme } = useTheme();
   return (
-    <header className="hidden md:flex px-8 py-5 border-b-2 border-ink items-center justify-between bg-bg">
+    <header className="hidden md:flex sticky top-0 z-50 px-8 py-3 border-b-2 border-ink items-center justify-between bg-bg">
       <div className="flex items-center gap-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-[30px] h-[30px] bg-ink text-bg flex items-center justify-center font-display font-extrabold text-sm tracking-tight">

@@ -184,7 +184,7 @@ function MemberProfile({ user }: { user: UserResponse }) {
   }
 
   return (
-    <div className={editing ? "pb-24 md:pb-24" : ""}>
+    <div>
       {/* Mobile */}
       <div className="md:hidden">
         {/* Avatar block */}
@@ -565,7 +565,7 @@ function MemberProfile({ user }: { user: UserResponse }) {
         </div>
 
         {editing && (
-          <div className="sticky bottom-0 left-0 right-0 px-8 py-3.5 bg-bg border-t-2 border-ink flex justify-end gap-2.5">
+          <div className="sticky bottom-0 left-0 right-0 px-8 py-3 bg-bg border-t-2 border-ink flex justify-end gap-2.5">
             <button
               onClick={resetForm}
               className="px-4 py-2.5 border border-ink bg-transparent text-ink cursor-pointer font-mono text-[11px] font-bold tracking-wide uppercase"

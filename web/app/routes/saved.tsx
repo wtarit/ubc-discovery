@@ -438,13 +438,13 @@ function MemberSaved() {
 
       {/* Desktop */}
       <div className="hidden md:block">
-        <div className="px-8 pt-10 pb-6 border-b border-ink">
+        <div className="px-8 pt-6 pb-4 border-b border-ink">
           <div className="grid grid-cols-[1fr_auto] items-end gap-7">
             <div>
-              <div className="font-mono text-[11px] text-muted tracking-wider uppercase mb-2">
+              <div className="font-mono text-[11px] text-muted tracking-wider uppercase mb-1.5">
                 Your shortlist & history
               </div>
-              <h1 className="font-display font-extrabold text-[80px] text-ink tracking-[-2.5px] leading-[0.92]">
+              <h1 className="font-display font-extrabold text-[52px] text-ink tracking-[-1.5px] leading-[0.92]">
                 Saved.
               </h1>
             </div>
