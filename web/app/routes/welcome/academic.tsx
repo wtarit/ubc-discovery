@@ -8,11 +8,10 @@ import {
 } from "~/components/OnboardingShell";
 import { useAuth } from "~/lib/auth";
 import {
-  mergeOnboardingDraft,
-  readOnboardingDraft,
   yearLabelToStanding,
   yearStandingToLabel,
 } from "~/lib/onboarding";
+import { onboardingDraftStore } from "~/lib/onboarding-draft";
 
 export function meta() {
   return [{ title: "Academic context — UBC Discovery" }];
@@ -92,21 +91,36 @@ function PillGrid({
 
 export default function OnboardingAcademic() {
   const navigate = useNavigate();
-  const { loading, profile, token } = useAuth();
-  const draft = readOnboardingDraft();
-  const [faculty, setFaculty] = useState(draft.faculty ?? "");
-  const [major, setMajor] = useState(draft.major ?? "");
-  const [year, setYear] = useState(yearStandingToLabel(draft.year_standing));
+  const { state } = useAuth();
+  const uid = state.status === "onboarding" ? state.uid : null;
+  const [faculty, setFaculty] = useState("");
+  const [major, setMajor] = useState("");
+  const [year, setYear] = useState("");
 
   useEffect(() => {
-    if (loading) return;
-    if (profile) navigate("/", { replace: true });
-    if (!token) navigate("/sign-in", { replace: true });
-    if (!readOnboardingDraft().preferred_name) navigate("/welcome/name", { replace: true });
-  }, [loading, navigate, profile, token]);
+    if (!uid) return;
 
-  function handleContinue() {
-    mergeOnboardingDraft({
+    let active = true;
+    void onboardingDraftStore.read(uid).then((draft) => {
+      if (!active) return;
+      if (!draft.preferred_name) {
+        navigate("/welcome/name", { replace: true });
+        return;
+      }
+
+      setFaculty(draft.faculty ?? "");
+      setMajor(draft.major ?? "");
+      setYear(yearStandingToLabel(draft.year_standing));
+    });
+    return () => {
+      active = false;
+    };
+  }, [navigate, uid]);
+
+  async function handleContinue() {
+    if (!uid) return;
+
+    await onboardingDraftStore.update(uid, {
       faculty: faculty || undefined,
       major: major.trim() || undefined,
       year_standing: yearLabelToStanding(year),
@@ -124,7 +138,7 @@ export default function OnboardingAcademic() {
       <div className="md:hidden pb-32">
         <OnboardingTop
           step={2}
-          total={4}
+          total={3}
           onBack={() => navigate("/welcome/name")}
         />
         <div className="px-[22px] pt-6 pb-4">
@@ -179,7 +193,7 @@ export default function OnboardingAcademic() {
       {/* Desktop */}
       <OnboardingDesktopShell
         step={2}
-        total={4}
+        total={3}
         kicker="Optional · skippable"
         title={
           <>

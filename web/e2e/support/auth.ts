@@ -1,0 +1,220 @@
+import type { Page } from "@playwright/test";
+
+export type MockProfile = {
+  id: string;
+  email: string;
+  preferred_name: string;
+  major: string | null;
+  year_standing: number | null;
+  faculty: string | null;
+  interests: string[];
+  bio: string | null;
+  profile_picture_url: string | null;
+  is_available_to_meet: boolean;
+  ubc_verified: boolean;
+  connections_count: number;
+  created_at: string;
+};
+
+export const existingProfile: MockProfile = {
+  id: "member-1",
+  email: "member@example.com",
+  preferred_name: "Taylor",
+  major: "Computer Science",
+  year_standing: 3,
+  faculty: "Science",
+  interests: ["music", "outdoors", "food"],
+  bio: null,
+  profile_picture_url: null,
+  is_available_to_meet: false,
+  ubc_verified: false,
+  connections_count: 0,
+  created_at: "2026-01-01T00:00:00Z",
+};
+
+export const mockEvent = {
+  id: "event-1",
+  title: "Campus Welcome",
+  description: "Meet the UBC community.",
+  source: "ubc",
+  source_label: "ubc_events",
+  source_url: null,
+  external_cta_label: null,
+  club_name: null,
+  event_picture_url: null,
+  vibes: ["social"],
+  latitude: null,
+  longitude: null,
+  location_name: "Main Mall",
+  event_date: "2026-09-01T18:00:00Z",
+  event_end_date: "2026-09-01T20:00:00Z",
+  created_at: "2026-01-01T00:00:00Z",
+};
+
+export async function mockApi(
+  page: Page,
+  options: {
+    profile?: MockProfile | null;
+    otpExpirySeconds?: number;
+    sendError?: { status: number; detail: string; code?: string };
+    verifyError?: { status: number; detail: string; code?: string };
+    saveError?: { status: number; detail: string };
+    onSave?: () => void;
+    otpUid?: string;
+  } = {}
+) {
+  let profile = options.profile === undefined ? null : options.profile;
+
+  await page.route("http://api.test/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/users/me") {
+      await route.fulfill({
+        status: profile ? 200 : 404,
+        contentType: "application/json",
+        body: JSON.stringify(profile ?? { detail: "User profile not found." }),
+      });
+      return;
+    }
+    if (
+      url.pathname === "/users/onboarding" &&
+      route.request().method() === "POST"
+    ) {
+      const body = route.request().postDataJSON();
+      profile = {
+        ...existingProfile,
+        id: "new-member-1",
+        email: "member@example.com",
+        preferred_name: body.preferred_name,
+        major: body.major ?? null,
+        year_standing: body.year_standing ?? null,
+        faculty: body.faculty ?? null,
+        interests: body.interests ?? [],
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(profile),
+      });
+      return;
+    }
+    if (url.pathname === "/events/event-1") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockEvent),
+      });
+      return;
+    }
+    if (url.pathname === "/saved-events" && route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ saved_events: [], total: 0 }),
+      });
+      return;
+    }
+    if (
+      url.pathname === "/saved-events/event-1" &&
+      route.request().method() === "POST"
+    ) {
+      options.onSave?.();
+      if (options.saveError) {
+        await route.fulfill({
+          status: options.saveError.status,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: options.saveError.detail }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "save-1",
+            user_id: profile?.id ?? "member-1",
+            event_id: "event-1",
+            created_at: "2026-01-01T00:00:00Z",
+          }),
+        });
+      }
+      return;
+    }
+    if (url.pathname === "/auth/otp/send") {
+      if (options.sendError) {
+        await route.fulfill({
+          status: options.sendError.status,
+          contentType: "application/json",
+          body: JSON.stringify({
+            detail: options.sendError.code
+              ? {
+                  code: options.sendError.code,
+                  message: options.sendError.detail,
+                }
+              : options.sendError.detail,
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          message: "sent",
+          expires_in_seconds: options.otpExpirySeconds ?? 600,
+        }),
+      });
+      return;
+    }
+    if (url.pathname === "/auth/otp/verify") {
+      if (options.verifyError) {
+        await route.fulfill({
+          status: options.verifyError.status,
+          contentType: "application/json",
+          body: JSON.stringify({
+            detail: options.verifyError.code
+              ? {
+                  code: options.verifyError.code,
+                  message: options.verifyError.detail,
+                }
+              : options.verifyError.detail,
+          }),
+        });
+        return;
+      }
+      const body = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          firebase_custom_token: `mock-token:otp-user:${body.email}`,
+          ...(options.otpUid
+            ? {
+                firebase_custom_token: `mock-token:${options.otpUid}:${body.email}`,
+              }
+            : {}),
+          is_new_user: !profile,
+          ubc_verified: false,
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ events: [], total: 0 }),
+    });
+  });
+}
+
+export async function setAuthenticatedUser(
+  page: Page,
+  user = { uid: "existing-uid", email: "member@example.com" }
+) {
+  await page.addInitScript((value) => {
+    if (!window.sessionStorage.getItem("ubc-discovery-test-firebase-user")) {
+      window.sessionStorage.setItem(
+        "ubc-discovery-test-firebase-user",
+        JSON.stringify(value)
+      );
+    }
+  }, user);
+}

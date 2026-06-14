@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import type { ApiEvent } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import {
   useSavedEventIds,
   useSavedEventMutations,
 } from "~/lib/saved-events-query";
+import { startAuthFlow } from "~/lib/auth-flow";
 
 type SaveEventButtonProps = {
   eventId: string;
@@ -27,8 +28,7 @@ export function SaveEventButton({
   className = "",
 }: SaveEventButtonProps) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { token, profile } = useAuth();
+  const { state } = useAuth();
   const { data: savedEventIds } = useSavedEventIds();
   const { save, unsave, pending } = useSavedEventMutations();
   const [failed, setFailed] = useState(false);
@@ -38,9 +38,13 @@ export function SaveEventButton({
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
-    if (!token || !profile) {
-      const redirect = encodeURIComponent(location.pathname + location.search);
-      navigate(`/sign-in?redirect=${redirect}`);
+    if (state.status !== "member") {
+      const returnTo = `/events/${encodeURIComponent(eventId)}`;
+      startAuthFlow({
+        returnTo,
+        actions: [{ type: "save-event", payload: { eventId } }],
+      });
+      navigate(`/sign-in?redirect=${encodeURIComponent(returnTo)}`);
       return;
     }
 
