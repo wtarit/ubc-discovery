@@ -16,9 +16,12 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
-    firebase_admin.initialize_app(cred)
-    logger.info("Firebase Admin SDK initialized")
+    if settings.firebase_credentials_json:
+        cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+        firebase_admin.initialize_app(cred)
+        logger.info("Firebase Admin SDK initialized")
+    else:
+        logger.warning("FIREBASE_CREDENTIALS_JSON not set — Firebase auth disabled")
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
