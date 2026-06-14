@@ -93,7 +93,7 @@ mobile/
 - UBC email not required for membership — optional verification for trust badge (code still enforces `*.ubc.ca`, needs updating)
 - Profile pictures and event images: S3 presigned URLs (upload + download), key stored in DB (`profile_picture_key`, `event_picture_key`)
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
-- Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
+- Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON. Legacy system, will be replaced with Recommender for speed and cost reduction
 - Recommender: content-based event similarity using Bedrock Titan embeddings + vibe Jaccard hybrid scoring. Embeddings pre-computed at event creation and stored as JSON on the event row; query-time similarity is pure Python (no API calls). Uses `@lru_cache` for the Bedrock client, same pattern as bedrock.py.
 
 ### Frontend (Web)
