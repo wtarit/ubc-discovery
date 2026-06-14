@@ -48,7 +48,7 @@ async def create_event(
     body: CreateEventRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    event = Event(**body.model_dump(), source="manual")
+    event = Event(**body.model_dump())
     db.add(event)
     await db.commit()
     await db.refresh(event)
