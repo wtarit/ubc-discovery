@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router";
 import { AccountMenu } from "~/components/AccountMenu";
+import { useTheme } from "~/lib/theme";
 
 const NAV_ITEMS = [
   { id: "discover", label: "Discover", to: "/" },
@@ -12,6 +13,7 @@ export function TopNav({
 }: {
   memberName?: string | null;
 }) {
+  const { resolvedTheme, toggleTheme } = useTheme();
   return (
     <header className="hidden md:flex px-8 py-5 border-b-2 border-ink items-center justify-between bg-bg">
       <div className="flex items-center gap-6">
@@ -49,6 +51,13 @@ export function TopNav({
           </span>
           Search · ⌘K
         </div>
+        <button
+          onClick={toggleTheme}
+          className="w-8 h-8 flex items-center justify-center border border-rule-soft text-muted hover:text-ink hover:border-ink transition-colors"
+          aria-label="Toggle theme"
+        >
+          {resolvedTheme === "dark" ? "☀" : "☾"}
+        </button>
         {memberName ? (
           <AccountMenu memberName={memberName} />
         ) : (

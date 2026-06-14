@@ -1,11 +1,13 @@
 import { Link } from "react-router";
 import { AccountMenu } from "~/components/AccountMenu";
+import { useTheme } from "~/lib/theme";
 
 export function MobileHeader({
   memberName,
 }: {
   memberName?: string | null;
 }) {
+  const { resolvedTheme, toggleTheme } = useTheme();
   return (
     <div className="border-b-2 border-ink md:hidden">
       <div className="px-[18px] py-2 flex justify-between items-baseline">
@@ -20,6 +22,13 @@ export function MobileHeader({
         <div className="flex items-center gap-3">
           <button className="font-mono text-accent text-base leading-none">
             ⌕
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="font-mono text-muted text-base leading-none"
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === "dark" ? "☀" : "☾"}
           </button>
           {memberName && <AccountMenu memberName={memberName} compact />}
           <Link

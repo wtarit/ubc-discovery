@@ -1,5 +1,3 @@
-import { Link } from "react-router";
-
 export function meta() {
   return [
     { title: "For Organizers — UBC Discovery" },
@@ -13,17 +11,6 @@ export function meta() {
 export default function Organizers() {
   return (
     <div className="min-h-screen bg-bg">
-      <header className="border-b-2 border-ink px-6 py-5 flex items-center gap-2.5 md:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-[30px] h-[30px] bg-ink text-bg flex items-center justify-center font-display font-extrabold text-sm tracking-tight">
-            UBC
-          </div>
-          <span className="font-display font-extrabold text-xl tracking-tight">
-            DISCOVERY
-          </span>
-        </Link>
-      </header>
-
       <main className="max-w-[560px] mx-auto px-6 py-12 md:py-20">
         <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight text-ink mb-4">
           Get your event discovered

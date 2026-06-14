@@ -5,6 +5,7 @@
   --font-body: "Inter", -apple-system, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
+  /* Semantic color tokens — override these per theme */
   --color-bg: #FFFFFF;
   --color-surface: #FFFFFF;
   --color-ink: #0A0A0B;
@@ -25,8 +26,29 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Dark theme ─────────────────────────────────────────────────────────── */
+/* Applied via data-theme="dark" on <html> (manual toggle takes priority)   */
+/* Falls back to system preference when no data-theme is set                */
+
+:root[data-theme="dark"],
+:root:not([data-theme="light"]):has(+ body) { /* fallback handled in JS */ }
+
+[data-theme="dark"] {
+  --color-bg: #0A0A0B;
+  --color-surface: #0F1012;
+  --color-ink: #F4F5F7;
+  --color-ink-soft: #C8CBD0;
+  --color-muted: #7E848C;
+  --color-rule: #F4F5F7;
+  --color-rule-soft: #22252A;
+  --color-accent: #7990FF;
+  --color-accent-soft: #0F1A4D;
+  --color-hi: #E0FF4F;
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --color-bg: #0A0A0B;
     --color-surface: #0F1012;
     --color-ink: #F4F5F7;
@@ -37,8 +59,6 @@ html, body {
     --color-accent: #7990FF;
     --color-accent-soft: #0F1A4D;
     --color-hi: #E0FF4F;
-  }
-  html, body {
     color-scheme: dark;
   }
 }
