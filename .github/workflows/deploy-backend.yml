@@ -8,82 +8,164 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "GHCR image tag to deploy"
+        description: "Public GHCR image tag to deploy"
         required: false
         default: latest
-
-env:
-  AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-  ECS_SERVICE: ubc-discovery-backend-2b51
-  ECS_SUBNETS: subnet-0228d22639b73b0e8,subnet-022a3ae38214578c4
-  ECS_SECURITY_GROUPS: sg-0168ff629d4aef83c
-  CONTAINER_PORT: "8000"
-  HEALTH_CHECK_PATH: /
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-backend
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: deploy-backend
+  group: deploy-backend-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy backend to ECS
+    name: Deploy backend to Lightsail
     runs-on: ubuntu-24.04
+    environment: production
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     env:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
-      ECS_INFRASTRUCTURE_ROLE_ARN: ${{ secrets.ECS_INFRASTRUCTURE_ROLE_ARN }}
-      ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
-      BACKEND_SECRETS_ARN: ${{ secrets.BACKEND_SECRETS_ARN }}
+      AWS_REGION: 'us-west-2'
+      LIGHTSAIL_SERVICE_NAME: ${{ vars.LIGHTSAIL_SERVICE_NAME || 'ubc-discovery-backend' }}
+      IMAGE_NAME: ${{ github.repository }}-backend
 
     steps:
-      - name: Set deployment image
+      - name: Select immutable image
         id: image
         env:
           WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
           MANUAL_IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
-          IMAGE_TAG="${MANUAL_IMAGE_TAG:-sha-${WORKFLOW_RUN_SHA:-$GITHUB_SHA}}"
-          IMAGE_NAME_LOWER="${IMAGE_NAME,,}"
-          echo "uri=${REGISTRY}/${IMAGE_NAME_LOWER}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            image_tag="sha-${WORKFLOW_RUN_SHA}"
+          else
+            image_tag="${MANUAL_IMAGE_TAG:-latest}"
+          fi
+
+          image_name_lower="${IMAGE_NAME,,}"
+          echo "uri=ghcr.io/${image_name_lower}:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy ECS Express service
-        id: deploy
-        uses: aws-actions/amazon-ecs-deploy-express-service@v1
-        with:
-          service-name: ${{ env.ECS_SERVICE }}
-          image: ${{ steps.image.outputs.uri }}
-          execution-role-arn: ${{ env.ECS_EXECUTION_ROLE_ARN }}
-          infrastructure-role-arn: ${{ env.ECS_INFRASTRUCTURE_ROLE_ARN }}
-          container-port: ${{ env.CONTAINER_PORT }}
-          subnets: ${{ env.ECS_SUBNETS }}
-          security-groups: ${{ env.ECS_SECURITY_GROUPS }}
-          health-check-path: ${{ env.HEALTH_CHECK_PATH }}
-          task-role-arn: ${{ env.ECS_TASK_ROLE_ARN }}
-          environment-variables: |
-            [
-              {"name": "AWS_REGION", "value": ${{ toJSON(env.AWS_REGION) }}},
-              {"name": "S3_BUCKET_NAME", "value": ${{ toJSON(vars.S3_BUCKET_NAME) }}},
-              {"name": "S3_ENDPOINT_URL", "value": ${{ toJSON(vars.S3_ENDPOINT_URL) }}},
-              {"name": "FIREBASE_PROJECT_ID", "value": ${{ toJSON(vars.FIREBASE_PROJECT_ID) }}},
-              {"name": "BEDROCK_MODEL_ID", "value": ${{ toJSON(vars.BEDROCK_MODEL_ID) }}},
-              {"name": "CORS_ALLOWED_ORIGINS", "value": ${{ toJSON(vars.CORS_ALLOWED_ORIGINS) }}}
-            ]
-          secrets: |
-            [
-              {"name": "DATABASE_URL", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:DATABASE_URL::"},
-              {"name": "FIREBASE_CREDENTIALS_JSON", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:FIREBASE_CREDENTIALS_JSON::"},
-              {"name": "ADMIN_API_KEY", "valueFrom": "${{ env.BACKEND_SECRETS_ARN }}:ADMIN_API_KEY::"}
-            ]
+      - name: Deploy to Lightsail
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          # APP_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
+          # APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+          S3_ENDPOINT_URL: ${{ vars.S3_ENDPOINT_URL || 'https://s3.us-west-2.amazonaws.com' }}
+          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID}}
+          EMAIL_SENDER_EMAIL: ${{ vars.EMAIL_SENDER_EMAIL }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$FIREBASE_CREDENTIALS_JSON"
+          test -n "$FIREBASE_PROJECT_ID"
+          test -n "$CORS_ALLOWED_ORIGINS"
+
+          jq -n \
+            --arg image "$IMAGE_URI" \
+            --arg database_url "$DATABASE_URL" \
+            --arg firebase_credentials_json "$FIREBASE_CREDENTIALS_JSON" \
+            --arg firebase_project_id "$FIREBASE_PROJECT_ID" \
+            --arg admin_api_key "$ADMIN_API_KEY" \
+            --arg app_aws_access_key_id "$APP_AWS_ACCESS_KEY_ID" \
+            --arg app_aws_secret_access_key "$APP_AWS_SECRET_ACCESS_KEY" \
+            --arg api_base_url "$API_BASE_URL" \
+            --arg aws_region "$AWS_REGION" \
+            --arg s3_bucket_name "$S3_BUCKET_NAME" \
+            --arg s3_endpoint_url "$S3_ENDPOINT_URL" \
+            --arg bedrock_model_id "$BEDROCK_MODEL_ID" \
+            --arg email_sender_email "$EMAIL_SENDER_EMAIL" \
+            --arg cors_allowed_origins "$CORS_ALLOWED_ORIGINS" \
+            '{
+              backend: {
+                image: $image,
+                environment: ({
+                  DATABASE_URL: $database_url,
+                  FIREBASE_CREDENTIALS_JSON: $firebase_credentials_json,
+                  FIREBASE_PROJECT_ID: $firebase_project_id,
+                  ADMIN_API_KEY: $admin_api_key,
+                  AWS_ACCESS_KEY_ID: $app_aws_access_key_id,
+                  AWS_SECRET_ACCESS_KEY: $app_aws_secret_access_key,
+                  API_BASE_URL: $api_base_url,
+                  AWS_REGION: $aws_region,
+                  S3_BUCKET_NAME: $s3_bucket_name,
+                  S3_ENDPOINT_URL: $s3_endpoint_url,
+                  BEDROCK_MODEL_ID: $bedrock_model_id,
+                  EMAIL_SENDER_EMAIL: $email_sender_email,
+                  CORS_ALLOWED_ORIGINS: $cors_allowed_origins
+                } | with_entries(select(.value != ""))),
+                ports: {"8000": "HTTP"}
+              }
+            }' > "$RUNNER_TEMP/containers.json"
+
+          jq -n '{
+            containerName: "backend",
+            containerPort: 8000,
+            healthCheck: {
+              path: "/",
+              intervalSeconds: 30,
+              timeoutSeconds: 5,
+              healthyThreshold: 2,
+              unhealthyThreshold: 5,
+              successCodes: "200"
+            }
+          }' > "$RUNNER_TEMP/public-endpoint.json"
+
+          aws lightsail create-container-service-deployment \
+            --region "$AWS_REGION" \
+            --service-name "$LIGHTSAIL_SERVICE_NAME" \
+            --containers "file://$RUNNER_TEMP/containers.json" \
+            --public-endpoint "file://$RUNNER_TEMP/public-endpoint.json" \
+            >/dev/null
+
+      - name: Wait for deployment
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+        run: |
+          for _ in $(seq 1 40); do
+            read -r service_state deployment_state deployed_image next_state < <(
+              aws lightsail get-container-services \
+                --region "$AWS_REGION" \
+                --service-name "$LIGHTSAIL_SERVICE_NAME" \
+                --query 'containerServices[0].[state,currentDeployment.state,currentDeployment.containers.backend.image,nextDeployment.state]' \
+                --output text
+            )
+
+            if [[ "$service_state" == "RUNNING" &&
+                  "$deployment_state" == "ACTIVE" &&
+                  "$deployed_image" == "$IMAGE_URI" ]]; then
+              echo "Deployment is active."
+              exit 0
+            fi
+
+            if [[ "$next_state" == "FAILED" ]]; then
+              echo "Lightsail deployment failed." >&2
+              exit 1
+            fi
+
+            sleep 15
+          done
+
+          echo "Timed out waiting for the Lightsail deployment." >&2
+          exit 1
+
+      - name: Show container logs after failure
+        if: failure()
+        run: |
+          aws lightsail get-container-log \
+            --region "$AWS_REGION" \
+            --service-name "$LIGHTSAIL_SERVICE_NAME" \
+            --container-name backend \
+            --output text || true

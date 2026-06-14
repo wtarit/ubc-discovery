@@ -9,6 +9,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-backend
+  DOCKER_METADATA_SHORT_SHA_LENGTH: 40
 
 jobs:
   build-docker:
