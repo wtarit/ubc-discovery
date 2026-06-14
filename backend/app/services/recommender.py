@@ -11,7 +11,7 @@ from app.models.event import Event
 logger = logging.getLogger(__name__)
 
 TITAN_EMBED_MODEL_ID = "amazon.titan-embed-text-v2:0"
-JACCARD_BOOST_WEIGHT = 0.2
+VIBE_WEIGHT_DEFAULT = 0.5
 
 
 @lru_cache
@@ -56,10 +56,11 @@ def hybrid_score(
     emb_b: list[float],
     vibes_a: list[str],
     vibes_b: list[str],
+    vibe_weight: float = VIBE_WEIGHT_DEFAULT,
 ) -> float:
     text_score = cosine_similarity(emb_a, emb_b)
-    vibe_boost = JACCARD_BOOST_WEIGHT * vibe_jaccard(vibes_a, vibes_b)
-    return text_score + vibe_boost
+    vibe_score = vibe_jaccard(vibes_a, vibes_b)
+    return (1.0 - vibe_weight) * text_score + vibe_weight * vibe_score
 
 
 def embed_text(text: str) -> list[float] | None:
@@ -103,12 +104,19 @@ def rank_events(
     taste_vector: list[float],
     candidates: list[Event],
     top_n: int = 10,
+    vibe_profile: list[str] | None = None,
+    vibe_weight: float = VIBE_WEIGHT_DEFAULT,
 ) -> list[tuple[Event, float]]:
     scored: list[tuple[Event, float]] = []
+    effective_vibe_profile = vibe_profile or []
     for event in candidates:
         if not event.embedding:
             continue
-        score = hybrid_score(taste_vector, event.embedding, [], event.vibes or [])
+        score = hybrid_score(
+            taste_vector, event.embedding,
+            effective_vibe_profile, event.vibes or [],
+            vibe_weight=vibe_weight,
+        )
         scored.append((event, score))
     scored.sort(key=lambda x: x[1], reverse=True)
     return scored[:top_n]
@@ -118,6 +126,7 @@ def get_similar_events(
     event: Event,
     candidates: list[Event],
     top_n: int = 5,
+    vibe_weight: float = VIBE_WEIGHT_DEFAULT,
 ) -> list[tuple[Event, float]]:
     if not event.embedding:
         scored: list[tuple[Event, float]] = []
@@ -140,7 +149,8 @@ def get_similar_events(
                 scored.append((c, vibe_score))
             continue
         score = hybrid_score(
-            event.embedding, c.embedding, event.vibes or [], c.vibes or []
+            event.embedding, c.embedding, event.vibes or [], c.vibes or [],
+            vibe_weight=vibe_weight,
         )
         scored.append((c, score))
     scored.sort(key=lambda x: x[1], reverse=True)

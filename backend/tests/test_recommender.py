@@ -70,14 +70,39 @@ class TestHybridScore:
         emb = [0.5, 0.5, 0.5, 0.5]
         vibes = ["social", "academic"]
         score = recommender.hybrid_score(emb, emb, vibes, vibes)
-        assert score == 1.0 + 0.2 * 1.0
-        assert score == 1.2
+        assert score == 1.0
 
     def test_no_overlap(self):
         a = [1.0, 0.0, 0.0, 0.0]
         b = [0.0, 1.0, 0.0, 0.0]
         score = recommender.hybrid_score(a, b, ["social"], ["career"])
         assert score == 0.0
+
+    def test_pure_cosine(self):
+        a = [1.0, 0.0, 0.0]
+        b = [0.0, 1.0, 0.0]
+        score = recommender.hybrid_score(a, b, ["social"], ["career"], vibe_weight=0.0)
+        assert score == 0.0
+
+        c = [1.0, 0.0, 0.0]
+        d = [1.0, 0.0, 0.0]
+        score2 = recommender.hybrid_score(c, d, ["social"], ["career"], vibe_weight=0.0)
+        assert score2 == 1.0
+
+    def test_pure_vibe(self):
+        a = [1.0, 0.0, 0.0]
+        b = [0.0, 1.0, 0.0]
+        score = recommender.hybrid_score(a, b, ["social", "academic"], ["academic"], vibe_weight=1.0)
+        assert score == 0.5
+
+    def test_balanced_blend(self):
+        a = [1.0, 0.0]
+        b = [1.0, 0.0]
+        score = recommender.hybrid_score(a, b, ["social"], ["social"], vibe_weight=0.5)
+        assert score == 1.0
+
+        score2 = recommender.hybrid_score(a, b, ["social"], ["career"], vibe_weight=0.5)
+        assert score2 == 0.5
 
 
 class TestMeanEmbedding:
@@ -95,6 +120,57 @@ class TestMeanEmbedding:
 
     def test_empty(self):
         assert recommender.mean_embedding([]) is None
+
+
+class TestRankEvents:
+    def _make_event_stub(self, eid: str, embedding, vibes: list[str]):
+        from types import SimpleNamespace
+        return SimpleNamespace(id=eid, embedding=embedding, vibes=vibes)
+
+    def test_with_vibe_profile(self):
+        taste = [1.0, 0.0]
+        candidates = [
+            self._make_event_stub("e1", [1.0, 0.0], ["social"]),
+            self._make_event_stub("e2", [1.0, 0.0], ["career"]),
+            self._make_event_stub("e3", [-1.0, 0.0], ["social"]),
+        ]
+        vibe_profile = ["social"]
+
+        result = recommender.rank_events(
+            taste, candidates, top_n=3,
+            vibe_profile=vibe_profile, vibe_weight=0.5,
+        )
+        assert len(result) == 3
+        assert result[0][0].id == "e1"
+        assert result[0][1] == 1.0
+        assert result[1][0].id == "e2"
+        assert result[1][1] == 0.5
+        assert result[2][0].id == "e3"
+        assert result[2][1] == 0.0
+
+    def test_empty_vibe_profile(self):
+        taste = [1.0, 0.0]
+        candidates = [
+            self._make_event_stub("e1", [1.0, 0.0], ["social"]),
+        ]
+        result = recommender.rank_events(taste, candidates, top_n=1, vibe_profile=[])
+        assert result[0][1] == 0.5
+
+    def test_skips_events_without_embedding(self):
+        taste = [1.0, 0.0]
+        candidates = [
+            self._make_event_stub("e1", None, ["social"]),
+        ]
+        result = recommender.rank_events(taste, candidates, top_n=5)
+        assert result == []
+
+    def test_default_parameters(self):
+        taste = [1.0, 0.0]
+        candidates = [
+            self._make_event_stub("e1", [1.0, 0.0], []),
+        ]
+        result = recommender.rank_events(taste, candidates, top_n=1)
+        assert result[0][1] == 0.5
 
 
 class TestSimilarEvents:
@@ -134,6 +210,30 @@ class TestSimilarEvents:
         assert resp.status_code == 200
         assert len(resp.json()["events"]) == 1
 
+    async def test_vibe_weight_param(
+        self, unauthed_client: AsyncClient, sample_events: list[Event]
+    ):
+        with patch.object(recommender, "embed_text") as mock_embed:
+            mock_embed.return_value = _make_embedding_from_title("generic")
+            event = sample_events[0]
+            resp = await unauthed_client.get(
+                f"/recommendations/events/{event.id}/similar",
+                params={"n": 2, "vibe_weight": 0.0},
+            )
+        assert resp.status_code == 200
+
+    async def test_vibe_weight_out_of_range(
+        self, unauthed_client: AsyncClient, sample_events: list[Event]
+    ):
+        with patch.object(recommender, "embed_text") as mock_embed:
+            mock_embed.return_value = _make_embedding_from_title("generic")
+            event = sample_events[0]
+            resp = await unauthed_client.get(
+                f"/recommendations/events/{event.id}/similar",
+                params={"vibe_weight": 1.5},
+            )
+        assert resp.status_code == 422
+
 
 class TestForYou:
     async def test_falls_back_to_recent_when_no_saved(
@@ -152,9 +252,11 @@ class TestForYou:
         assert resp.status_code == 401
 
     async def test_personalized_from_saved(
-        self, client: AsyncClient, sample_events: list[Event], test_user: User
+        self, client: AsyncClient, db_session: AsyncSession, sample_events: list[Event], test_user: User
     ):
         event = sample_events[0]
+        event.embedding = _make_embedding_from_title(event.title)
+        await db_session.flush()
         save_resp = await client.post(f"/events/{event.id}/save")
         assert save_resp.status_code == 200
 
@@ -167,7 +269,5 @@ class TestForYou:
         assert data["source"] == "saved_events"
         assert len(data["events"]) > 0
         assert any(s > 0.0 for s in data["scores"])
-        saved_ids = [s.event_id for s in [event]]
         result_ids = [e["id"] for e in data["events"]]
-        for sid in saved_ids:
-            assert sid not in result_ids
+        assert event.id not in result_ids
