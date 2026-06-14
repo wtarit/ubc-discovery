@@ -6,6 +6,7 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.event import Event
 from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse
+from app.services import recommender
 from app.services import s3
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -52,4 +53,11 @@ async def create_event(
     db.add(event)
     await db.commit()
     await db.refresh(event)
+
+    # Generate embedding asynchronously after creation (~ Estimated Cost: 0.0001$ per event creation)
+    embedding = await recommender.generate_event_embedding(event)
+    if embedding is not None:
+        event.embedding = embedding
+        await db.commit()
+
     return _to_response(event)

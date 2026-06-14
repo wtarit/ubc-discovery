@@ -8,7 +8,7 @@ Campus discovery app for the UBC community to find events, explore places, and c
 - **Frontend**: React web app in `web/` — React Router 7 + React 19 + Tailwind CSS
 - **Mobile**: React Native app in `mobile/` — Expo SDK 55 + Expo Router + Zustand
 - **Database**: PostgreSQL 17.4 on AWS RDS
-- **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching
+- **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching, Titan Embeddings for content-based event recommendations
 
 ## Product Focus
 
@@ -60,10 +60,10 @@ backend/
 │   ├── database.py      # Async SQLAlchemy engine + session
 │   ├── dependencies.py  # get_current_user (Cognito token → User)
 │   ├── seed.py          # UBC event seed data
-│   ├── models/          # SQLAlchemy ORM: User, Event, Connection, ZoneUnlock
+│   ├── models/          # SQLAlchemy ORM: User, Event, SavedEvent, Connection, ZoneUnlock
 │   ├── schemas/         # Pydantic request/response models (auto Swagger docs)
-│   ├── routers/         # auth, users, events, connections, matching, zones
-│   └── services/        # cognito, s3, bedrock, scraper
+│   ├── routers/         # auth, users, events, connections, matching, ratings, recommendations, saved_events, zones
+│   └── services/        # bedrock, cognito, email, recommender, s3, scraper
 └── tests/               # pytest async test suite
 
 web/
@@ -94,6 +94,7 @@ mobile/
 - Profile pictures and event images: S3 presigned URLs (upload + download), key stored in DB (`profile_picture_key`, `event_picture_key`)
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
 - Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
+- Recommender: content-based event similarity using Bedrock Titan embeddings + vibe Jaccard hybrid scoring. Embeddings pre-computed at event creation and stored as JSON on the event row; query-time similarity is pure Python (no API calls). Uses `@lru_cache` for the Bedrock client, same pattern as bedrock.py.
 
 ### Frontend (Web)
 - `web/` is the default frontend target for new feature work and UI fixes.
