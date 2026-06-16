@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import patch
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +24,7 @@ def _make_embedding_from_title(title: str) -> list[float]:
 class TestCosineSimilarity:
     def test_identical(self):
         v = [1.0, 0.0, 0.5]
-        assert recommender.cosine_similarity(v, v) == 1.0
+        assert recommender.cosine_similarity(v, v) == pytest.approx(1.0)
 
     def test_orthogonal(self):
         assert recommender.cosine_similarity([1.0, 0.0], [0.0, 1.0]) == 0.0
@@ -34,7 +35,7 @@ class TestCosineSimilarity:
     def test_negative_values(self):
         a = [1.0, -2.0, 3.0]
         b = [-1.0, 2.0, -3.0]
-        assert recommender.cosine_similarity(a, b) == -1.0
+        assert recommender.cosine_similarity(a, b) == pytest.approx(-1.0)
 
     def test_length_mismatch(self):
         try:
@@ -255,9 +256,10 @@ class TestForYou:
         self, client: AsyncClient, db_session: AsyncSession, sample_events: list[Event], test_user: User
     ):
         event = sample_events[0]
-        event.embedding = _make_embedding_from_title(event.title)
+        for ev in sample_events:
+            ev.embedding = _make_embedding_from_title(ev.title)
         await db_session.flush()
-        save_resp = await client.post(f"/events/{event.id}/save")
+        save_resp = await client.post(f"/saved-events/{event.id}")
         assert save_resp.status_code == 200
 
         with patch.object(recommender, "embed_text") as mock_embed:
