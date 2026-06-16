@@ -67,6 +67,7 @@ jobs:
           BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID}}
           EMAIL_SENDER_EMAIL: ${{ vars.EMAIL_SENDER_EMAIL }}
           CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          CORS_ALLOWED_ORIGIN_REGEX: ${{ vars.CORS_ALLOWED_ORIGIN_REGEX }}
         run: |
           test -n "$DATABASE_URL"
           test -n "$FIREBASE_CREDENTIALS_JSON"
@@ -88,6 +89,7 @@ jobs:
             --arg bedrock_model_id "$BEDROCK_MODEL_ID" \
             --arg email_sender_email "$EMAIL_SENDER_EMAIL" \
             --arg cors_allowed_origins "$CORS_ALLOWED_ORIGINS" \
+            --arg cors_allowed_origin_regex "$CORS_ALLOWED_ORIGIN_REGEX" \
             '{
               backend: {
                 image: $image,
