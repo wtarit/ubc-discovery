@@ -16,8 +16,10 @@ class FirebaseIdentity:
 
 
 async def get_firebase_identity(
-    authorization: str = Header(..., description="Bearer <id_token>"),
+    authorization: str | None = Header(None, description="Bearer <id_token>"),
 ) -> FirebaseIdentity:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
 
