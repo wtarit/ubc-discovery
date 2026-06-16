@@ -99,18 +99,17 @@ function RowSelect({
   );
 }
 
-type SortMode = "Happening Soon" | "newest" | "a-z";
+type SortMode = "upcoming" | "newest" | "a-z";
 
 const SORT_OPTIONS: { id: SortMode; label: string }[] = [
-  { id: "Happening Soon", label: "Happening Soon" },
-  { id: "newest", label: "Recently added" },
-  { id: "a-z", label: "A → Z" },
+  { id: "upcoming", label: "Upcoming" },
+  { id: "newest", label: "Recently added" }
 ];
 
 function sortEvents(events: ApiEvent[], mode: SortMode): ApiEvent[] {
   const sorted = [...events];
   switch (mode) {
-    case "Happening Soon":
+    case "upcoming":
       return sorted.sort((a, b) => {
         const da = a.event_date ? new Date(a.event_date).getTime() : Infinity;
         const db = b.event_date ? new Date(b.event_date).getTime() : Infinity;
@@ -133,7 +132,7 @@ export default function Discover() {
   const [activeVibe, setActiveVibe] = useState<VibeId | null>(null);
   const [activeSource, setActiveSource] = useState<SourceId>("all");
   const [density] = useState<"compact" | "medium" | "rich">("medium");
-  const [sortBy, setSortBy] = useState<SortMode>("Happening Soon");
+  const [sortBy, setSortBy] = useState<SortMode>("upcoming");
 
   const events = useMemo(() => {
     let filtered: ApiEvent[] = data?.events ?? [];
