@@ -6,7 +6,7 @@ class Settings(BaseSettings):
 
     aws_region: str = "us-west-2"
     s3_bucket_name: str = ""
-    s3_endpoint_url: str = "https://s3.us-west-2.amazonaws.com"
+    s3_public_base_url: str = ""
 
     firebase_credentials_json: str = ""
     firebase_project_id: str = ""

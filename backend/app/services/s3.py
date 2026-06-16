@@ -1,5 +1,6 @@
 import uuid
 from functools import lru_cache
+from urllib.parse import quote
 
 import boto3
 from botocore.config import Config
@@ -12,8 +13,10 @@ def _client():
     return boto3.client(
         "s3",
         region_name=settings.aws_region,
-        endpoint_url=settings.s3_endpoint_url,
-        config=Config(signature_version="s3v4"),
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        ),
     )
 
 
@@ -36,4 +39,4 @@ def delete_object(file_key: str) -> None:
 
 
 def public_url(file_key: str) -> str:
-    return f"{settings.s3_endpoint_url}/{settings.s3_bucket_name}/{file_key}"
+    return f"{settings.s3_public_base_url.rstrip('/')}/{quote(file_key, safe='/')}"
