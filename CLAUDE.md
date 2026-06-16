@@ -7,7 +7,7 @@ Campus discovery app for the UBC community to find events, explore places, and c
 - **Backend**: Python FastAPI in `backend/` — async SQLAlchemy + asyncpg
 - **Frontend**: React web app in `web/` — React Router 7 + React 19 + Tailwind CSS
 - **Database**: PostgreSQL 18.4 on AWS RDS
-- **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching
+- **AI**: AWS Bedrock (Claude Sonnet 4.6) for user/event matching, Titan Embeddings for content-based event recommendations
 
 ## AWS Resources (us-west-2)
 
@@ -45,10 +45,10 @@ backend/
 │   ├── database.py      # Async SQLAlchemy engine + session
 │   ├── dependencies.py  # get_current_user (Cognito token → User)
 │   ├── seed.py          # UBC event seed data
-│   ├── models/          # SQLAlchemy ORM: User, Event, Connection, ZoneUnlock
+│   ├── models/          # SQLAlchemy ORM: User, Event, SavedEvent, Connection, ZoneUnlock
 │   ├── schemas/         # Pydantic request/response models (auto Swagger docs)
-│   ├── routers/         # auth, users, events, connections, matching, zones
-│   └── services/        # cognito, s3, bedrock, scraper
+│   ├── routers/         # auth, users, events, connections, matching, ratings, recommendations, saved_events, zones
+│   └── services/        # bedrock, cognito, email, recommender, s3, scraper
 └── tests/               # pytest async test suite
 
 web/
@@ -71,7 +71,8 @@ web/
 - UBC email is not required for membership; `*.ubc.ca` is only used to set/confirm the optional `ubc_verified` trust badge
 - Profile pictures and event images: S3 presigned URLs (upload + download), key stored in DB (`profile_picture_key`, `event_picture_key`)
 - Location: lat/lng floats with haversine distance calc (no PostGIS dependency)
-- Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON
+- Matching: Bedrock Claude Sonnet 4.6 scores users/events and returns JSON. Legacy system, will be replaced with Recommender for speed and cost reduction
+- Recommender: Content-based event similarity using Bedrock Titan embeddings + vibe Jaccard weighted blend. Embeddings pre-computed at event creation and stored as JSON. Same pattern as bedrock.py for the Bedrock Client.
 
 ### Frontend (Web)
 - React Router 7 routes live in `web/app/routes/`; shared web UI lives in `web/app/components/`.
