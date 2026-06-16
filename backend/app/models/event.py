@@ -28,5 +28,4 @@ class Event(Base):
     event_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     event_end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    embedding: Mapped[list[float] | None] = mapped_column(JSON, default=None)
+    embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True, default=None)

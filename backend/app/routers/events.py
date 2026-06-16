@@ -35,6 +35,33 @@ async def list_events(
     return EventListResponse(events=[_to_response(e) for e in events], total=total)
 
 
+@router.get("/search", response_model=EventListResponse)
+async def search_events(
+    q: str = Query(default=""),
+    limit: int = Query(default=10, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """Search events by title, description, location, or club name."""
+    term = q.strip()
+    if len(term) < 2:
+        return EventListResponse(events=[], total=0)
+    pattern = f"%{term}%"
+    query = (
+        select(Event)
+        .where(
+            Event.title.ilike(pattern)
+            | Event.description.ilike(pattern)
+            | Event.location_name.ilike(pattern)
+            | Event.club_name.ilike(pattern)
+        )
+        .order_by(Event.event_date.asc().nullslast())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    events = result.scalars().all()
+    return EventListResponse(events=[_to_response(e) for e in events], total=len(events))
+
+
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(event_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Event).where(Event.id == event_id))

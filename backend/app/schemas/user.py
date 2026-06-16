@@ -67,4 +67,6 @@ class UserStatsResponse(BaseModel):
 
 class PresignedUploadResponse(BaseModel):
     upload_url: str
+    fields: dict[str, str]
     file_key: str
+    max_file_size_bytes: int

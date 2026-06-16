@@ -1,5 +1,6 @@
 import uuid
 from functools import lru_cache
+from urllib.parse import quote
 
 import boto3
 from botocore.config import Config
@@ -12,40 +13,35 @@ def _client():
     return boto3.client(
         "s3",
         region_name=settings.aws_region,
-        endpoint_url=settings.s3_endpoint_url,
-        config=Config(signature_version="s3v4"),
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        ),
     )
 
 
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
-
-
-def generate_presigned_upload_url(content_type: str = "image/jpeg") -> tuple[str, str]:
+def generate_presigned_upload_url(
+    content_type: str = "image/webp",
+) -> tuple[str, dict[str, str], str]:
     file_key = f"profile-pictures/{uuid.uuid4()}"
-    url = _client().generate_presigned_url(
-        "put_object",
-        Params={
-            "Bucket": settings.s3_bucket_name,
-            "Key": file_key,
-            "ContentType": content_type,
+    post = _client().generate_presigned_post(
+        Bucket=settings.s3_bucket_name,
+        Key=file_key,
+        Fields={
+            "Content-Type": content_type,
         },
+        Conditions=[
+            {"Content-Type": content_type},
+            ["content-length-range", 1, settings.profile_photo_max_bytes],
+        ],
         ExpiresIn=300,
     )
-    return url, file_key
+    return post["url"], post["fields"], file_key
 
 
 def delete_object(file_key: str) -> None:
     _client().delete_object(Bucket=settings.s3_bucket_name, Key=file_key)
 
 
-def presigned_download_url(file_key: str, expires_in: int = 3600) -> str:
-    return _client().generate_presigned_url(
-        "get_object",
-        Params={"Bucket": settings.s3_bucket_name, "Key": file_key},
-        ExpiresIn=expires_in,
-    )
-
-
 def public_url(file_key: str) -> str:
-    from app.config import settings as _settings
-    return f"{_settings.api_base_url}/users/picture/{file_key}"
+    return f"{settings.s3_public_base_url.rstrip('/')}/{quote(file_key, safe='/')}"
