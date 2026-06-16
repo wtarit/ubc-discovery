@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/discover";
 import { api, type ApiEvent } from "~/lib/api";
@@ -99,16 +99,49 @@ function RowSelect({
   );
 }
 
+type SortMode = "Happening Soon" | "newest" | "a-z";
+
+const SORT_OPTIONS: { id: SortMode; label: string }[] = [
+  { id: "Happening Soon", label: "Happening Soon" },
+  { id: "newest", label: "Recently added" },
+  { id: "a-z", label: "A → Z" },
+];
+
+function sortEvents(events: ApiEvent[], mode: SortMode): ApiEvent[] {
+  const sorted = [...events];
+  switch (mode) {
+    case "Happening Soon":
+      return sorted.sort((a, b) => {
+        const da = a.event_date ? new Date(a.event_date).getTime() : Infinity;
+        const db = b.event_date ? new Date(b.event_date).getTime() : Infinity;
+        return da - db;
+      });
+    case "newest":
+      return sorted.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    case "a-z":
+      return sorted.sort((a, b) =>
+        a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
+      );
+  }
+}
+
 export default function Discover() {
   const data = useLoaderData<typeof clientLoader>();
   const [activeVibe, setActiveVibe] = useState<VibeId | null>(null);
   const [activeSource, setActiveSource] = useState<SourceId>("all");
   const [density] = useState<"compact" | "medium" | "rich">("medium");
+  const [sortBy, setSortBy] = useState<SortMode>("Happening Soon");
 
-  let events: ApiEvent[] = data?.events ?? [];
-  if (activeVibe) events = events.filter((e) => e.vibes.includes(activeVibe));
-  if (activeSource !== "all")
-    events = events.filter((e) => e.source_label === activeSource);
+  const events = useMemo(() => {
+    let filtered: ApiEvent[] = data?.events ?? [];
+    if (activeVibe) filtered = filtered.filter((e) => e.vibes.includes(activeVibe));
+    if (activeSource !== "all")
+      filtered = filtered.filter((e) => e.source_label === activeSource);
+    return sortEvents(filtered, sortBy);
+  }, [data, activeVibe, activeSource, sortBy]);
 
   const CardComponent =
     density === "compact"
@@ -151,6 +184,17 @@ export default function Discover() {
               >
                 <VibeTag vibe={v.id} active={activeVibe === v.id} />
               </button>
+            ))}
+          </FilterRow>
+          <FilterRow label="SORT">
+            {SORT_OPTIONS.map((s) => (
+              <Pill
+                key={s.id}
+                active={sortBy === s.id}
+                onClick={() => setSortBy(s.id)}
+              >
+                {s.label}
+              </Pill>
             ))}
           </FilterRow>
         </div>
@@ -224,6 +268,16 @@ export default function Discover() {
                   </button>
                 ))}
               </div>
+            </FilterBlock>
+            <FilterBlock label="Sort">
+              {SORT_OPTIONS.map((s) => (
+                <RowSelect
+                  key={s.id}
+                  label={s.label}
+                  active={sortBy === s.id}
+                  onClick={() => setSortBy(s.id)}
+                />
+              ))}
             </FilterBlock>
           </aside>
 
