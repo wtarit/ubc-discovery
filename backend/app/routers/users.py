@@ -1,7 +1,6 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,13 +89,6 @@ async def update_availability(
     await db.commit()
     await db.refresh(current_user)
     return UserResponse.model_validate(current_user)
-
-
-@router.get("/picture/{file_key:path}")
-async def get_profile_picture(file_key: str):
-    """Redirect to a fresh presigned S3 GET URL so the browser can load the image."""
-    url = s3.presigned_download_url(file_key)
-    return RedirectResponse(url=url, status_code=302)
 
 
 @router.get("/me/presigned-upload", response_model=PresignedUploadResponse)

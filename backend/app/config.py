@@ -4,8 +4,6 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = ""
 
-    api_base_url: str = "http://localhost:8000"
-
     aws_region: str = "us-west-2"
     s3_bucket_name: str = ""
     s3_endpoint_url: str = "https://s3.us-west-2.amazonaws.com"
