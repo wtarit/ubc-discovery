@@ -177,11 +177,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Sign in before updating your profile photo.");
       }
       const resized = await resizeImage(file);
-      const { upload_url } = await api.users.presignedUpload("image/jpeg");
+      const { upload_url, fields, max_file_size_bytes } =
+        await api.users.presignedUpload("image/webp");
+      if (resized.size > max_file_size_bytes) {
+        throw new Error("Profile photo is too large after compression.");
+      }
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(fields)) {
+        formData.append(key, value);
+      }
+      formData.append("file", resized);
       const upload = await fetch(upload_url, {
-        method: "PUT",
-        headers: { "Content-Type": "image/jpeg" },
-        body: resized,
+        method: "POST",
+        body: formData,
       });
       if (!upload.ok) {
         const text = await upload.text();

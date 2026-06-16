@@ -6,7 +6,7 @@ Covers:
 - POST /users/onboarding - create user on onboarding
 - PUT /users/me - update profile
 - PUT /users/me/availability - toggle availability
-- GET /users/me/presigned-upload - S3 presigned URL
+- GET /users/me/presigned-upload - S3 presigned POST
 - GET /users/me/stats - user statistics
 - GET /users/{user_id} - public profile
 """
@@ -119,7 +119,19 @@ class TestPresignedUpload:
         assert resp.status_code == 200
         data = resp.json()
         assert "upload_url" in data
+        assert "fields" in data
+        assert data["fields"]["Content-Type"] == "image/webp"
         assert "file_key" in data
+        assert data["max_file_size_bytes"] == 512 * 1024
+
+    async def test_presigned_upload_rejects_unsupported_content_type(
+        self, client: AsyncClient
+    ):
+        resp = await client.get(
+            "/users/me/presigned-upload",
+            params={"content_type": "image/jpeg"},
+        )
+        assert resp.status_code == 400
 
 
 class TestUserStats:

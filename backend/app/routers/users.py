@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.user import User
@@ -93,16 +94,23 @@ async def update_availability(
 
 @router.get("/me/presigned-upload", response_model=PresignedUploadResponse)
 async def get_presigned_upload(
-    content_type: str = Query(default="image/jpeg"),
+    content_type: str = Query(default="image/webp"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if content_type != "image/webp":
+        raise HTTPException(status_code=400, detail="Profile photos must be uploaded as WebP")
     if current_user.profile_picture_key:
         s3.delete_object(current_user.profile_picture_key)
-    url, file_key = s3.generate_presigned_upload_url(content_type)
+    url, fields, file_key = s3.generate_presigned_upload_url(content_type)
     current_user.profile_picture_key = file_key
     await db.commit()
-    return PresignedUploadResponse(upload_url=url, file_key=file_key)
+    return PresignedUploadResponse(
+        upload_url=url,
+        fields=fields,
+        file_key=file_key,
+        max_file_size_bytes=settings.profile_photo_max_bytes,
+    )
 
 
 @router.get("/me/stats", response_model=UserStatsResponse)

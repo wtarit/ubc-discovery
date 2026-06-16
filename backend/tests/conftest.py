@@ -157,9 +157,15 @@ def _mock_external_services():
 
         s3_client = MagicMock()
         mock_s3.return_value = s3_client
-        s3_client.generate_presigned_url.return_value = (
-            "https://s3.example.com/presigned"
-        )
+        s3_client.generate_presigned_post.return_value = {
+            "url": "https://s3.example.com/presigned",
+            "fields": {
+                "key": "profile-pictures/mock",
+                "Content-Type": "image/webp",
+                "policy": "mock-policy",
+                "x-amz-signature": "mock-signature",
+            },
+        }
 
         bedrock_client = MagicMock()
         mock_bedrock.return_value = bedrock_client

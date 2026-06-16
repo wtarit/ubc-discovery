@@ -20,18 +20,23 @@ def _client():
     )
 
 
-def generate_presigned_upload_url(content_type: str = "image/jpeg") -> tuple[str, str]:
+def generate_presigned_upload_url(
+    content_type: str = "image/webp",
+) -> tuple[str, dict[str, str], str]:
     file_key = f"profile-pictures/{uuid.uuid4()}"
-    url = _client().generate_presigned_url(
-        "put_object",
-        Params={
-            "Bucket": settings.s3_bucket_name,
-            "Key": file_key,
-            "ContentType": content_type,
+    post = _client().generate_presigned_post(
+        Bucket=settings.s3_bucket_name,
+        Key=file_key,
+        Fields={
+            "Content-Type": content_type,
         },
+        Conditions=[
+            {"Content-Type": content_type},
+            ["content-length-range", 1, settings.profile_photo_max_bytes],
+        ],
         ExpiresIn=300,
     )
-    return url, file_key
+    return post["url"], post["fields"], file_key
 
 
 def delete_object(file_key: str) -> None:

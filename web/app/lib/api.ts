@@ -53,6 +53,13 @@ export interface UserResponse {
   created_at: string;
 }
 
+export interface PresignedUploadResponse {
+  upload_url: string;
+  fields: Record<string, string>;
+  file_key: string;
+  max_file_size_bytes: number;
+}
+
 export interface SavedEventResponse {
   id: string;
   user_id: string;
@@ -164,8 +171,8 @@ export const api = {
         "/users/me",
         { method: "PUT", body: JSON.stringify(data) }
       ),
-    presignedUpload: (contentType = "image/jpeg") =>
-      authenticatedApiFetch<{ upload_url: string; file_key: string }>(
+    presignedUpload: (contentType = "image/webp") =>
+      authenticatedApiFetch<PresignedUploadResponse>(
         `/users/me/presigned-upload?content_type=${encodeURIComponent(contentType)}`,
         {}
       ),

@@ -1,5 +1,5 @@
 /**
- * Resizes and converts an image file to a JPEG blob.
+ * Resizes and converts an image file to a WebP blob.
  * Output is capped at maxSizePx × maxSizePx, maintaining aspect ratio.
  */
 export async function resizeImage(
@@ -22,7 +22,7 @@ export async function resizeImage(
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Canvas toBlob failed"))),
-      "image/jpeg",
+      "image/webp",
       quality
     );
   });

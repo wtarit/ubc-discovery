@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-west-2"
     s3_bucket_name: str = ""
     s3_public_base_url: str = ""
+    profile_photo_max_bytes: int = 512 * 1024
 
     firebase_credentials_json: str = ""
     firebase_project_id: str = ""
