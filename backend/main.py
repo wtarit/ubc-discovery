@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if settings.firebase_credentials_json:
-        cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+        val = settings.firebase_credentials_json.strip()
+        if val.startswith("{"):
+            cred = credentials.Certificate(json.loads(val))
+        else:
+            cred = credentials.Certificate(val) 
         firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialized")
     else:
