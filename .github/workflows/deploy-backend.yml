@@ -48,7 +48,7 @@ jobs:
           echo "uri=ghcr.io/${image_name_lower}:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
@@ -60,8 +60,8 @@ jobs:
           APPENV_FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
           APPENV_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           APPENV_ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
-          # APPENV_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
-          # APPENV_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
+          APPENV_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
+          APPENV_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
           APPENV_AWS_REGION: ${{ env.AWS_REGION }}
           APPENV_S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
           APPENV_S3_PUBLIC_BASE_URL: ${{ vars.S3_PUBLIC_BASE_URL }}
