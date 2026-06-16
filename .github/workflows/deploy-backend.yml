@@ -56,58 +56,36 @@ jobs:
       - name: Deploy to Lightsail
         env:
           IMAGE_URI: ${{ steps.image.outputs.uri }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
-          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
-          # APP_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
-          # APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
-          S3_PUBLIC_BASE_URL: ${{ vars.S3_PUBLIC_BASE_URL }}
-          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID}}
-          EMAIL_SENDER_EMAIL: ${{ vars.EMAIL_SENDER_EMAIL }}
-          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
-          CORS_ALLOWED_ORIGIN_REGEX: ${{ vars.CORS_ALLOWED_ORIGIN_REGEX }}
+          APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APPENV_FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          APPENV_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          APPENV_ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          # APPENV_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
+          # APPENV_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
+          APPENV_AWS_REGION: ${{ env.AWS_REGION }}
+          APPENV_S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+          APPENV_S3_PUBLIC_BASE_URL: ${{ vars.S3_PUBLIC_BASE_URL }}
+          APPENV_BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID}}
+          APPENV_EMAIL_SENDER_EMAIL: ${{ vars.EMAIL_SENDER_EMAIL }}
+          APPENV_CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          APPENV_CORS_ALLOWED_ORIGIN_REGEX: ${{ vars.CORS_ALLOWED_ORIGIN_REGEX }}
         run: |
-          test -n "$DATABASE_URL"
-          test -n "$FIREBASE_CREDENTIALS_JSON"
-          test -n "$FIREBASE_PROJECT_ID"
-          test -n "$CORS_ALLOWED_ORIGINS"
+          test -n "$APPENV_DATABASE_URL"
+          test -n "$APPENV_FIREBASE_CREDENTIALS_JSON"
+          test -n "$APPENV_FIREBASE_PROJECT_ID"
+          test -n "$APPENV_CORS_ALLOWED_ORIGINS"
 
           jq -n \
             --arg image "$IMAGE_URI" \
-            --arg database_url "$DATABASE_URL" \
-            --arg firebase_credentials_json "$FIREBASE_CREDENTIALS_JSON" \
-            --arg firebase_project_id "$FIREBASE_PROJECT_ID" \
-            --arg admin_api_key "$ADMIN_API_KEY" \
-            --arg app_aws_access_key_id "$APP_AWS_ACCESS_KEY_ID" \
-            --arg app_aws_secret_access_key "$APP_AWS_SECRET_ACCESS_KEY" \
-            --arg api_base_url "$API_BASE_URL" \
-            --arg aws_region "$AWS_REGION" \
-            --arg s3_bucket_name "$S3_BUCKET_NAME" \
-            --arg s3_public_base_url "$S3_PUBLIC_BASE_URL" \
-            --arg bedrock_model_id "$BEDROCK_MODEL_ID" \
-            --arg email_sender_email "$EMAIL_SENDER_EMAIL" \
-            --arg cors_allowed_origins "$CORS_ALLOWED_ORIGINS" \
-            --arg cors_allowed_origin_regex "$CORS_ALLOWED_ORIGIN_REGEX" \
             '{
               backend: {
                 image: $image,
-                environment: ({
-                  DATABASE_URL: $database_url,
-                  FIREBASE_CREDENTIALS_JSON: $firebase_credentials_json,
-                  FIREBASE_PROJECT_ID: $firebase_project_id,
-                  ADMIN_API_KEY: $admin_api_key,
-                  AWS_ACCESS_KEY_ID: $app_aws_access_key_id,
-                  AWS_SECRET_ACCESS_KEY: $app_aws_secret_access_key,
-                  API_BASE_URL: $api_base_url,
-                  AWS_REGION: $aws_region,
-                  S3_BUCKET_NAME: $s3_bucket_name,
-                  S3_PUBLIC_BASE_URL: $s3_public_base_url,
-                  BEDROCK_MODEL_ID: $bedrock_model_id,
-                  EMAIL_SENDER_EMAIL: $email_sender_email,
-                  CORS_ALLOWED_ORIGINS: $cors_allowed_origins
-                } | with_entries(select(.value != ""))),
+                environment: (
+                  env
+                  | with_entries(select(.key | startswith("APPENV_")))
+                  | with_entries(.key |= sub("^APPENV_"; ""))
+                  | with_entries(select(.value != ""))
+                ),
                 ports: {"8000": "HTTP"}
               }
             }' > "$RUNNER_TEMP/containers.json"
