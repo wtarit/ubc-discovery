@@ -1,10 +1,10 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import FirebaseIdentity, get_firebase_identity, get_current_user
 from app.models.user import User
@@ -92,25 +92,25 @@ async def update_availability(
     return UserResponse.model_validate(current_user)
 
 
-@router.get("/picture/{file_key:path}")
-async def get_profile_picture(file_key: str):
-    """Redirect to a fresh presigned S3 GET URL so the browser can load the image."""
-    url = s3.presigned_download_url(file_key)
-    return RedirectResponse(url=url, status_code=302)
-
-
 @router.get("/me/presigned-upload", response_model=PresignedUploadResponse)
 async def get_presigned_upload(
-    content_type: str = Query(default="image/jpeg"),
+    content_type: str = Query(default="image/webp"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if content_type != "image/webp":
+        raise HTTPException(status_code=400, detail="Profile photos must be uploaded as WebP")
     if current_user.profile_picture_key:
         s3.delete_object(current_user.profile_picture_key)
-    url, file_key = s3.generate_presigned_upload_url(content_type)
+    url, fields, file_key = s3.generate_presigned_upload_url(content_type)
     current_user.profile_picture_key = file_key
     await db.commit()
-    return PresignedUploadResponse(upload_url=url, file_key=file_key)
+    return PresignedUploadResponse(
+        upload_url=url,
+        fields=fields,
+        file_key=file_key,
+        max_file_size_bytes=settings.profile_photo_max_bytes,
+    )
 
 
 @router.get("/me/stats", response_model=UserStatsResponse)
