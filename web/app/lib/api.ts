@@ -115,6 +115,10 @@ export const api = {
     list: (skip = 0, limit = 50) =>
       apiFetch<EventListResponse>(`/events?skip=${skip}&limit=${limit}`),
     get: (id: string) => apiFetch<ApiEvent>(`/events/${id}`),
+    search: (q: string, limit = 10) =>
+      apiFetch<EventListResponse>(
+        `/events/search?q=${encodeURIComponent(q)}&limit=${limit}`
+      ),
   },
   auth: {
     sendOtp: (email: string) =>

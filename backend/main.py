@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if settings.firebase_credentials_json:
-        cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+        val = settings.firebase_credentials_json.strip()
+        if val.startswith("{"):
+            cred = credentials.Certificate(json.loads(val))
+        else:
+            cred = credentials.Certificate(val) 
         firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialized")
     else:
@@ -26,6 +30,19 @@ async def lifespan(app: FastAPI):
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # GIN trigram index for fast ILIKE search — requires pg_trgm extension
+        try:
+            from sqlalchemy import text
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_events_search_trgm "
+                "ON events USING gin ("
+                "(coalesce(title,'') || ' ' || coalesce(club_name,'') || ' ' || coalesce(location_name,'')) "
+                "gin_trgm_ops)"
+            ))
+            logger.info("Search trigram index ready")
+        except Exception as e:
+            logger.warning("Could not create trigram index (search will use seq scan): %s", e)
     yield
     await engine.dispose()
 
