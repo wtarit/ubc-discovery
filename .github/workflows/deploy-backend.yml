@@ -63,7 +63,7 @@ jobs:
           # APP_AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_AWS_ACCESS_KEY_ID }}
           # APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_AWS_SECRET_ACCESS_KEY }}
           S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
-          S3_ENDPOINT_URL: ${{ vars.S3_ENDPOINT_URL || 'https://s3.us-west-2.amazonaws.com' }}
+          S3_PUBLIC_BASE_URL: ${{ vars.S3_PUBLIC_BASE_URL }}
           BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID}}
           EMAIL_SENDER_EMAIL: ${{ vars.EMAIL_SENDER_EMAIL }}
           CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
