@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     cors_allowed_origins: list[str] = [
         "http://localhost:5173",  # React Router web dev server
     ]
+    cors_allowed_origin_regex: str | None = None
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
