@@ -71,6 +71,18 @@ export interface SavedEventWithEventResponse extends SavedEventResponse {
   event: ApiEvent;
 }
 
+export interface SimilarEventsResponse {
+  event_id: string;
+  events: ApiEvent[];
+  scores: number[];
+}
+
+export interface ForYouResponse {
+  events: ApiEvent[];
+  scores: number[];
+  source: string;
+}
+
 export interface EventRatingResponse {
   id: string;
   user_id: string;
@@ -199,6 +211,16 @@ export const api = {
       authenticatedApiFetch<{ saved: boolean }>(
         `/saved-events/${eventId}/status`,
         {}
+      ),
+  },
+  recommendations: {
+    similar: (eventId: string, n = 5) =>
+      apiFetch<SimilarEventsResponse>(
+        `/recommendations/events/${eventId}/similar?n=${n}`
+      ),
+    forYou: (n = 10) =>
+      authenticatedApiFetch<ForYouResponse>(
+        `/recommendations/events/for-you?n=${n}`
       ),
   },
   ratings: {

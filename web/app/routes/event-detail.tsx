@@ -5,20 +5,25 @@ import { fmtDay, fmtRange, fmtTime, fmtMonth, fmtDate02 } from "~/lib/date";
 import { SaveEventButton } from "~/components/SaveEventButton";
 import { SourceBadge } from "~/components/SourceBadge";
 import { VibeTag } from "~/components/VibeTag";
+import { EventCardMedium } from "~/components/EventCard";
 
 export function meta({ data }: Route.MetaArgs) {
-  const event = data as ApiEvent | undefined;
+  const event = (data as { event: ApiEvent } | undefined)?.event;
   return [
     { title: event ? `${event.title} — UBC Discovery` : "Event — UBC Discovery" },
   ];
 }
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  return api.events.get(params.id);
+  const [event, similar] = await Promise.all([
+    api.events.get(params.id),
+    api.recommendations.similar(params.id, 5).catch(() => null),
+  ]);
+  return { event, similar };
 }
 
 export default function EventDetail() {
-  const event = useLoaderData<typeof clientLoader>();
+  const { event, similar } = useLoaderData<typeof clientLoader>();
   const navigate = useNavigate();
   const d = event.event_date ? new Date(event.event_date) : null;
   const endD = event.event_end_date ? new Date(event.event_end_date) : null;
@@ -85,11 +90,23 @@ export default function EventDetail() {
           </p>
         </div>
 
-        <div className="px-[18px] pt-5 pb-3.5">
+        <div className="px-[18px] pt-5">
           <span className="font-mono text-[10.5px] text-muted tracking-wide uppercase">
             ○ REPORT AN ISSUE WITH THIS LISTING
           </span>
         </div>
+
+        {/* Similar Events — mobile */}
+        {similar && similar.events.length > 0 && (
+          <div className="px-[18px] pt-7 pb-32">
+            <div className="font-mono text-[10px] text-muted tracking-wider uppercase mb-3 pb-1 border-b border-ink">
+              Similar Events
+            </div>
+            {similar.events.map((e) => (
+              <EventCardMedium key={e.id} event={e} />
+            ))}
+          </div>
+        )}
 
         {/* Bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-bg border-t-2 border-ink px-[18px] py-3 pb-7 flex gap-2 md:hidden z-50">
@@ -171,6 +188,20 @@ export default function EventDetail() {
                 ○ REPORT AN ISSUE WITH THIS LISTING
               </div>
             </div>
+
+            {/* Similar Events — desktop (inside left column) */}
+            {similar && similar.events.length > 0 && (
+              <div className="mt-12">
+                <div className="font-mono text-[11px] text-muted tracking-wider uppercase mb-4 pb-1.5 border-b border-ink">
+                  Similar Events
+                </div>
+                <div className="flex flex-col">
+                  {similar.events.map((e) => (
+                    <EventCardMedium key={e.id} event={e} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <aside className="sticky top-0 self-start">
