@@ -31,7 +31,7 @@ export const SOURCE_DISPLAY: Record<string, { code: string; tone: string }> = {
   ubc_official: { code: "UBC", tone: "#1E40FF" },
   ams_club: { code: "AMS", tone: "#D63A2E" },
   campus_community: { code: "CC", tone: "#7E6F4C" },
-  instagram: { code: "IG", tone: "#E1306C" },
+  instagram: { code: "CLUB", tone: "#E1306C" },
 };
 
 export const FACULTIES = [
