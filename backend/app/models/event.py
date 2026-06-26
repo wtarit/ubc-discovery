@@ -18,7 +18,6 @@ class Event(Base):
     source_url: Mapped[str | None] = mapped_column(String(1024))
     external_cta_label: Mapped[str | None] = mapped_column(String(80))
     club_name: Mapped[str | None] = mapped_column(String(255))
-    event_picture_key: Mapped[str | None] = mapped_column(String(256))
     vibes: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     latitude: Mapped[float | None] = mapped_column(Float)

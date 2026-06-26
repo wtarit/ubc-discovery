@@ -4,9 +4,16 @@ Tests for the /events endpoints.
 Covers:
 - GET /events - list all events (paginated)
 - POST /events - create a manual event (admin only)
+- PUT /events/{event_id} - update an event (admin only)
+- DELETE /events/{event_id} - delete an event (admin only)
+- POST /events/{event_id}/presigned-upload - event image upload (admin only)
 """
 
+from unittest.mock import patch
+
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
 
@@ -58,6 +65,7 @@ class TestGetEvent:
         assert data["title"] == event.title
         assert data["source_label"] == event.source_label
         assert data["vibes"] == event.vibes
+        assert data["event_picture_url"].endswith(f"/event-pictures/{event.id}.webp")
         assert data["event_date"] is not None
         assert data["event_end_date"] is not None
 
@@ -163,3 +171,102 @@ class TestCreateEvent:
             },
         )
         assert resp.status_code == 422
+
+
+class TestUpdateEvent:
+    async def test_update_event_partial_preserves_omitted_fields(
+        self, admin_client: AsyncClient, sample_events: list[Event]
+    ):
+        event = sample_events[0]
+        with patch("app.routers.events.recommender.generate_event_embedding") as mock_embedding:
+            mock_embedding.return_value = [0.1, 0.2]
+            resp = await admin_client.put(
+                f"/events/{event.id}",
+                json={"title": "Updated Event Title"},
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["title"] == "Updated Event Title"
+        assert data["description"] == event.description
+        assert data["event_picture_url"].endswith(f"/event-pictures/{event.id}.webp")
+        mock_embedding.assert_called_once()
+
+    async def test_update_event_non_embedding_field_does_not_regenerate_embedding(
+        self, admin_client: AsyncClient, sample_events: list[Event]
+    ):
+        event = sample_events[0]
+        with patch("app.routers.events.recommender.generate_event_embedding") as mock_embedding:
+            resp = await admin_client.put(
+                f"/events/{event.id}",
+                json={"source_url": "https://example.com/updated"},
+            )
+
+        assert resp.status_code == 200
+        assert resp.json()["source_url"] == "https://example.com/updated"
+        mock_embedding.assert_not_called()
+
+    async def test_update_event_not_found(self, admin_client: AsyncClient):
+        resp = await admin_client.put("/events/notfound", json={"title": "Nope"})
+        assert resp.status_code == 404
+
+    async def test_update_event_rejects_unknown_vibe(
+        self, admin_client: AsyncClient, sample_events: list[Event]
+    ):
+        resp = await admin_client.put(
+            f"/events/{sample_events[0].id}",
+            json={"vibes": ["invented"]},
+        )
+        assert resp.status_code == 422
+
+    async def test_update_event_rejects_end_before_existing_start(
+        self, admin_client: AsyncClient, sample_events: list[Event]
+    ):
+        resp = await admin_client.put(
+            f"/events/{sample_events[0].id}",
+            json={"event_end_date": "2026-08-01T10:00:00Z"},
+        )
+        assert resp.status_code == 422
+
+
+class TestDeleteEvent:
+    async def test_delete_event_success(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+    ):
+        event = Event(title="Delete Me", source="manual")
+        db_session.add(event)
+        await db_session.flush()
+        event_id = event.id
+
+        with patch("app.routers.events.s3.delete_object") as mock_delete:
+            resp = await admin_client.delete(f"/events/{event_id}")
+
+        assert resp.status_code == 204
+        mock_delete.assert_called_once_with(f"event-pictures/{event_id}.webp")
+        result = await db_session.execute(select(Event).where(Event.id == event_id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_delete_event_not_found(self, admin_client: AsyncClient):
+        resp = await admin_client.delete("/events/notfound")
+        assert resp.status_code == 404
+
+
+class TestEventPresignedUpload:
+    async def test_get_event_presigned_upload_url(
+        self, admin_client: AsyncClient, sample_events: list[Event]
+    ):
+        event = sample_events[0]
+        resp = await admin_client.post(f"/events/{event.id}/presigned-upload")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["upload_url"] == "https://s3.example.com/presigned"
+        assert data["fields"]["Content-Type"] == "image/webp"
+        assert data["file_key"] == f"event-pictures/{event.id}.webp"
+        assert data["max_file_size_bytes"] == 3 * 1024 * 1024
+
+    async def test_event_presigned_upload_not_found(self, admin_client: AsyncClient):
+        resp = await admin_client.post("/events/notfound/presigned-upload")
+        assert resp.status_code == 404
