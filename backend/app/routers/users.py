@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,10 @@ from app.schemas.user import (
 from app.services import s3
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+def _profile_picture_key() -> str:
+    return f"profile-pictures/{uuid.uuid4()}"
 
 
 @router.get("/me", response_model=UserResponse)
@@ -94,15 +98,17 @@ async def update_availability(
 
 @router.get("/me/presigned-upload", response_model=PresignedUploadResponse)
 async def get_presigned_upload(
-    content_type: str = Query(default="image/webp"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if content_type != "image/webp":
-        raise HTTPException(status_code=400, detail="Profile photos must be uploaded as WebP")
+    content_type = "image/webp"
     if current_user.profile_picture_key:
         s3.delete_object(current_user.profile_picture_key)
-    url, fields, file_key = s3.generate_presigned_upload_url(content_type)
+    url, fields, file_key = s3.generate_presigned_upload_url(
+        content_type=content_type,
+        file_key=_profile_picture_key(),
+        max_file_size_bytes=settings.profile_photo_max_bytes,
+    )
     current_user.profile_picture_key = file_key
     await db.commit()
     return PresignedUploadResponse(

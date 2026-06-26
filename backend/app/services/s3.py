@@ -1,4 +1,3 @@
-import uuid
 from functools import lru_cache
 from urllib.parse import quote
 
@@ -21,9 +20,11 @@ def _client():
 
 
 def generate_presigned_upload_url(
-    content_type: str = "image/webp",
+    *,
+    content_type: str,
+    file_key: str,
+    max_file_size_bytes: int,
 ) -> tuple[str, dict[str, str], str]:
-    file_key = f"profile-pictures/{uuid.uuid4()}"
     post = _client().generate_presigned_post(
         Bucket=settings.s3_bucket_name,
         Key=file_key,
@@ -32,7 +33,7 @@ def generate_presigned_upload_url(
         },
         Conditions=[
             {"Content-Type": content_type},
-            ["content-length-range", 1, settings.profile_photo_max_bytes],
+            ["content-length-range", 1, max_file_size_bytes],
         ],
         ExpiresIn=300,
     )
