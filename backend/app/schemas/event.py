@@ -51,12 +51,12 @@ class CreateEventRequest(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     location_name: str | None = None
-    event_date: datetime | None = None
+    event_date: datetime
     event_end_date: datetime | None = None
 
     @model_validator(mode="after")
     def validate_end_after_start(self) -> "CreateEventRequest":
-        if self.event_date and self.event_end_date and self.event_end_date < self.event_date:
+        if self.event_end_date and self.event_end_date < self.event_date:
             raise ValueError("event_end_date must not be before event_date")
         return self
 

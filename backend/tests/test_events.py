@@ -9,7 +9,9 @@ Covers:
 - POST /events/{event_id}/presigned-upload - event image upload (admin only)
 """
 
+from datetime import datetime, timedelta
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -70,6 +72,34 @@ class TestGetEvent:
     async def test_get_event_not_found(self, unauthed_client: AsyncClient):
         resp = await unauthed_client.get("/events/notfound")
         assert resp.status_code == 404
+
+
+class TestSearchEvents:
+    async def test_search_events_only_returns_upcoming_matches(
+        self, unauthed_client: AsyncClient, db_session: AsyncSession
+    ):
+        current_time = datetime.now(ZoneInfo("America/Vancouver"))
+        future_event = Event(
+            title="Campus Search Match",
+            description="Upcoming searchable event",
+            source="manual",
+            event_date=current_time + timedelta(days=1),
+        )
+        past_event = Event(
+            title="Campus Search Match Past",
+            description="Past searchable event",
+            source="manual",
+            event_date=current_time - timedelta(days=1),
+        )
+        db_session.add_all([future_event, past_event])
+        await db_session.flush()
+
+        resp = await unauthed_client.get("/events/search", params={"q": "Campus Search Match"})
+
+        assert resp.status_code == 200
+        ids = [event["id"] for event in resp.json()["events"]]
+        assert future_event.id in ids
+        assert past_event.id not in ids
 
 
 class TestCreateEvent:

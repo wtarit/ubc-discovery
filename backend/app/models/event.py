@@ -24,7 +24,7 @@ class Event(Base):
     longitude: Mapped[float | None] = mapped_column(Float)
     location_name: Mapped[str | None] = mapped_column(String(255))
 
-    event_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    event_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     event_end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True, default=None)

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.database import get_db
@@ -28,8 +30,9 @@ async def list_events(
     limit: int = Query(default=20, le=100),
     db: AsyncSession = Depends(get_db),
 ):
+    current_time = datetime.now(ZoneInfo('America/Vancouver'))
     result = await db.execute(
-        select(Event).order_by(Event.event_date.desc().nullslast(), Event.created_at.desc()).offset(skip).limit(limit)
+        select(Event).where(Event.event_date >= current_time).order_by(Event.event_date.desc(), Event.created_at.desc()).offset(skip).limit(limit)
     )
     events = result.scalars().all()
     return EventListResponse(events=[event_to_response(e) for e in events])
@@ -46,15 +49,19 @@ async def search_events(
     if len(term) < 2:
         return EventListResponse(events=[])
     pattern = f"%{term}%"
+    current_time = datetime.now(ZoneInfo('America/Vancouver'))
     query = (
         select(Event)
         .where(
-            Event.title.ilike(pattern)
-            | Event.description.ilike(pattern)
-            | Event.location_name.ilike(pattern)
-            | Event.club_name.ilike(pattern)
+            Event.event_date >= current_time,
+            or_(
+                Event.title.ilike(pattern),
+                Event.description.ilike(pattern),
+                Event.location_name.ilike(pattern),
+                Event.club_name.ilike(pattern),
+            ),
         )
-        .order_by(Event.event_date.asc().nullslast())
+        .order_by(Event.event_date.asc())
         .limit(limit)
     )
     result = await db.execute(query)
