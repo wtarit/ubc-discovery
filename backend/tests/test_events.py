@@ -24,7 +24,6 @@ class TestListEvents:
         assert resp.status_code == 200
         data = resp.json()
         assert "events" in data
-        assert "total" in data
         assert isinstance(data["events"], list)
 
     async def test_list_events_with_data(
@@ -33,7 +32,6 @@ class TestListEvents:
         resp = await unauthed_client.get("/events")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["total"] >= 3
         titles = [e["title"] for e in data["events"]]
         assert "Test Event 0" in titles
 

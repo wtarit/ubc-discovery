@@ -34,7 +34,6 @@ export interface ApiEvent {
 
 export interface EventListResponse {
   events: ApiEvent[];
-  total: number;
 }
 
 export interface UserResponse {

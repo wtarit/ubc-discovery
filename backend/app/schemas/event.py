@@ -124,4 +124,3 @@ class UpdateEventRequest(BaseModel):
 
 class EventListResponse(BaseModel):
     events: list[EventResponse]
-    total: int
