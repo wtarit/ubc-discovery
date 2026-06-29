@@ -7,19 +7,11 @@ from app.dependencies import get_current_user
 from app.models.event import Event
 from app.models.saved_event import SavedEvent
 from app.models.user import User
-from app.schemas.event import EventResponse
 from app.schemas.recommendation import ForYouResponse, SimilarEventsResponse
+from app.presenters.event import event_to_response
 from app.services import recommender
-from app.services import s3
 
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
-
-
-def _to_response(event: Event) -> EventResponse:
-    r = EventResponse.model_validate(event)
-    if event.event_picture_key:
-        r.event_picture_url = s3.public_url(event.event_picture_key)
-    return r
 
 
 @router.get("/events/{event_id}/similar", response_model=SimilarEventsResponse)
@@ -45,7 +37,7 @@ async def get_similar_events(
 
     return SimilarEventsResponse(
         event_id=event_id,
-        events=[_to_response(e) for e, _ in similar],
+        events=[event_to_response(e) for e, _ in similar],
         scores=[round(s, 4) for _, s in similar],
     )
 
@@ -101,7 +93,7 @@ async def get_for_you(
 
             if ranked:
                 return ForYouResponse(
-                    events=[_to_response(e) for e, _ in ranked],
+                    events=[event_to_response(e) for e, _ in ranked],
                     scores=[round(s, 4) for _, s in ranked],
                     source="saved_events",
                 )
@@ -114,7 +106,7 @@ async def get_for_you(
     recent = list(recent_result.scalars().all())
 
     return ForYouResponse(
-        events=[_to_response(e) for e in recent],
+        events=[event_to_response(e) for e in recent],
         scores=[0.0] * len(recent),
         source="recent",
     )

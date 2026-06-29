@@ -34,7 +34,6 @@ export interface ApiEvent {
 
 export interface EventListResponse {
   events: ApiEvent[];
-  total: number;
 }
 
 export interface UserResponse {
@@ -171,9 +170,9 @@ export const api = {
         "/users/me",
         { method: "PUT", body: JSON.stringify(data) }
       ),
-    presignedUpload: (contentType = "image/webp") =>
+    presignedUpload: () =>
       authenticatedApiFetch<PresignedUploadResponse>(
-        `/users/me/presigned-upload?content_type=${encodeURIComponent(contentType)}`,
+        "/users/me/presigned-upload",
         {}
       ),
   },

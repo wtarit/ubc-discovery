@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const resized = await resizeImage(file);
       const { upload_url, fields, max_file_size_bytes } =
-        await api.users.presignedUpload("image/webp");
+        await api.users.presignedUpload();
       if (resized.size > max_file_size_bytes) {
         throw new Error("Profile photo is too large after compression.");
       }

@@ -124,15 +124,6 @@ class TestPresignedUpload:
         assert "file_key" in data
         assert data["max_file_size_bytes"] == 512 * 1024
 
-    async def test_presigned_upload_rejects_unsupported_content_type(
-        self, client: AsyncClient
-    ):
-        resp = await client.get(
-            "/users/me/presigned-upload",
-            params={"content_type": "image/jpeg"},
-        )
-        assert resp.status_code == 400
-
 
 class TestUserStats:
     async def test_get_stats(self, client: AsyncClient):

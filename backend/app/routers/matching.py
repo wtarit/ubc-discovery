@@ -12,9 +12,9 @@ from app.schemas.matching import (
     MatchedUserResponse,
     UserMatchListResponse,
 )
-from app.schemas.event import EventResponse
 from app.schemas.user import UserPublicResponse
 from app.services import bedrock
+from app.presenters.event import event_to_response
 
 router = APIRouter(prefix="/matching", tags=["AI Matching"])
 
@@ -58,7 +58,7 @@ async def get_matched_events(
     return EventMatchListResponse(
         matches=[
             MatchedEventResponse(
-                event=EventResponse.model_validate(m["event"]),
+                event=event_to_response(m["event"]),
                 match_score=m["score"],
                 match_reason=m["reason"],
             )
