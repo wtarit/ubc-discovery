@@ -48,8 +48,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="UBC Newcomers API",
-    description="Backend API for UBC Newcomers community app — connecting new UBC students",
+    title="UBC Discovery API",
+    description="Backend API for public campus event discovery and member personalization",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -73,4 +73,4 @@ app.include_router(recommendations.router)
 
 @app.get("/", tags=["Health"])
 async def health():
-    return {"status": "ok", "app": "UBC Newcomers API"}
+    return {"status": "ok", "app": "UBC Discovery API"}

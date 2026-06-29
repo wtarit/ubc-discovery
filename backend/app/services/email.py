@@ -90,7 +90,7 @@ async def send_otp_email(
     html = f"""\
 <html>
 <body style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
-  <h2 style="color: #007AFF; margin-bottom: 8px;">UBC Newcomers</h2>
+  <h2 style="color: #007AFF; margin-bottom: 8px;">UBC Discovery</h2>
   <p style="color: #333; font-size: 16px;">Your verification code is:</p>
   <div style="background: #f5f5f5; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
     <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #007AFF;">{otp_code}</span>
@@ -101,7 +101,7 @@ async def send_otp_email(
 </html>"""
     message = OutboundEmail(
         to=(to_email,),
-        subject=f"Your UBC Newcomers verification code: {otp_code}",
+        subject=f"Your UBC Discovery verification code: {otp_code}",
         text=text,
         html=html,
     )

@@ -1,5 +1,5 @@
 """
-Shared fixtures for the UBC Newcomers test suite.
+Shared fixtures for the UBC Discovery test suite.
 
 Strategy:
 - Tables are created once (idempotent create_all) at session start.
