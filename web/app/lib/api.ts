@@ -194,11 +194,6 @@ export const api = {
       authenticatedApiFetch<void>(`/saved-events/${eventId}`, {
         method: "DELETE",
       }),
-    status: (eventId: string) =>
-      authenticatedApiFetch<{ saved: boolean }>(
-        `/saved-events/${eventId}/status`,
-        {}
-      ),
   },
   ratings: {
     list: () =>

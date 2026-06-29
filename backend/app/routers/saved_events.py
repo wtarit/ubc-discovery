@@ -92,14 +92,3 @@ async def unsave_event(
     await db.delete(saved_event)
     await db.commit()
 
-
-@router.get("/{event_id}/status")
-async def check_saved_status(
-    event_id: str,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(SavedEvent).where(and_(SavedEvent.user_id == user.id, SavedEvent.event_id == event_id))
-    )
-    return {"saved": result.scalar_one_or_none() is not None}
