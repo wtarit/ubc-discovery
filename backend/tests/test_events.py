@@ -136,7 +136,7 @@ class TestCreateEvent:
     async def test_create_event_minimal_fields(self, admin_client: AsyncClient):
         resp = await admin_client.post(
             "/events",
-            json={"title": "Minimal Event"},
+            json={"title": "Minimal Event", "event_date": "2026-09-01T10:00:00Z"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -148,7 +148,11 @@ class TestCreateEvent:
     async def test_create_event_preserves_ingestion_source(self, admin_client: AsyncClient):
         resp = await admin_client.post(
             "/events",
-            json={"title": "Scraped Event", "source": "instagram"},
+            json={
+                "title": "Scraped Event",
+                "source": "instagram",
+                "event_date": "2026-09-01T10:00:00Z",
+            },
         )
         assert resp.status_code == 200
         assert resp.json()["source"] == "instagram"
@@ -156,7 +160,11 @@ class TestCreateEvent:
     async def test_create_event_accepts_free_form_source(self, admin_client: AsyncClient):
         resp = await admin_client.post(
             "/events",
-            json={"title": "Imported Event", "source": "ubc_calendar"},
+            json={
+                "title": "Imported Event",
+                "source": "ubc_calendar",
+                "event_date": "2026-09-01T10:00:00Z",
+            },
         )
         assert resp.status_code == 200
         assert resp.json()["source"] == "ubc_calendar"
@@ -263,7 +271,11 @@ class TestDeleteEvent:
         admin_client: AsyncClient,
         db_session: AsyncSession,
     ):
-        event = Event(title="Delete Me", source="manual")
+        event = Event(
+            title="Delete Me",
+            source="manual",
+            event_date=datetime(2026, 9, 1, 10, 0, tzinfo=ZoneInfo("UTC")),
+        )
         db_session.add(event)
         await db_session.flush()
         event_id = event.id
