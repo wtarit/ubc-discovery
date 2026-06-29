@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from app.config import settings
-from app.services.event_response import event_image_key
+from app.presenters.event import event_image_key
 from app.services import s3
 
 

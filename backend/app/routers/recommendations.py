@@ -8,7 +8,7 @@ from app.models.event import Event
 from app.models.saved_event import SavedEvent
 from app.models.user import User
 from app.schemas.recommendation import ForYouResponse, SimilarEventsResponse
-from app.services.event_response import event_to_response
+from app.presenters.event import event_to_response
 from app.services import recommender
 
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])

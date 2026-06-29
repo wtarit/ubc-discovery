@@ -8,9 +8,9 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.event import Event
+from app.presenters.event import event_image_key, event_to_response
 from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse, UpdateEventRequest
 from app.schemas.user import PresignedUploadResponse
-from app.services.event_response import event_image_key, event_to_response
 from app.services import recommender
 from app.services import s3
 

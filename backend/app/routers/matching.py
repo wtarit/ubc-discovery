@@ -14,7 +14,7 @@ from app.schemas.matching import (
 )
 from app.schemas.user import UserPublicResponse
 from app.services import bedrock
-from app.services.event_response import event_to_response
+from app.presenters.event import event_to_response
 
 router = APIRouter(prefix="/matching", tags=["AI Matching"])
 

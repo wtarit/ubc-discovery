@@ -12,7 +12,7 @@ from app.schemas.saved_event import (
     SavedEventResponse,
     SavedEventWithEventResponse,
 )
-from app.services.event_response import event_to_response
+from app.presenters.event import event_to_response
 
 router = APIRouter(prefix="/saved-events", tags=["Saved Events"])
 
