@@ -142,7 +142,6 @@ def _mock_external_services():
         patch("app.services.firebase_auth.get_or_create_firebase_user") as mock_get_or_create,
         patch("app.services.firebase_auth.create_custom_token") as mock_custom_token,
         patch("app.services.s3._client") as mock_s3,
-        patch("app.services.bedrock._client") as mock_bedrock,
         patch("app.services.email.send_otp_email") as mock_email,
     ):
         mock_firebase.return_value = {
@@ -166,9 +165,6 @@ def _mock_external_services():
                 "x-amz-signature": "mock-signature",
             },
         }
-
-        bedrock_client = MagicMock()
-        mock_bedrock.return_value = bedrock_client
 
         yield
 
