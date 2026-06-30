@@ -111,7 +111,7 @@ export async function mockApi(
     }
     if (
       url.pathname === "/saved-events/event-1" &&
-      route.request().method() === "POST"
+      route.request().method() === "PUT"
     ) {
       options.onSave?.();
       if (options.saveError) {
@@ -122,13 +122,11 @@ export async function mockApi(
         });
       } else {
         await route.fulfill({
-          status: 200,
+          status: 201,
           contentType: "application/json",
           body: JSON.stringify({
-            id: "save-1",
-            user_id: profile?.id ?? "member-1",
             event_id: "event-1",
-            created_at: "2026-01-01T00:00:00Z",
+            saved_at: "2026-01-01T00:00:00Z",
           }),
         });
       }
