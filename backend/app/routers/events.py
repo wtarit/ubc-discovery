@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -9,7 +9,12 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.event import Event
 from app.presenters.event import event_image_key, event_to_response
-from app.schemas.event import CreateEventRequest, EventListResponse, EventResponse, UpdateEventRequest
+from app.schemas.event import (
+    CreateEventRequest,
+    EventListResponse,
+    EventResponse,
+    UpdateEventRequest,
+)
 from app.schemas.user import PresignedUploadResponse
 from app.services import recommender
 from app.services import s3
@@ -30,9 +35,13 @@ async def list_events(
     limit: int = Query(default=20, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    current_time = datetime.now(ZoneInfo('America/Vancouver'))
+    current_time = datetime.now(ZoneInfo("America/Vancouver"))
     result = await db.execute(
-        select(Event).where(Event.event_date >= current_time).order_by(Event.event_date.desc(), Event.created_at.desc()).offset(skip).limit(limit)
+        select(Event)
+        .where(Event.event_date >= current_time)
+        .order_by(Event.event_date.desc(), Event.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     events = result.scalars().all()
     return EventListResponse(events=[event_to_response(e) for e in events])
@@ -49,7 +58,7 @@ async def search_events(
     if len(term) < 2:
         return EventListResponse(events=[])
     pattern = f"%{term}%"
-    current_time = datetime.now(ZoneInfo('America/Vancouver'))
+    current_time = datetime.now(ZoneInfo("America/Vancouver"))
     query = (
         select(Event)
         .where(
@@ -94,7 +103,9 @@ async def create_event(
     return event_to_response(event)
 
 
-@router.put("/{event_id}", response_model=EventResponse, dependencies=[Depends(require_admin)])
+@router.put(
+    "/{event_id}", response_model=EventResponse, dependencies=[Depends(require_admin)]
+)
 async def update_event(
     event_id: str,
     body: UpdateEventRequest,
@@ -109,7 +120,9 @@ async def update_event(
     next_start = changes.get("event_date", event.event_date)
     next_end = changes.get("event_end_date", event.event_end_date)
     if next_start and next_end and next_end < next_start:
-        raise HTTPException(status_code=422, detail="event_end_date must not be before event_date")
+        raise HTTPException(
+            status_code=422, detail="event_end_date must not be before event_date"
+        )
 
     embedding_fields = {
         "title",
@@ -150,7 +163,11 @@ async def delete_event(
     await db.commit()
 
 
-@router.post("/{event_id}/presigned-upload", response_model=PresignedUploadResponse, dependencies=[Depends(require_admin)])
+@router.post(
+    "/{event_id}/presigned-upload",
+    response_model=PresignedUploadResponse,
+    dependencies=[Depends(require_admin)],
+)
 async def get_event_presigned_upload(
     event_id: str,
     db: AsyncSession = Depends(get_db),

@@ -10,9 +10,7 @@ export type MockProfile = {
   interests: string[];
   bio: string | null;
   profile_picture_url: string | null;
-  is_available_to_meet: boolean;
   ubc_verified: boolean;
-  connections_count: number;
   created_at: string;
 };
 
@@ -26,9 +24,7 @@ export const existingProfile: MockProfile = {
   interests: ["music", "outdoors", "food"],
   bio: null,
   profile_picture_url: null,
-  is_available_to_meet: false,
   ubc_verified: false,
-  connections_count: 0,
   created_at: "2026-01-01T00:00:00Z",
 };
 
