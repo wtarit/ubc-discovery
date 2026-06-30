@@ -3,7 +3,7 @@ import {
   ApiError,
   api,
   type ApiEvent,
-  type SavedEventWithEventResponse,
+  type SavedEventListItem,
 } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 
@@ -13,7 +13,7 @@ type SaveMutationInput = {
 };
 
 const emptySavedEventIds = new Set<string>();
-const emptySavedEvents: SavedEventWithEventResponse[] = [];
+const emptySavedEvents: SavedEventListItem[] = [];
 
 function savedEventsQueryKey(userId: string | null | undefined) {
   return ["saved-events", userId ?? "anonymous"] as const;
@@ -44,7 +44,7 @@ export function useSavedEventIds() {
 
   return {
     ...savedEventsQuery,
-    data: new Set(savedEventsQuery.data.map((saved) => saved.event_id)),
+    data: new Set(savedEventsQuery.data.map((saved) => saved.event.id)),
   };
 }
 
@@ -74,18 +74,14 @@ export function useSavedEventMutations() {
     onMutate: async ({ eventId, event }) => {
       await queryClient.cancelQueries({ queryKey });
       const previous =
-        queryClient.getQueryData<SavedEventWithEventResponse[]>(queryKey);
-      queryClient.setQueryData<SavedEventWithEventResponse[]>(queryKey, (current) => {
-        if (!event || current?.some((saved) => saved.event_id === eventId)) {
+        queryClient.getQueryData<SavedEventListItem[]>(queryKey);
+      queryClient.setQueryData<SavedEventListItem[]>(queryKey, (current) => {
+        if (!event || current?.some((saved) => saved.event.id === eventId)) {
           return current ?? [];
         }
-        const userId = state.status === "member" ? state.profile.id : "";
         return [
           {
-            id: `optimistic-${eventId}`,
-            user_id: userId,
-            event_id: eventId,
-            created_at: new Date().toISOString(),
+            saved_at: new Date().toISOString(),
             event,
           },
           ...(current ?? []),
@@ -118,9 +114,9 @@ export function useSavedEventMutations() {
     onMutate: async (eventId) => {
       await queryClient.cancelQueries({ queryKey });
       const previous =
-        queryClient.getQueryData<SavedEventWithEventResponse[]>(queryKey);
-      queryClient.setQueryData<SavedEventWithEventResponse[]>(queryKey, (current) => {
-        return (current ?? []).filter((saved) => saved.event_id !== eventId);
+        queryClient.getQueryData<SavedEventListItem[]>(queryKey);
+      queryClient.setQueryData<SavedEventListItem[]>(queryKey, (current) => {
+        return (current ?? []).filter((saved) => saved.event.id !== eventId);
       });
       return { previous };
     },

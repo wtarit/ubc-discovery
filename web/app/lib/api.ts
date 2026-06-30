@@ -58,13 +58,12 @@ export interface PresignedUploadResponse {
 }
 
 export interface SavedEventResponse {
-  id: string;
-  user_id: string;
   event_id: string;
-  created_at: string;
+  saved_at: string;
 }
 
-export interface SavedEventWithEventResponse extends SavedEventResponse {
+export interface SavedEventListItem {
+  saved_at: string;
   event: ApiEvent;
 }
 
@@ -177,7 +176,7 @@ export const api = {
   saved: {
     list: (skip = 0, limit = 100) =>
       authenticatedApiFetch<{
-        saved_events: SavedEventWithEventResponse[];
+        saved_events: SavedEventListItem[];
         total: number;
       }>(
         `/saved-events?skip=${skip}&limit=${limit}`,
@@ -186,7 +185,7 @@ export const api = {
     save: (eventId: string) =>
       authenticatedApiFetch<SavedEventResponse>(
         `/saved-events/${eventId}`,
-        { method: "POST" }
+        { method: "PUT" }
       ),
     unsave: (eventId: string) =>
       authenticatedApiFetch<void>(`/saved-events/${eventId}`, {

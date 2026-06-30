@@ -51,7 +51,7 @@ async def get_for_you(
     saved_result = await db.execute(
         select(SavedEvent)
         .where(SavedEvent.user_id == current_user.id)
-        .order_by(SavedEvent.created_at.desc())
+        .order_by(SavedEvent.saved_at.desc())
         .limit(100)
     )
     saved_rows = list(saved_result.scalars().all())

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, and_
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import delete, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -9,8 +10,8 @@ from app.models.saved_event import SavedEvent
 from app.models.user import User
 from app.schemas.saved_event import (
     SavedEventListResponse,
+    SavedEventListItem,
     SavedEventResponse,
-    SavedEventWithEventResponse,
 )
 from app.presenters.event import event_to_response
 
@@ -25,23 +26,25 @@ async def list_saved_events(
     db: AsyncSession = Depends(get_db),
 ):
     count_result = await db.execute(
-        select(func.count()).select_from(SavedEvent).where(SavedEvent.user_id == user.id)
+        select(func.count())
+        .select_from(SavedEvent)
+        .where(SavedEvent.user_id == user.id)
     )
-    total = count_result.scalar()
+    total = count_result.scalar_one()
 
     result = await db.execute(
         select(SavedEvent, Event)
         .join(Event, Event.id == SavedEvent.event_id)
         .where(SavedEvent.user_id == user.id)
-        .order_by(SavedEvent.created_at.desc())
+        .order_by(SavedEvent.saved_at.desc())
         .offset(skip)
         .limit(limit)
     )
     saved = result.all()
     return SavedEventListResponse(
         saved_events=[
-            SavedEventWithEventResponse(
-                **SavedEventResponse.model_validate(saved_event).model_dump(),
+            SavedEventListItem(
+                saved_at=saved_event.saved_at,
                 event=event_to_response(event),
             )
             for saved_event, event in saved
@@ -50,45 +53,64 @@ async def list_saved_events(
     )
 
 
-@router.post("/{event_id}", response_model=SavedEventResponse)
+@router.put(
+    "/{event_id}",
+    response_model=SavedEventResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={status.HTTP_200_OK: {"model": SavedEventResponse}},
+)
 async def save_event(
     event_id: str,
+    response: Response,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     # Verify event exists
     event_result = await db.execute(select(Event).where(Event.id == event_id))
     if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
 
-    # Check if already saved (upsert: return existing if so)
-    existing_result = await db.execute(
-        select(SavedEvent).where(and_(SavedEvent.user_id == user.id, SavedEvent.event_id == event_id))
+    result = await db.execute(
+        insert(SavedEvent)
+        .values(user_id=user.id, event_id=event_id)
+        .on_conflict_do_nothing(
+            index_elements=[SavedEvent.user_id, SavedEvent.event_id]
+        )
+        .returning(SavedEvent)
     )
-    existing = existing_result.scalar_one_or_none()
-    if existing:
-        return SavedEventResponse.model_validate(existing)
+    saved_event = result.scalar_one_or_none()
 
-    saved_event = SavedEvent(user_id=user.id, event_id=event_id)
-    db.add(saved_event)
+    if saved_event is None:
+        response.status_code = status.HTTP_200_OK
+        existing_result = await db.execute(
+            select(SavedEvent).where(
+                SavedEvent.user_id == user.id,
+                SavedEvent.event_id == event_id,
+            )
+        )
+        saved_event = existing_result.scalar_one()
+    else:
+        response.headers["Location"] = f"/saved-events/{event_id}"
+
     await db.commit()
-    await db.refresh(saved_event)
-    return SavedEventResponse.model_validate(saved_event)
+    return SavedEventResponse(
+        event_id=saved_event.event_id,
+        saved_at=saved_event.saved_at,
+    )
 
 
-@router.delete("/{event_id}", status_code=204)
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def unsave_event(
     event_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(SavedEvent).where(and_(SavedEvent.user_id == user.id, SavedEvent.event_id == event_id))
+    await db.execute(
+        delete(SavedEvent).where(
+            SavedEvent.user_id == user.id,
+            SavedEvent.event_id == event_id,
+        )
     )
-    saved_event = result.scalar_one_or_none()
-    if not saved_event:
-        raise HTTPException(status_code=404, detail="Saved event not found")
-
-    await db.delete(saved_event)
     await db.commit()
-

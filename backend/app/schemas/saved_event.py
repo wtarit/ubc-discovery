@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -7,18 +6,15 @@ from app.schemas.event import EventResponse
 
 
 class SavedEventResponse(BaseModel):
-    id: uuid.UUID
-    user_id: uuid.UUID
     event_id: str
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
+    saved_at: datetime
 
 
-class SavedEventWithEventResponse(SavedEventResponse):
+class SavedEventListItem(BaseModel):
+    saved_at: datetime
     event: EventResponse
 
 
 class SavedEventListResponse(BaseModel):
-    saved_events: list[SavedEventWithEventResponse]
+    saved_events: list[SavedEventListItem]
     total: int
