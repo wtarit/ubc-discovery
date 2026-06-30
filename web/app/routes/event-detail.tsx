@@ -1,10 +1,11 @@
 import { useLoaderData, useNavigate } from "react-router";
 import type { Route } from "./+types/event-detail";
-import { api, type ApiEvent } from "~/lib/api";
+import { ApiError, api, type ApiEvent } from "~/lib/api";
 import { fmtDay, fmtRange, fmtTime, fmtMonth, fmtDate02 } from "~/lib/date";
 import { SaveEventButton } from "~/components/SaveEventButton";
 import { SourceBadge } from "~/components/SourceBadge";
 import { VibeTag } from "~/components/VibeTag";
+import { RouteErrorState } from "~/components/RouteErrorState";
 
 export function meta({ data }: Route.MetaArgs) {
   const event = data as ApiEvent | undefined;
@@ -17,6 +18,32 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   return api.events.get(params.id);
 }
 
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const eventIsGone =
+    error instanceof ApiError && (error.status === 404 || error.status === 410);
+
+  if (eventIsGone) {
+    return (
+      <RouteErrorState
+        eyebrow="Event unavailable"
+        title="This event is no longer available."
+        description="It may have been cancelled or removed by its organizer. There are plenty of current events to explore."
+        link={{ label: "Browse current events", to: "/" }}
+      />
+    );
+  }
+
+  return (
+    <RouteErrorState
+      eyebrow="Could not load event"
+      title="We couldn’t open this event."
+      description="Something went wrong while loading the event details. Try again, or return to Discover."
+      retry
+      link={{ label: "Back to Discover", to: "/" }}
+    />
+  );
+}
+
 export default function EventDetail() {
   const event = useLoaderData<typeof clientLoader>();
   const navigate = useNavigate();
@@ -27,7 +54,7 @@ export default function EventDetail() {
     <div>
       {/* Mobile */}
       <div className="md:hidden">
-        <div className="px-[18px] py-3.5 border-b border-ink flex justify-between items-center">
+        <div className="px-4.5 py-3.5 border-b border-ink flex justify-between items-center">
           <button
             onClick={() => navigate(-1)}
             className="bg-transparent border-none cursor-pointer font-mono text-[11px] text-ink font-bold tracking-wide uppercase"
@@ -39,7 +66,7 @@ export default function EventDetail() {
           </div>
         </div>
 
-        <div className="px-[18px] pt-[18px]">
+        <div className="px-4.5 pt-4.5">
           <SourceBadge sourceLabel={event.source_label} host={event.club_name} />
           <h1 className="mt-3 mb-1.5 font-display font-extrabold text-4xl text-ink tracking-tight leading-none text-balance">
             {event.title}
@@ -52,7 +79,7 @@ export default function EventDetail() {
         </div>
 
         {/* Data table */}
-        <div className="mx-[18px] mt-5 border border-ink">
+        <div className="mx-4.5 mt-5 border border-ink">
           {[
             ["WHEN", d ? fmtDay(d) : "TBD", d && endD ? fmtRange(d, endD).toUpperCase() : d ? fmtTime(d).toUpperCase() : ""],
             ["WHERE", event.location_name ?? "TBD", "OPEN IN MAPS →"],
@@ -76,7 +103,7 @@ export default function EventDetail() {
           ))}
         </div>
 
-        <div className="px-[18px] pt-5">
+        <div className="px-4.5 pt-5">
           <div className="font-mono text-[10px] text-muted tracking-wider uppercase mb-2">
             About this event
           </div>
@@ -85,14 +112,14 @@ export default function EventDetail() {
           </p>
         </div>
 
-        <div className="px-[18px] pt-5 pb-3.5">
+        <div className="px-4.5 pt-5 pb-3.5">
           <span className="font-mono text-[10.5px] text-muted tracking-wide uppercase">
             ○ REPORT AN ISSUE WITH THIS LISTING
           </span>
         </div>
 
         {/* Bottom action bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-bg border-t-2 border-ink px-[18px] py-3 pb-7 flex gap-2 md:hidden z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-bg border-t-2 border-ink px-4.5 py-3 pb-7 flex gap-2 md:hidden z-50">
           <SaveEventButton eventId={event.id} event={event} variant="bar" />
           {event.source_url ? (
             <a
@@ -143,7 +170,7 @@ export default function EventDetail() {
               <img
                 src={event.event_picture_url}
                 alt=""
-                className="mt-8 w-full h-[360px] object-cover"
+                className="mt-8 w-full h-90 object-cover"
               />
             )}
 
@@ -151,7 +178,7 @@ export default function EventDetail() {
               <div className="font-mono text-[11px] text-muted tracking-wider uppercase mb-3 pb-1.5 border-b border-ink">
                 About this event
               </div>
-              <p className="max-w-[580px] text-base text-ink-soft leading-relaxed">
+              <p className="max-w-145 text-base text-ink-soft leading-relaxed">
                 {event.description}
               </p>
             </div>
