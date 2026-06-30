@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import { useLoaderData } from "react-router";
-import type { Route } from "./+types/discover";
 import { api, type ApiEvent } from "~/lib/api";
 import { VIBES, SOURCES, type VibeId, type SourceId } from "~/lib/constants";
 import { VibeTag } from "~/components/VibeTag";
 import { EventCardMedium, EventCardCompact, EventCardRich } from "~/components/EventCard";
+import { RouteErrorState } from "~/components/RouteErrorState";
 
 export function meta() {
   return [
@@ -16,6 +16,17 @@ export function meta() {
 export async function clientLoader() {
   const data = await api.events.list(0, 100);
   return data;
+}
+
+export function ErrorBoundary() {
+  return (
+    <RouteErrorState
+      eyebrow="Could not load Discover"
+      title="Events are taking a break."
+      description="We couldn’t reach the event feed. Check your connection and try again in a moment."
+      retry
+    />
+  );
 }
 
 function Pill({
@@ -49,7 +60,7 @@ function FilterRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 px-[18px] py-2 overflow-x-auto border-b border-rule-soft">
+    <div className="flex items-center gap-2 px-4.5 py-2 overflow-x-auto border-b border-rule-soft">
       <span className="font-mono text-[10px] text-muted tracking-wider shrink-0">
         {label}
       </span>
@@ -224,7 +235,7 @@ export default function Discover() {
             </button>
           </div>
         ) : (
-          <div className="px-[18px]">
+          <div className="px-4.5">
             {events.map((e) => (
               <CardComponent key={e.id} event={e} />
             ))}
@@ -236,7 +247,7 @@ export default function Discover() {
       <div className="hidden md:block">
         {/* Filter rail + grid */}
         <div className="flex border-b border-ink">
-          <aside className="w-[260px] shrink-0 p-5 px-6 border-r border-ink">
+          <aside className="w-65 shrink-0 p-5 px-6 border-r border-ink">
             <FilterBlock label="Source">
               {SOURCES.map((s) => (
                 <RowSelect
