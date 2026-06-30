@@ -5,10 +5,8 @@ Covers:
 - GET /users/me - fetch own profile
 - POST /users/onboarding - create user on onboarding
 - PUT /users/me - update profile
-- PUT /users/me/availability - toggle availability
 - GET /users/me/presigned-upload - S3 presigned POST
 - GET /users/me/stats - user statistics
-- GET /users/{user_id} - public profile
 """
 
 from httpx import AsyncClient
@@ -29,17 +27,24 @@ class TestGetMe:
         resp = await client.get("/users/me")
         data = resp.json()
         expected_fields = {
-            "id", "email", "preferred_name", "major", "year_standing",
-            "interests", "faculty", "bio",
+            "id",
+            "email",
+            "preferred_name",
+            "major",
+            "year_standing",
+            "interests",
+            "faculty",
+            "bio",
             "profile_picture_url",
-            "is_available_to_meet", "connections_count",
             "created_at",
         }
         assert expected_fields.issubset(data.keys())
 
 
 class TestOnboarding:
-    async def test_complete_onboarding_creates_user(self, onboarding_client: AsyncClient):
+    async def test_complete_onboarding_creates_user(
+        self, onboarding_client: AsyncClient
+    ):
         resp = await onboarding_client.post(
             "/users/onboarding",
             json={
@@ -58,7 +63,9 @@ class TestOnboarding:
         assert data["year_standing"] == 2
         assert data["email"] == "newuser@student.ubc.ca"
 
-    async def test_onboarding_duplicate_returns_409(self, onboarding_client: AsyncClient):
+    async def test_onboarding_duplicate_returns_409(
+        self, onboarding_client: AsyncClient
+    ):
         await onboarding_client.post(
             "/users/onboarding",
             json={"preferred_name": "New User"},
@@ -95,24 +102,6 @@ class TestUpdateProfile:
         assert data["year_standing"] == 4
 
 
-class TestAvailability:
-    async def test_set_available(self, client: AsyncClient):
-        resp = await client.put(
-            "/users/me/availability",
-            json={"is_available_to_meet": True},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["is_available_to_meet"] is True
-
-    async def test_set_unavailable(self, client: AsyncClient):
-        resp = await client.put(
-            "/users/me/availability",
-            json={"is_available_to_meet": False},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["is_available_to_meet"] is False
-
-
 class TestPresignedUpload:
     async def test_get_presigned_upload_url(self, client: AsyncClient):
         resp = await client.get("/users/me/presigned-upload")
@@ -130,21 +119,4 @@ class TestUserStats:
         resp = await client.get("/users/me/stats")
         assert resp.status_code == 200
         data = resp.json()
-        assert "connections_count" in data
         assert "member_since" in data
-
-
-class TestGetUserPublic:
-    async def test_get_other_user_profile(
-        self, client: AsyncClient, other_user: User
-    ):
-        resp = await client.get(f"/users/{other_user.id}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["preferred_name"] == "Other User"
-        assert "email" not in data
-
-    async def test_get_nonexistent_user_returns_404(self, client: AsyncClient):
-        import uuid
-        resp = await client.get(f"/users/{uuid.uuid4()}")
-        assert resp.status_code == 404

@@ -22,10 +22,6 @@ class UpdateProfileRequest(BaseModel):
     bio: str | None = None
 
 
-class UpdateAvailabilityRequest(BaseModel):
-    is_available_to_meet: bool
-
-
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
@@ -36,32 +32,13 @@ class UserResponse(BaseModel):
     interests: list[str] | None
     bio: str | None
     profile_picture_url: str | None = None
-    is_available_to_meet: bool
     ubc_verified: bool
-    connections_count: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
-class UserPublicResponse(BaseModel):
-    id: uuid.UUID
-    preferred_name: str
-    major: str | None
-    year_standing: int | None
-    faculty: str | None
-    interests: list[str] | None
-    bio: str | None
-    profile_picture_url: str | None = None
-    is_available_to_meet: bool
-    ubc_verified: bool
-    connections_count: int
-
-    model_config = {"from_attributes": True}
-
-
 class UserStatsResponse(BaseModel):
-    connections_count: int
     member_since: datetime
 
 

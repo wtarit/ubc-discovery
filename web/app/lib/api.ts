@@ -46,9 +46,7 @@ export interface UserResponse {
   interests: string[] | null;
   bio: string | null;
   profile_picture_url: string | null;
-  is_available_to_meet: boolean;
   ubc_verified: boolean;
-  connections_count: number;
   created_at: string;
 }
 
@@ -194,11 +192,6 @@ export const api = {
       authenticatedApiFetch<void>(`/saved-events/${eventId}`, {
         method: "DELETE",
       }),
-    status: (eventId: string) =>
-      authenticatedApiFetch<{ saved: boolean }>(
-        `/saved-events/${eventId}/status`,
-        {}
-      ),
   },
   ratings: {
     list: () =>

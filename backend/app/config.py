@@ -13,8 +13,6 @@ class Settings(BaseSettings):
     firebase_credentials_json: str = ""
     firebase_project_id: str = ""
 
-    bedrock_model_id: str = "anthropic.claude-sonnet-4-6"
-
     email_sender_email: str = ""
     otp_expiry_minutes: int = 10
     otp_max_attempts: int = 5

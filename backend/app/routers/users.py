@@ -11,9 +11,7 @@ from app.models.user import User
 from app.schemas.user import (
     OnboardingRequest,
     PresignedUploadResponse,
-    UpdateAvailabilityRequest,
     UpdateProfileRequest,
-    UserPublicResponse,
     UserResponse,
     UserStatsResponse,
 )
@@ -84,18 +82,6 @@ async def update_profile(
     return response
 
 
-@router.put("/me/availability", response_model=UserResponse)
-async def update_availability(
-    body: UpdateAvailabilityRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    current_user.is_available_to_meet = body.is_available_to_meet
-    await db.commit()
-    await db.refresh(current_user)
-    return UserResponse.model_validate(current_user)
-
-
 @router.get("/me/presigned-upload", response_model=PresignedUploadResponse)
 async def get_presigned_upload(
     current_user: User = Depends(get_current_user),
@@ -122,15 +108,5 @@ async def get_presigned_upload(
 @router.get("/me/stats", response_model=UserStatsResponse)
 async def get_stats(current_user: User = Depends(get_current_user)):
     return UserStatsResponse(
-        connections_count=current_user.connections_count,
         member_since=current_user.created_at,
     )
-
-
-@router.get("/{user_id}", response_model=UserPublicResponse)
-async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return UserPublicResponse.model_validate(user)
